@@ -4,7 +4,7 @@
 		<title>Welcome</title>
 </head>
 	<body>
-	<a href="/join">회원가입</a>
+	<a href="${pageContext.request.contextPath}/join">회원가입</a>
 	<p>joinForm으로 이동</p>
 		
 	
