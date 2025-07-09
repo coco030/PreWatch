@@ -8,7 +8,7 @@
 </head>
 <body>
     <h2>회원가입</h2>
-    <form action="/member/join" method="post">
+    <form action="/join" method="post">
         <p>아이디: <input type="text" name="id" required /></p>
         <p>비밀번호: <input type="password" name="password" required /></p>
         <input type="submit" value="가입하기" />
