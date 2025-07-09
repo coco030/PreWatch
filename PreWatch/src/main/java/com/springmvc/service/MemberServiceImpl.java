@@ -16,4 +16,15 @@ public class MemberServiceImpl implements MemberService{
 		memberRepository.save(member);
 		
 	}
+	@Override
+	public Member login(String id, String password) {
+	    return memberRepository.login(id, password);
+	}
+
+    // 가입시 중복 아이디를 넣는지 검사 로직 
+	@Override
+    public boolean existsById(String id) {
+        return memberRepository.existsById(id); 
+    }
+
 }

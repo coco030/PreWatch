@@ -12,25 +12,35 @@ import com.springmvc.service.MemberService;
 
 @Controller
 public class MemberController {
-	
-	@Autowired
-	 private MemberService memberService;
-	
-	//회원가입 폼으로 이동합니다.
-	@GetMapping("/join") // joinForm.jsp 보여주기
-	public String showJoinForm(Model model) {
-		System.out.println("/Join 매핑. joinForm.jsp 로 이동");
-	    model.addAttribute("member", new Member());  // 선택사항
-	    return "joinForm"; //
-	}
-	
-	//회원가입 정보 전달폼.
-	@PostMapping("/join") // joinResult.jsp로 처리 결과 넘기기
-	public String processJoin(@ModelAttribute Member member) {
-		System.out.println("/Join 매핑. joinForm.jsp 로 이동");
-	    System.out.println(member);  // 디버깅용 출력 (id, password 확인)
-	    memberService.save(member); // 서비스에 회원 객체 전달 → DB 저장
-	    return "joinResult";  
-	}
 
+    @Autowired
+    private MemberService memberService;
+    
+    // 메인 페이지 보여주기
+    @GetMapping("/")
+    public String showHomePage() {
+    	System.out.println("Membercontroller 메인 보여주기");
+        return "home"; // home.jsp
+    }
+    
+    // 회원가입 폼 보여주기
+    @GetMapping("/join")
+    public String showJoinForm(Model model) {	
+    	System.out.println("Membercontroller 회원가입 폼 보여주기");
+        model.addAttribute("member", new Member()); 
+        return "joinForm"; // joinForm.jsp
+    }
+
+    // 회원가입 처리
+    @PostMapping("/join")
+    
+    public String processJoin(@ModelAttribute Member member, Model model) {
+    	System.out.println("[MemberController] 회원가입 처리 시도: id=" + member.getId());
+        if (memberService.existsById(member.getId())) {
+            model.addAttribute("errorMessage", "이미 존재하는 ID입니다.");
+            return "joinForm";
+        }
+        memberService.save(member);
+        return "joinResult"; // joinResult.jsp
+    }
 }
