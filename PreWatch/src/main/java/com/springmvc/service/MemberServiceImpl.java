@@ -14,6 +14,7 @@ public class MemberServiceImpl implements MemberService{
 
 	public void save(Member member) {
 		memberRepository.save(member);
+		System.out.println("[Service] 회원 저장 시도: ID = " + member.getId());
 		
 	}
 	@Override

@@ -17,7 +17,7 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
     @Override
     public void save(Member member) {
-        System.out.println("[Repository] save() 호출됨");
+        System.out.println("MemberRepositoryImpl에서 save() 호출됨" + member);
 
         String sql = "INSERT INTO member (id, password) VALUES (?, ?)";
         System.out.println("실행할 SQL: " + sql);
