@@ -38,6 +38,7 @@ public class MemberController {
     	System.out.println("[MemberController] 회원가입 처리 시도: id=" + member.getId());
         if (memberService.existsById(member.getId())) {
             model.addAttribute("errorMessage", "이미 존재하는 ID입니다.");
+            System.out.println("아이디 중복으로 다시 회원가입 화면으로 돌아옴: id=" + member.getId());
             return "joinForm";
         }
         memberService.save(member);
