@@ -1,0 +1,18 @@
+# 컴파일 결과물
+*.class
+
+# 빌드 폴더 (Maven, Eclipse, etc.)
+/target/
+/bin/
+/build/
+
+# IDE 설정파일 무시
+*.iml
+.idea/
+.classpath
+.project
+.settings/
+
+# 시스템 파일 무시
+.DS_Store
+Thumbs.db
