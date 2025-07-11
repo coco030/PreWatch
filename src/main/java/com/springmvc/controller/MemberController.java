@@ -50,32 +50,24 @@ public class MemberController {
         memberService.save(member);
         return "joinResult"; // joinResult.jsp
     }
-    
-    
-    
-    //editForm 이동하게 함. get
-    @RequestMapping(value = "/editForm", method = RequestMethod.GET)
+    // 비밀번호 수정 폼: GET /member/editForm
+    @GetMapping("/editForm") // RequestMapping에서 GetMapping으로.
     public String showEditForm(HttpSession session) {
-        Object loginMember = session.getAttribute("loginMember");
         System.out.println("Membercontroller 비밀번호 바꾸는 페이지 보여주기");
         return "editForm";
     }
-    
-    //비밀번호 수정 정보 보내서 post
-    @RequestMapping(value = "/editPassword", method = RequestMethod.POST)
-    public String editPassword(HttpServletRequest request) {
-        String id = request.getParameter("id");
+    //비밀번호 수정 처리: POST /member/editPassword
+    @PostMapping("/editPassword") // @PostMapping을 사용
+    public String editPassword(HttpServletRequest request) {	
+    	String id = request.getParameter("id");
         String pw = request.getParameter("pw");
 
         System.out.println("[Controller] 비밀번호 수정 요청 도착");
         System.out.println("[Controller] 파라미터 id = " + id + ", pw = " + pw);
 
         memberService.updatePassword(id, pw);
-
         System.out.println("[Controller] 비밀번호 수정 후 editForm으로 리다이렉트");
-        return "redirect:/member/editForm";
+        // 성공 후 어디로 갈지? 보통 마이페이지나 메인으로 가지만 여기선 수정폼으로 되돌아가도록 함.
+        return "redirect:/member/editForm"; 
     }
-    
-    
-    
 }
