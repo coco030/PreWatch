@@ -15,9 +15,13 @@
     <p><%= member.getId() %>님, 환영합니다.</p><br>
 
     <!-- 25.07.10 추가함 -->
-    <a href="${pageContext.request.contextPath}/member/mypage">나의 영화 기록</a>
+    <a href="${pageContext.request.contextPath}/member/mypage">나의 기록</a><br>
     <a href="${pageContext.request.contextPath}/member/editForm">비밀번호 수정</a>
     <a href="${pageContext.request.contextPath}/logout">로그아웃</a>
 <% } %>	
+	<br>
+	 <hr>
+	    <h2>영화 목록 (나중에 추가될 영역)</h2>
+	    <%-- 이 곳에 영화 뷰 모듈이 들어옵니다. --%>
 	</body>
 </html>
