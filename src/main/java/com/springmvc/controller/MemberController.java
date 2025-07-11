@@ -16,6 +16,7 @@ import com.springmvc.domain.Member;
 import com.springmvc.service.MemberService;
 
 @Controller
+@RequestMapping("/member") 
 public class MemberController {
 
     @Autowired
