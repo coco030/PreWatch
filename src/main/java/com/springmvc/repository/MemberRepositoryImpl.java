@@ -57,8 +57,8 @@ public class MemberRepositoryImpl implements MemberRepository {
 	    System.out.println("[Repository] updatePassword() 진입");
 	    System.out.println("[Repository] 실행할 SQL: UPDATE member SET pw = ? WHERE id = ?");
 	    System.out.println("[Repository] 파라미터 id = " + id + ", pw = " + pw);
-
-	    String sql = "UPDATE member SET pw = ? WHERE id = ?";
+// String sql = "UPDATE member SET pw 라서 오류가 난 거였음. sql 테이블에 지정된대로 수정
+	    String sql = "UPDATE member SET password = ? WHERE id = ?";
 	    int result = jdbcTemplate.update(sql, pw, id);
 
 	    System.out.println("[Repository] SQL 실행 결과: " + result + " rows updated");

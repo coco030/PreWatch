@@ -56,11 +56,13 @@ public class MemberController {
         System.out.println("Membercontroller 비밀번호 바꾸는 페이지 보여주기");
         return "editForm";
     }
-    //비밀번호 수정 처리: POST /member/editPassword
-    @PostMapping("/editPassword") // @PostMapping을 사용
+    //비밀번호 수정 처리: POST /member/editPassword였지만 폼으로 전송되지 않았으므로
+   // POST /member/updatePassword 주소를 처리하도록 수정
+    @PostMapping("/updatePassword") 
     public String editPassword(HttpServletRequest request) {	
     	String id = request.getParameter("id");
         String pw = request.getParameter("pw");
+        String confirmPassword = request.getParameter("confirmPassword");
 
         System.out.println("[Controller] 비밀번호 수정 요청 도착");
         System.out.println("[Controller] 파라미터 id = " + id + ", pw = " + pw);
@@ -68,6 +70,6 @@ public class MemberController {
         memberService.updatePassword(id, pw);
         System.out.println("[Controller] 비밀번호 수정 후 editForm으로 리다이렉트");
         // 성공 후 어디로 갈지? 보통 마이페이지나 메인으로 가지만 여기선 수정폼으로 되돌아가도록 함.
-        return "redirect:/member/editForm"; 
+        return "redirect:/"; // 메인 페이지로 이동
     }
 }

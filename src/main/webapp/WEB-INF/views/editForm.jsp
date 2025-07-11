@@ -8,14 +8,15 @@
 <title>회원정보 수정 페이지</title>
 </head>
 <body>
-  <form action="${pageContext.request.contextPath}/updatePassword" method="post">
-    <input type="hidden" name="id" value="${loginMember.id}" />
+  <form action="${pageContext.request.contextPath}/member/updatePassword" method="post">
+    <input type="hidden" name="id" value="${sessionScope.loginMember.id}" />
     <label>새 비밀번호:</label>
-    <input type="password" name="newPassword" required /><br />
+    <%-- name을 "pw"로 통일함 --%>
+    <input type="password" name="pw" required /><br /> 
     <label>새 비밀번호 확인:</label>
     <input type="password" name="confirmPassword" required /><br />
     <button type="submit">비밀번호 수정</button>
-  </form>
+</form>
   <c:if test="${not empty errorMessage}">
     <p style="color:red">${errorMessage}</p>
   </c:if>
