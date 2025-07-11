@@ -29,6 +29,7 @@ public class LoginController {
     @PostMapping("/login")
     public String processLogin(@RequestParam String id, @RequestParam String password, HttpSession session, RedirectAttributes rttr) {
         System.out.println("[LoginController] 로그인 시도: id=" + id);
+        
         Member loginMember = memberService.login(id, password);
 
         if (loginMember != null) {
