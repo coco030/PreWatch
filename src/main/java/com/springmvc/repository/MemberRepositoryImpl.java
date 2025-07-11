@@ -11,30 +11,39 @@ public class MemberRepositoryImpl implements MemberRepository {
 	
 	private JdbcTemplate jdbcTemplate;
 	
+	//저장소 연결
     @Autowired
     public MemberRepositoryImpl(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
+    
+    //회원가입시 저장됨
     @Override
     public void save(Member member) {
-        System.out.println("MemberRepositoryImpl에서 save() 호출됨" + member);
-        String sql = "INSERT INTO member (id, password) VALUES (?, ?)";
+        System.out.println("회원가입 저장 save로 진입 : " + member);
+        String sql = "INSERT INTO member (id, password, status) VALUES (?, ?, ?)";
+        
         System.out.println("실행할 SQL: " + sql);
         System.out.println("입력값: id=" + member.getId() + ", pw=" + member.getPassword());
-        jdbcTemplate.update(sql, member.getId(), member.getPassword());
+        
+        //ACTIVE가 디폴트값이라 안 넣어도 상관 없지만 가시성과 명확성을 위해 추가함.
+        jdbcTemplate.update(sql, member.getId(), member.getPassword(), "ACTIVE");
         System.out.println("DB 저장 완료");
     }
+    
+    //아이디 유효성 검사
 	@Override
 	public boolean existsById(String id) {
 		String sql = "SELECT COUNT(*) FROM member WHERE id = ?";
 	    Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
 	    return count != null && count > 0;
 	}
+	
+	//로그인을 하기 위해서 정보를 가져오게 함
 	@Override
 	public Member login(String id, String password) {
 	    // 1. SQL 쿼리 작성
-	    String sql = "SELECT * FROM member WHERE id = ? AND password = ?";
-	    
+		String sql = "SELECT * FROM member WHERE id = ? AND password = ? AND status = 'ACTIVE'";
 	    try {
 	        // 2. jdbcTemplate.queryForObject() 사용
 	        // queryForObject는 결과가 정확히 1개일 때 해당 객체를 반환
@@ -52,13 +61,15 @@ public class MemberRepositoryImpl implements MemberRepository {
 	        return null;
 	    }
  }
+	//비밀번호를 수정시킨다.
 	@Override
 	public void updatePassword(String id, String pw) {
 	    System.out.println("[Repository] updatePassword() 진입");
 	    System.out.println("[Repository] 실행할 SQL: UPDATE member SET pw = ? WHERE id = ?");
 	    System.out.println("[Repository] 파라미터 id = " + id + ", pw = " + pw);
-// String sql = "UPDATE member SET pw 라서 오류가 난 거였음. sql 테이블에 지정된대로 수정
+	    // String sql = "UPDATE member SET pw 라서 오류가 난 거였음. sql 테이블에 지정된대로 수정
 	    String sql = "UPDATE member SET password = ? WHERE id = ?";
+	    
 	    int result = jdbcTemplate.update(sql, pw, id);
 
 	    System.out.println("[Repository] SQL 실행 결과: " + result + " rows updated");

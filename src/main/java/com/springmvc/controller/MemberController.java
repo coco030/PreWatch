@@ -72,4 +72,15 @@ public class MemberController {
         // 성공 후 어디로 갈지? 보통 마이페이지나 메인으로 가지만 여기선 수정폼으로 되돌아가도록 함.
         return "redirect:/"; // 메인 페이지로 이동
     }
+    
+    //회원탈퇴. (비활성화된 사용자로 두어서 리뷰나 별점을 남겨둡니다. 그래서 실제로는 update 기능)
+    @PostMapping("/deleteUser") 
+    public String deleteUser(HttpServletRequest request) {
+    	
+    	//함수들을 쓸 자리
+    	
+    	return "redirect:/"; // 탈퇴 후 메인 페이지로 이동
+    	
+    }
+    
 }
