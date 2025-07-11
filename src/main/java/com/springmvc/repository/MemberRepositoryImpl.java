@@ -80,5 +80,15 @@ public class MemberRepositoryImpl implements MemberRepository {
 	        System.out.println("[Repository] 비밀번호 성공적으로 변경됨");
 	    }
 	}
+	//회원 비활성화
+	@Override
+	public void deactivate(String id) {
+		System.out.println("회원을 탈퇴(정확히는 비활성화)하기 위한 정보변경 repository 진입");
+		String sql = "UPDATE member SET status = 'INACTIVE' WHERE id = ?";
+		int result = jdbcTemplate.update(sql, id);
+
+		    // 실제로 몇 개의 행이 수정됐는지 로그로 확인
+		System.out.println("실제 수정된 행 수: " + result);
+	}
 	
 }

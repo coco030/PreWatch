@@ -16,7 +16,7 @@
 	<c:if test="${not empty sessionScope.loginMember}">
 	    <p>${sessionScope.loginMember.id}님, 환영합니다.</p><br>
 	    <a href="${pageContext.request.contextPath}/member/mypage">나의 기록</a><br>
-	    <a href="${pageContext.request.contextPath}/member/editForm">비밀번호 수정</a>
+	    <a href="${pageContext.request.contextPath}/member/editForm">회원정보 수정</a>
 	    <a href="${pageContext.request.contextPath}/logout">로그아웃</a>
 	</c:if>		
 	<br>

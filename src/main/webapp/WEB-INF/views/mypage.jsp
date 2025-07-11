@@ -7,6 +7,6 @@
 <title>mypage</title>
 </head>
 <body>
-회원정보 조회 페이지
+나의 영화 리뷰나 별점 목록
 </body>
 </html>

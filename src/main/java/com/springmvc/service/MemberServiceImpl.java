@@ -37,5 +37,11 @@ public class MemberServiceImpl implements MemberService{
 
 	    System.out.println("[Service] memberRepository.updatePassword() 호출 완료");
 	}
+	
+	//회원비활성화
+	@Override
+	public void deactivate(String id) {
+		memberRepository.deactivate(id);
+	}
 
 }

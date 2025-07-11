@@ -53,7 +53,7 @@ public class MemberController {
     // 비밀번호 수정 폼: GET /member/editForm
     @GetMapping("/editForm") // RequestMapping에서 GetMapping으로.
     public String showEditForm(HttpSession session) {
-        System.out.println("Membercontroller 비밀번호 바꾸는 페이지 보여주기");
+        System.out.println("회원정보 수정 컨트롤러 진입");
         return "editForm";
     }
     //비밀번호 수정 처리: POST /member/editPassword였지만 폼으로 전송되지 않았으므로
@@ -73,12 +73,18 @@ public class MemberController {
         return "redirect:/"; // 메인 페이지로 이동
     }
     
-    //회원탈퇴. (비활성화된 사용자로 두어서 리뷰나 별점을 남겨둡니다. 그래서 실제로는 update 기능)
-    @PostMapping("/deleteUser") 
-    public String deleteUser(HttpServletRequest request) {
+    //회원탈퇴. (상태만 'INACTIVE' 로 두어서 리뷰나 별점을 남겨둡니다. 그래서 실제로는 update 기능)
+    @PostMapping("/deactivateUser") 
+    public String deactivateUser(HttpServletRequest request) {
+    	System.out.println("회원 탈퇴 컨트롤러 진입");
     	
-    	//함수들을 쓸 자리
-    	
+    	Member member = (Member) request.getSession().getAttribute("loginMember");
+    	String id = member.getId();
+        System.out.println("탈퇴 요청 ID: " + id);
+        memberService.deactivate(id);       // 여기서 상태 변경
+        System.out.println("상태 변경 완료, 세션 끊기기 직전.");
+        request.getSession().invalidate();   // 세션 끊기
+        System.out.println("세션 끊었음. 사용자는 이후 메인 페이지로 돌아갑니다.");
     	return "redirect:/"; // 탈퇴 후 메인 페이지로 이동
     	
     }
