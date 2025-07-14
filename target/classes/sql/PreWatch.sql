@@ -23,6 +23,7 @@ CREATE TABLE movies (
     year INT,
     genre VARCHAR(255),
     rating DECIMAL(3, 1) DEFAULT 0.0, -- (평균 만족도 별점)
+    violence_score_avg DECIMAL(3, 1) DEFAULT 0.0 --(평균 폭력성 게이지 점수)
     overview TEXT, -- (영화 소개페이지)
     poster_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

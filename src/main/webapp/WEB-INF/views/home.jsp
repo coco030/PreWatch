@@ -14,7 +14,7 @@
         <hr>
         <h2>영화 목록 (나중에 추가될 영역)</h2>
         <div>
-            <!-- 영화 목록 (나중에 추가될 영역) -->
+       <jsp:include page="/WEB-INF/views/layout/main.jsp" />
         </div>
     </main>
 
