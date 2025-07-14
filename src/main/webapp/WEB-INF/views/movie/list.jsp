@@ -2,6 +2,7 @@
     pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <html>
 <head><title>영화 목록</title></head>
 <body>
@@ -24,8 +25,9 @@
         <th>연도</th>
         <th>장르</th>
         <th>평점</th>
+        <th>잔혹도</th>
         <th>개요</th>
-        <th>리뷰</th> 
+        <th>관리</th>  <!-- 수정/삭제 버튼 자리 -->
     </tr>
     <c:forEach var="movie" items="${movies}">
         <tr>
@@ -51,9 +53,9 @@
             <td>${movie.director}</td>
             <td>${movie.year}</td>
             <td>${movie.genre}</td>
-            <td>${movie.rating}</td>
+            <td><fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></td> 
+            <td><fmt:formatNumber value="${movie.violence_score_avg}" pattern="#0.0" /></td>
             <td>${fn:substring(movie.overview, 0, 30)}...</td>
-            <td>${fn:substring(movie.review, 0, 30)}...</td> 
             <td>
                 <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>
                 <form action="<c:url value='/movies/${movie.id}/delete'/>" method="post" style="display:inline">
@@ -63,7 +65,7 @@
         </tr>
     </c:forEach>
     <c:if test="${empty movies}">
-        <tr><td colspan="8">등록된 영화가 없습니다.</td></tr> <%-- colspan 갯수 조정 --%>
+        <tr><td colspan="9">등록된 영화가 없습니다.</td></tr> 
     </c:if>
 </table>
 </body>

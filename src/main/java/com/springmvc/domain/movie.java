@@ -12,7 +12,7 @@ public class movie {
     private LocalDate releaseDate;
     private String genre;
     private double rating;
-    private String violence_score_avg;
+    private double violence_score_avg;
     private String overview;
     private String posterPath; // posterPath 필드 확인
     private LocalDateTime createdAt;
@@ -28,9 +28,7 @@ public class movie {
         this.genre = genre;
     }
 
-    public movie(Long id, String apiId, String title, String director, int year,
-                 LocalDate releaseDate, String genre, double rating, String review,
-                 String overview, String posterPath, // posterPath 생성자 파라미터 확인
+    public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath, // posterPath 생성자 파라미터 확인
                  LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.apiId = apiId;
@@ -48,7 +46,7 @@ public class movie {
     }
 
     public movie(String apiId, String title, String director, int year,
-                 LocalDate releaseDate, String genre, String overview, String posterPath) { // posterPath 생성자 파라미터 확인
+                 LocalDate releaseDate, String genre, String overview, String posterPath) {
         this.apiId = apiId;
         this.title = title;
         this.director = director;
@@ -58,7 +56,6 @@ public class movie {
         this.overview = overview;
         this.posterPath = posterPath; // 할당 확인
     }
-
     // --- posterPath에 대한 Getter와 Setter 추가 ---
     public String getPosterPath() {
         return posterPath;
@@ -67,7 +64,6 @@ public class movie {
     public void setPosterPath(String posterPath) {
         this.posterPath = posterPath;
     }
-
     // --- 다른 필드 Getter/Setter 유지 ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -93,8 +89,8 @@ public class movie {
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
-    public String getviolence_score_avg() { return violence_score_avg; }
-    public void setviolence_score_avg(String violence_score_avg) { this.violence_score_avg = violence_score_avg; }
+    public double getviolence_score_avg() { return violence_score_avg; }  // ← 타입에 맞춰 수정
+    public void setviolence_score_avg(double violence_score_avg) { this.violence_score_avg = violence_score_avg; }
 
     public String getOverview() { return overview; }
     public void setOverview(String overview) { this.overview = overview; }

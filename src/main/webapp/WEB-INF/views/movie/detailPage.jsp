@@ -28,9 +28,9 @@
 <p>감독: ${movie.director}</p>
 <p>연도: ${movie.year}</p>
 <p>장르: ${movie.genre}</p>
-<p>평점: ${movie.rating} / 5.0</p>
+<p>평점: ${movie.rating} / 10.0</p>
+<p>잔혹도 평균: ${movie.violence_score_avg} / 10.0</p>
 <p>개요: ${movie.overview}</p>
-<p>리뷰: ${movie.review}</p> 
 
 <a href="<c:url value='/movies'/>">목록</a>
 <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>

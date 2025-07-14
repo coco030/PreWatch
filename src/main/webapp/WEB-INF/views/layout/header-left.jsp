@@ -1,11 +1,10 @@
  <!-- 팀원 작업영역 -->
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<link rel="stylesheet" href="<c:url value='/resources/css/header_layout.css'/>">
-<head>
-    <title>PreWatch</title>
-  <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
-</head>
-<!-- header-left.jsp -->
-<div>로고 - 메뉴</div>
 
+<!-- header-left.jsp -->
+<div class="header-left">
+    <a href="${pageContext.request.contextPath}/">PreWatch</a> |
+    <a href="${pageContext.request.contextPath}/movies">영화 목록</a> |
+    <a href="${pageContext.request.contextPath}/movies/new">영화 등록</a>
+</div>
