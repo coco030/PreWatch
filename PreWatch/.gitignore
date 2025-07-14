@@ -1,0 +1,16 @@
+# 컴파일 결과물
+*.class
+
+# 빌드 폴더
+/target/
+/build/
+/bin/
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# === Eclipse 쓰면서 협업 중이라서 ! 붙여서 무시하지 않고 같이 올림 ===
+!.classpath
+!.project
+!.settings/
