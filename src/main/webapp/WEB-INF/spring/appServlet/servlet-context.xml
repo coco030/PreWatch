@@ -34,7 +34,7 @@
          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
     <beans:property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/> 
     <beans:property name="url" 
-         value="jdbc:mysql://localhost:3306/prewatch_member_db?serverTimezone=UTC"/>  
+         value="jdbc:mysql://localhost:3306/prewatch_db?serverTimezone=UTC"/>  
                                                   	<!--위 부분을 수정하였다.-->   
     <beans:property name="username" value="root"/> 
 	<!--value 값은 코드 17-2에서 설정한 password이어야 한다.-->   
