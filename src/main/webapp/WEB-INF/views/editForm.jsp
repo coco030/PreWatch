@@ -8,7 +8,7 @@
 <title>회원정보 수정 페이지</title>
 </head>
 <body>
-  <form action="${pageContext.request.contextPath}/updatePassword" method="post">
+  <form action="${pageContext.request.contextPath}/member/updatePassword" method="post">
     <input type="hidden" name="id" value="${sessionScope.loginMember.id}" />
     <label>새 비밀번호:</label>
     <%-- name을 "pw"로 통일함 --%>
@@ -19,7 +19,7 @@
 </form>
 	<br>
 	<%-- a태그를 쓰면 get 방식만 가능해서 post로 보내기 위해 form으로 수정 --%>
-	<form action="${pageContext.request.contextPath}/deactivateUser" method="post">
+	<form action="${pageContext.request.contextPath}/member/deactivateUser" method="post">
     <button type="submit">회원 탈퇴</button>
 </form>
   <c:if test="${not empty errorMessage}">
