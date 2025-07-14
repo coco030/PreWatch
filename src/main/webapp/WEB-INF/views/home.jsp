@@ -1,27 +1,26 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%System.out.println("홈 뷰 진입"); %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<% Object loginMember = session.getAttribute("loginMember"); %>
 <html>
-	<head>
-		<title>Welcome</title>
+<head>
+    <title>Welcome</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-	<body>	
-<c:if test="${empty sessionScope.loginMember}">
-	    <%-- 로그인 안 한 경우 --%>
-	    <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
-	    <a href="${pageContext.request.contextPath}/login">로그인</a>
-	</c:if>
-	 	<%-- 로그인 한 경우 --%>
-	<c:if test="${not empty sessionScope.loginMember}">
-	    <p>${sessionScope.loginMember.id}님, 환영합니다.</p><br>
-	    <a href="${pageContext.request.contextPath}/member/mypage">나의 기록</a><br>
-	    <a href="${pageContext.request.contextPath}/member/editForm">회원정보 수정</a>
-	    <a href="${pageContext.request.contextPath}/logout">로그아웃</a>
-	</c:if>		
-	<br>
-	 <hr>
-	    <h2>영화 목록 (나중에 추가될 영역)</h2>
-	    <%-- 이 곳에 영화 뷰 모듈이 들어옵니다. --%>
-	</body>
+<body>
+    <%-- 공통 헤더 --%>
+    <jsp:include page="/WEB-INF/views/layout/header.jsp" />
+    <%-- 메인 콘텐츠 (영화 목록 등) --%>
+    <main>
+        <hr>
+        <h2>영화 목록 (나중에 추가될 영역)</h2>
+        <div>
+            <!-- 영화 목록 (나중에 추가될 영역) -->
+        </div>
+    </main>
+
+    <%-- 3. 공통 푸터 --%>
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>

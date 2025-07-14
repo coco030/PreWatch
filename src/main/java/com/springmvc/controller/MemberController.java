@@ -16,7 +16,6 @@ import com.springmvc.domain.Member;
 import com.springmvc.service.MemberService;
 
 @Controller
-@RequestMapping("/member") 
 public class MemberController {
 
     @Autowired
@@ -88,5 +87,10 @@ public class MemberController {
     	return "redirect:/"; // 탈퇴 후 메인 페이지로 이동
     	
     }
-    
+    //마이페이지. 나의 영화 리뷰나 별점 목록 (볼 수만 있고 이 페이지에서 수정삭제 불가)
+    @GetMapping("/mypage")
+    public String showMyPage() {
+    	System.out.println("마이페이지로 이동");
+        return "mypage";
+    }
 }

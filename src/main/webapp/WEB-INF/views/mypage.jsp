@@ -7,6 +7,6 @@
 <title>mypage</title>
 </head>
 <body>
-나의 영화 리뷰나 별점 목록
+나의 영화 리뷰나 별점 목록 (볼 수만 있고 이 페이지에서 수정삭제 불가)
 </body>
 </html>

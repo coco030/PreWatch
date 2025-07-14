@@ -20,6 +20,6 @@
     </form>
     
     <br>
-    <p>아직 회원이 아니신가요? <a href="${pageContext.request.contextPath}/member/join">회원가입</a></p>
+    <p>아직 회원이 아니신가요? <a href="${pageContext.request.contextPath}/join">회원가입</a></p>
 </body>
 </html>
