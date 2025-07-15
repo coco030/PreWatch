@@ -6,12 +6,12 @@
 <div class="header-right-wrapper">
 <% if (loginMember == null) { %>    
     <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
-    <a href="${pageContext.request.contextPath}/login">로그인</a>
+    <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
 <% } else { 
        com.springmvc.domain.Member member = (com.springmvc.domain.Member) loginMember;
 %>
     <a href="${pageContext.request.contextPath}/member/mypage">나의 영화 기록</a>
     <a href="${pageContext.request.contextPath}/member/editForm">회원 정보 수정</a>
-    <a href="${pageContext.request.contextPath}/logout">로그아웃</a>
+    <a href="${pageContext.request.contextPath}/auth/logout">로그아웃</a>
 <% } %>
 </div>
