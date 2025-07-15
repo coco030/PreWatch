@@ -10,5 +10,5 @@
 <p>가입을 축하드립니다.</p>
 <!--"${pageContext.request.contextPath}" 대신에  "/PreWatch" 이렇게 해도 되지만 혹시 바뀔지도 모르니깐 -->
 	<a href="${pageContext.request.contextPath}">홈으로 가기</a>
-	<a href="login">로그인하기</a>
+	<a href="${pageContext.request.contextPath}/auth/login">로그인하기</a>
 </body>

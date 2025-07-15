@@ -13,7 +13,7 @@
         <p style="color:red;">${errorMessage}</p>
     </c:if>
 
-    <form action="${pageContext.request.contextPath}/login" method="post">
+    <form action="${pageContext.request.contextPath}/auth/login" method="post">
         <p>아이디: <input type="text" name="id" required /></p>
         <p>비밀번호: <input type="password" name="password" required /></p>
         <input type="submit" value="로그인" />
