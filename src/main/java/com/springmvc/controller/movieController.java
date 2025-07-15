@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession; // HttpSession 임포트 확인
 
 import java.io.File;
 import java.io.IOException;
@@ -20,14 +20,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.List;
 
 @Controller
-@RequestMapping("/movies") // 클래스 레벨 매핑: 모든 메서드 경로 앞에 "/movies"가 붙음
 public class movieController {
 
     private static final Logger logger = LoggerFactory.getLogger(movieController.class);
 
-    // 업로드된 이미지가 저장될 실제 경로 (webapp/resources/images/movies/)
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
 
     private final movieService movieService;
@@ -39,61 +38,68 @@ public class movieController {
         this.externalMovieApiService = externalMovieApiService;
     }
 
-    // ------------------------- 1. 영화 목록 (Read All) -------------------------
-    // GET /movies 또는 GET /movies/ (클래스 레벨 @RequestMapping과 조합)
-    @GetMapping({"", "/"}) // /movies 와 /movies/ 둘 다 처리
-    public String list(Model model) {
-        logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
-        model.addAttribute("movies", movieService.findAll());
-        logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
-        return "movie/list"; // /WEB-INF/views/movie/list.jsp 뷰 반환
+    // --- 역할 기반 접근 제어 헬퍼 메서드 ---
+    // 세션에서 "userRole" 값을 가져와 "ADMIN"인지 확인합니다.
+    // 세션에 "userRole"이 없거나 "ADMIN"이 아니면 false를 반환합니다.
+    private boolean isAdmin(HttpSession session) {
+        String userRole = (String) session.getAttribute("userRole");
+        return "ADMIN".equals(userRole);
     }
+    
+    // --- 기본 영화 관리 (CRUD) 기능 ---
 
-    // ------------------------- 2. 새 영화 등록 폼 (Create Form) -------------------------
-    // GET /movies/new
-    @GetMapping("/new")
-    public String createForm(Model model) {
+    // 1. 새 영화 등록 폼 (Create Form)
+    // GET /PreWatch/movies/new
+    @GetMapping("/movies/new")
+    public String createForm(Model model, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[GET /movies/new] 권한 없음: 비관리자 접근 시도.");
+            return "redirect:/accessDenied"; // 권한 없음 페이지로 리다이렉트
+        }
         logger.info("[GET /movies/new] 새 영화 등록 폼 요청.");
-        model.addAttribute("movie", new movie()); // 빈 movie 객체 전달
-        return "movie/form"; // /WEB-INF/views/movie/form.jsp 뷰 반환
+        model.addAttribute("movie", new movie());
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        return "movie/form";
     }
 
-    // ------------------------- 3. 영화 등록 처리 (Create Process) -------------------------
-    // POST /movies (새 영화 등록 폼 제출 시)
-    @PostMapping // @RequestMapping("/movies")와 조합되어 POST /movies 처리
+    // 2. 영화 등록 처리 (Create Process)
+    // POST /PreWatch/movies
+    @PostMapping("/movies")
     public String create(@ModelAttribute movie movie,
-                         @RequestParam("posterImage") MultipartFile posterImage, // 파일 업로드 파라미터
-                         HttpServletRequest request) { // 서버의 실제 파일 경로를 얻기 위해
+                         @RequestParam("posterImage") MultipartFile posterImage,
+                         HttpServletRequest request, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies] 권한 없음: 비관리자 영화 등록 시도.");
+            return "redirect:/accessDenied";
+        }
         logger.info("[POST /movies] 새 영화 등록 요청: 제목 = {}", movie.getTitle());
 
-        if (posterImage != null && !posterImage.isEmpty()) { // 파일이 업로드된 경우
+        if (posterImage != null && !posterImage.isEmpty()) {
             try {
-                // 웹 애플리케이션의 실제(물리적) 경로 얻기
                 String realUploadPath = request.getSession().getServletContext().getRealPath(UPLOAD_DIRECTORY_RELATIVE);
                 File uploadDir = new File(realUploadPath);
-                if (!uploadDir.exists()) { // 디렉토리가 없으면 생성
+                if (!uploadDir.exists()) {
                     uploadDir.mkdirs();
                     logger.debug("업로드 디렉토리 생성: {}", realUploadPath);
                 }
 
-                // 파일명 중복 방지를 위한 UUID 사용
                 String originalFileName = posterImage.getOriginalFilename();
                 String fileExtension = "";
                 if (originalFileName != null && originalFileName.contains(".")) {
                     fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
                 }
-                String savedFileName = UUID.randomUUID().toString() + fileExtension; // 고유한 파일명
+                String savedFileName = UUID.randomUUID().toString() + fileExtension;
                 Path filePath = Paths.get(realUploadPath, savedFileName);
 
-                Files.copy(posterImage.getInputStream(), filePath); // 파일 저장
+                Files.copy(posterImage.getInputStream(), filePath);
                 logger.info("포스터 이미지 저장 성공: {}", filePath.toString());
 
-                // DB에 저장할 웹 접근 경로 설정 (예: /resources/images/movies/uuid.jpg)
                 movie.setPosterPath(UPLOAD_DIRECTORY_RELATIVE + savedFileName);
 
             } catch (IOException e) {
                 logger.error("포스터 이미지 업로드 실패: {}", e.getMessage(), e);
-                // 파일 업로드 실패 시, posterPath는 null 또는 기존값 유지 (여기서는 null)
                 movie.setPosterPath(null);
             }
         } else {
@@ -101,35 +107,53 @@ public class movieController {
             movie.setPosterPath(null);
         }
 
-        movieService.save(movie); // DB에 영화 정보 저장 (포스터 경로 포함)
+        movieService.save(movie);
         logger.info("영화 '{}' DB에 저장 완료.", movie.getTitle());
-        return "redirect:/movies"; // 저장 후 목록 페이지로 리다이렉트
+        return "redirect:/movies";
     }
 
- // ------------------------- 4. 영화 상세 (Read One) -------------------------
- // GET /movies/{id}
- @GetMapping("/{id}")
- public String detail(@PathVariable Long id, Model model, HttpSession session) { // HttpSession 파라미터는 계속 유지됩니다.
-     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
+    // 3. 영화 상세 (Read One)
+    // GET /PreWatch/movies/{id}
+    @GetMapping("/movies/{id}")
+    public String detail(@PathVariable Long id, Model model, HttpSession session) {
+        logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+        movie movie = movieService.findById(id);
 
-     if (movie == null) {
-         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-         return "redirect:/movies?error=notFound"; // 영화를 찾지 못하면 목록으로 리다이렉트
-     }
+        if (movie == null) {
+            logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+            return "redirect:/movies?error=notFound";
+        }
 
-     model.addAttribute("movie", movie);
-     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-     
-     return "movie/detailPage"; 
- }
+        model.addAttribute("movie", movie);
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
 
-    // ------------------------- 5. 영화 수정 폼 (Update Form) -------------------------
-    // GET /movies/{id}/edit
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+        return "movie/detailPage";
+    }
+
+    // 4. 영화 목록 (Read All)
+    // GET /PreWatch/movies 또는 GET /PreWatch/movies/
+    @GetMapping({"/movies", "/movies/"})
+    public String list(Model model, HttpSession session) {
+        logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
+        model.addAttribute("movies", movieService.findAll());
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
+        return "movie/list";
+    }
+
+
+    // 5. 영화 수정 폼 (Update Form)
+    // GET /PreWatch/movies/{id}/edit
+    @GetMapping("/movies/{id}/edit")
+    public String editForm(@PathVariable Long id, Model model, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[GET /movies/{}/edit] 권한 없음: 비관리자 접근 시도.", id);
+            return "redirect:/accessDenied";
+        }
         logger.info("[GET /movies/{}/edit] 영화 수정 폼 요청: ID = {}", id, id);
-        movie movie = movieService.findById(id); // 수정할 기존 영화 정보 조회
+        movie movie = movieService.findById(id);
 
         if (movie == null) {
             logger.warn("[GET /movies/{}/edit] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
@@ -137,24 +161,29 @@ public class movieController {
         }
 
         model.addAttribute("movie", movie);
-        return "movie/form"; // 등록/수정 폼 공유
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        return "movie/form";
     }
 
-    // ------------------------- 6. 영화 수정 처리 (Update Process) -------------------------
-    // POST /movies/{id}/edit
-    @PostMapping("/{id}/edit")
+    // 6. 영화 수정 처리 (Update Process)
+    // POST /PreWatch/movies/{id}/edit
+    @PostMapping("/movies/{id}/edit")
     public String update(@PathVariable Long id,
                          @ModelAttribute movie movie,
-                         @RequestParam("posterImage") MultipartFile posterImage, // 파일 업로드 파라미터
-                         HttpServletRequest request) {
+                         @RequestParam("posterImage") MultipartFile posterImage,
+                         HttpServletRequest request, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies/{}/edit] 권한 없음: 비관리자 영화 업데이트 시도.", id);
+            return "redirect:/accessDenied";
+        }
         logger.info("[POST /movies/{}/edit] 영화 업데이트 요청: ID = {}, 제목 = {}", id, movie.getTitle());
-        movie.setId(id); // URL의 ID를 movie 객체에 설정
+        movie.setId(id);
 
-        // 기존 영화 정보 로드 (기존 포스터 경로를 알아야 함)
         movie existingMovie = movieService.findById(id);
         String oldPosterPath = existingMovie != null ? existingMovie.getPosterPath() : null;
 
-        if (posterImage != null && !posterImage.isEmpty()) { // 새로운 이미지가 업로드된 경우
+        if (posterImage != null && !posterImage.isEmpty()) {
             try {
                 String realUploadPath = request.getSession().getServletContext().getRealPath(UPLOAD_DIRECTORY_RELATIVE);
                 File uploadDir = new File(realUploadPath);
@@ -162,7 +191,6 @@ public class movieController {
                     uploadDir.mkdirs();
                 }
 
-                // 기존 파일 삭제 (선택 사항: 불필요한 파일 누적 방지)
                 if (oldPosterPath != null && !oldPosterPath.startsWith("http://") && !oldPosterPath.startsWith("https://")) {
                     Path oldFilePath = Paths.get(request.getSession().getServletContext().getRealPath(oldPosterPath));
                     if (Files.exists(oldFilePath)) {
@@ -179,28 +207,33 @@ public class movieController {
                 String savedFileName = UUID.randomUUID().toString() + fileExtension;
                 Path filePath = Paths.get(realUploadPath, savedFileName);
 
-                Files.copy(posterImage.getInputStream(), filePath); // 새 파일 저장
+                Files.copy(posterImage.getInputStream(), filePath);
                 logger.info("새로운 포스터 이미지 저장 성공: {}", filePath.toString());
-                movie.setPosterPath(UPLOAD_DIRECTORY_RELATIVE + savedFileName); // 새 경로 설정
+                movie.setPosterPath(UPLOAD_DIRECTORY_RELATIVE + savedFileName);
 
             } catch (IOException e) {
                 logger.error("포스터 이미지 업데이트 실패: {}", e.getMessage(), e);
-                movie.setPosterPath(oldPosterPath); // 업로드 실패 시 기존 경로 유지
+                movie.setPosterPath(oldPosterPath);
             }
-        } else { // 새로운 이미지가 업로드되지 않은 경우
+        } else {
             logger.info("[POST /movies/{}/edit] 새로운 포스터 이미지 업로드 없음. 기존 경로 유지.", id);
-            movie.setPosterPath(oldPosterPath); // 기존 경로 유지
+            movie.setPosterPath(oldPosterPath);
         }
 
-        movieService.update(movie); // DB 업데이트
+        movieService.update(movie);
         logger.info("영화 '{}' 업데이트 완료.", movie.getTitle());
-        return "redirect:/movies"; // 업데이트 후 목록 페이지로 리다이렉트
+        return "redirect:/movies";
     }
 
-    // ------------------------- 7. 영화 삭제 (Delete) -------------------------
-    // POST /movies/{id}/delete
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpServletRequest request) {
+    // 7. 영화 삭제 (Delete)
+    // POST /PreWatch/movies/{id}/delete
+    @PostMapping("/movies/{id}/delete")
+    public String delete(@PathVariable Long id, HttpServletRequest request, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies/{}/delete] 권한 없음: 비관리자 영화 삭제 시도.", id);
+            return "redirect:/accessDenied";
+        }
         logger.info("[POST /movies/{}/delete] 영화 삭제 요청: ID = {}", id, id);
 
         movie movieToDelete = movieService.findById(id);
@@ -223,26 +256,76 @@ public class movieController {
             logger.debug("삭제할 영화가 없거나 포스터 경로가 없어 파일 삭제 스kip.");
         }
 
-        movieService.delete(id); // DB에서 영화 삭제
+        movieService.delete(id);
         logger.info("영화 ID {} 삭제 완료.", id);
-        return "redirect:/movies"; // 삭제 후 목록 페이지로 리다이렉트
+        return "redirect:/movies";
     }
 
-    // ------------------------- 8. API에서 영화 가져오기 (Import from API) -------------------------
-    // POST /movies/import
-    @PostMapping("/import")
-    public String importFromApi(@RequestParam String title) {
-        logger.info("[POST /movies/import] 영화 API 가져오기 요청: 제목 = {}", title);
-        movie movieFromApi = externalMovieApiService.getMovieFromApi(title);
+    // --- API 연동 기능 ---
+
+    @GetMapping("/movies/search-api")
+    public String searchApiMoviesPage(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[GET /movies/search-api] 권한 없음: 비관리자 API 검색 페이지 접근 시도.");
+            return "redirect:/accessDenied";
+        }
+        logger.info("[GET /movies/search-api] API 영화 검색 페이지 또는 검색 결과 요청. 쿼리: {}", query);
+        if (query != null && !query.trim().isEmpty()) {
+            List<movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
+            model.addAttribute("apiMovies", searchResults);
+            model.addAttribute("searchPerformed", true);
+            model.addAttribute("query", query);
+        } else {
+            model.addAttribute("searchPerformed", false);
+        }
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        return "movie/apiSearchPage";
+    }
+
+
+    @GetMapping("/search") // 이 경로는 헤더 검색창에서 사용되며, API 검색 페이지로 연결됩니다.
+    public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
+        logger.info("[GET /search] 헤더 검색 요청. 쿼리: {}", query);
+        // 이 기능은 모든 사용자가 접근 가능하도록 유지
+        if (query != null && !query.trim().isEmpty()) {
+            List<movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
+            model.addAttribute("apiMovies", searchResults);
+            model.addAttribute("searchPerformed", true);
+            model.addAttribute("query", query);
+        } else {
+            model.addAttribute("searchPerformed", false);
+        }
+        model.addAttribute("userRole", session.getAttribute("userRole")); // JSP에 역할 전달
+        return "movie/apiSearchPage"; // API 검색 결과를 보여줄 JSP 페이지
+    }
+
+
+    @PostMapping("/movies/import-api-detail")
+    public String importApiMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session) {
+        // ⭐ 관리자만 접근 가능
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies/import-api-detail] 권한 없음: 비관리자 API 영화 등록 시도.");
+            return "redirect:/accessDenied";
+        }
+        logger.info("[POST /movies/import-api-detail] API에서 영화 상세 정보 가져와 등록 요청: imdbID = {}", imdbId);
+
+        movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
-            logger.info("API에서 영화 '{}'를 성공적으로 가져왔습니다.", movieFromApi.getTitle());
             movieService.save(movieFromApi);
-            logger.info("영화 '{}'를 DB에 저장 완료.", movieFromApi.getTitle());
-            return "redirect:/movies";
+            logger.info("API 영화 '{}' (ID: {}) DB에 성공적으로 등록.", movieFromApi.getTitle(), movieFromApi.getApiId());
+            return "redirect:/movies?status=registered"; // 등록 후 목록 페이지로 리다이렉트
         } else {
-            logger.warn("[POST /movies/import] API에서 영화 '{}'를 찾지 못했거나 가져오기에 실패했습니다.", title);
-            return "redirect:/movies?error=movieNotFound";
+            logger.warn("[POST /movies/import-api-detail] imdbID '{}'에 해당하는 영화 정보를 API에서 찾을 수 없습니다.", imdbId);
+            model.addAttribute("errorMessage", "영화 상세 정보를 찾을 수 없습니다.");
+            return "redirect:/search?error=detailNotFound"; // 실패 시 검색 페이지로 돌아가 에러 메시지 표시
         }
+    }
+
+    // 권한 없음 페이지 매핑
+    @GetMapping("/accessDenied")
+    public String accessDenied() {
+        return "accessDenied"; // accessDenied.jsp
     }
 }

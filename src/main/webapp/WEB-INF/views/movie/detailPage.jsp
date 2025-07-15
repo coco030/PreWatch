@@ -33,9 +33,12 @@
 <p>개요: ${movie.overview}</p>
 
 <a href="<c:url value='/movies'/>">목록</a>
-<a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>
-<form action="<c:url value='/movies/${movie.id}/delete'/>" method="post" style="display:inline">
-    <button type="submit">삭제</button>
-</form>
+<%-- 관리자에게만 '수정'/'삭제' 버튼 표시 --%>
+<c:if test="${userRole == 'ADMIN'}">
+    <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>
+    <form action="<c:url value='/movies/${movie.id}/delete'/>" method="post" style="display:inline">
+        <button type="submit">삭제</button>
+    </form>
+</c:if>
 </body>
 </html>

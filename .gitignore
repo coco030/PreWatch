@@ -1,2 +1,18 @@
+# === Java & Maven 프로젝트 공통 ===
 /target/
-/*.class
+*.log
+*.tmp
+*.bak
+
+# === 이클립스 (STS 포함) ===
+.classpath
+.project
+.settings/*
+!.settings/org.eclipse.wst.common.project.facet.core.xml
+!.settings/org.eclipse.jdt.core.prefs  # Java 버전 호환 위해 유지 권장
+.factorypath
+.recommenders/
+
+# === OS 자동 파일 ===
+.DS_Store
+Thumbs.db
