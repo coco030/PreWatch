@@ -251,7 +251,7 @@ public class movieController {
         }
     }
 
-    // overrideRatingsWithLocalData 헬퍼 메서드: API 영화 목록의 평점/잔혹도를 로컬 DB 데이터로 덮어씀.
+    // overrideRatingsWithLocalData 헬퍼 메서드: API 영화 목록의 평점/폭력성평점을 로컬 DB 데이터로 덮어씀.
     // 목적: 외부 API 데이터와 우리 시스템의 내부 데이터를 일관되게 보여줌.
     private void overrideRatingsWithLocalData(List<movie> apiMovies) {
         for (movie apiMovie : apiMovies) {
@@ -259,9 +259,9 @@ public class movieController {
             if (localMovie != null) {
                 apiMovie.setRating(localMovie.getRating());
                 apiMovie.setviolence_score_avg(localMovie.getviolence_score_avg());
-                logger.debug("영화 '{}' (apiId: {})의 평점/잔혹도를 로컬 DB 데이터로 덮어씀.", apiMovie.getTitle(), apiMovie.getApiId());
+                logger.debug("영화 '{}' (apiId: {})의 평점/폭력성 평점을 로컬 DB 데이터로 덮어씀.", apiMovie.getTitle(), apiMovie.getApiId());
             } else {
-                logger.debug("영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/잔혹도 유지.", apiMovie.getTitle(), apiMovie.getApiId());
+                logger.debug("영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/폭력성 점수 유지.", apiMovie.getTitle(), apiMovie.getApiId());
             }
         }
     }

@@ -86,19 +86,21 @@
                         - `movieController`에서 업로드된 파일이 없을 때 `movie.setPosterPath(null)`로 설정될 수 있습니다.
                 --%>
                 <c:set var="posterSrc">
-                    <c:choose>
-                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                            <c:if test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                                ${movie.posterPath}
-                            </c:if>
-                            <c:if test="${not (fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://'))}">
-                                ${pageContext.request.contextPath}${movie.posterPath}
-                            </c:if>
-                        </c:when>
-                        <c:otherwise>
-                            ${pageContext.request.contextPath}/resources/images/default_poster.jpg
-                        </c:otherwise>
-                    </c:choose>
+					<c:choose>
+					    <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+					        <c:choose>
+					            <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+					                <c:set var="posterSrc" value="${movie.posterPath}" />
+					            </c:when>
+					            <c:otherwise>
+					                <c:set var="posterSrc" value="${pageContext.request.contextPath}${movie.posterPath}" />
+					            </c:otherwise>
+					        </c:choose>
+					    </c:when>
+					    <c:otherwise>
+					        <c:set var="posterSrc" value="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" />
+					    </c:otherwise>
+					</c:choose>
                 </c:set>
                 <img src="${posterSrc}" alt="${movie.title} 포스터" style="width: 100px; height: auto;" />
             </td>

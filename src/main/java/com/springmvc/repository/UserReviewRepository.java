@@ -103,4 +103,10 @@ public class UserReviewRepository {
         System.out.println("▶ 계산된 평균 폭력성 점수: " + result);
         return result;
     }
+    
+    // 마이페이지에서 사용자가 작성한 모든 리뷰 조회 뷰
+    public List<UserReview> findAllByMemberId(String memberId) {
+        String sql = "SELECT * FROM user_reviews WHERE member_id = ? ORDER BY created_at DESC";
+        return jdbcTemplate.query(sql, rowMapper, memberId);
+    }
 }

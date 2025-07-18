@@ -11,6 +11,10 @@
 
 package com.springmvc.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -23,12 +27,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.springmvc.domain.Member;
+import com.springmvc.domain.UserReview;
+import com.springmvc.domain.movie;
+import com.springmvc.repository.movieRepository;
 import com.springmvc.service.MemberService;
+import com.springmvc.service.UserReviewService;
 
 @Controller // Spring이 컨트롤러로 인식
 @RequestMapping("/member") // 기본 URL 경로 "/member" 설정
-public class MemberController {
 
+public class MemberController {
+	
+	@Autowired
+	private movieRepository movieRepository;
+	@Autowired
+    private UserReviewService userReviewService;
+	
     @Autowired
     private MemberService memberService; // 회원 비즈니스 로직을 위임하기 위해 MemberService 주입
 
@@ -106,13 +120,38 @@ public class MemberController {
         System.out.println("세션 끊었음. 사용자는 이후 메인 페이지로 돌아갑니다.");
     	return "redirect:/"; // 메인 페이지로 리다이렉트
     }
-
+    
     // --- Read (One/My Page) ---
     // showMyPage 메서드: "/member/mypage" 경로에 대한 GET 요청 처리
-    // 목적: 로그인한 사용자에게 마이페이지를 제공 (현재는 빈 페이지, 추후 리뷰 목록 등 추가 예정)
+    // 목적: 로그인한 사용자에게 사용자가 작성한 모든 리뷰 조회 뷰
     @GetMapping("/mypage")
-    public String showMyPage() {
-    	System.out.println("마이페이지로 이동");
-        return "mypage"; // "mypage.jsp" 뷰 반환
+    public String myPage(Model model, HttpSession session) {
+    	System.out.println("마이페이지의 사용자 모든 리뷰 조회하기");
+    	Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null) {
+            return "redirect:/login";
+        }
+
+        String memberId = loginMember.getId();
+
+        // 1. 내가 쓴 리뷰 목록 가져오기
+        List<UserReview> myReviews = userReviewService.getMyReviews(memberId);
+
+        // 2. 영화 정보 가져와서 Map에 저장
+        Map<Long, movie> movieMap = new HashMap<>();
+        for (UserReview r : myReviews) {
+            Long movieId = r.getMovieId();
+            if (!movieMap.containsKey(movieId)) {
+                movie m = movieRepository.findTitleAndPosterById(movieId);
+                if (m != null) {
+                    movieMap.put(movieId, m);
+                }
+            }
+        }
+
+        // 3. 모델에 담기
+        model.addAttribute("myReviews", myReviews);
+        model.addAttribute("movieMap", movieMap);
+        return "mypage";
     }
 }

@@ -13,6 +13,9 @@ import com.springmvc.repository.movieRepository;
 @Service
 public class UserReviewService {
     
+	@Autowired
+	private UserReviewService userReviewService;
+	
     @Autowired
     private UserReviewRepository userReviewRepository;
     
@@ -54,5 +57,9 @@ public class UserReviewService {
     public Double getAverageViolenceScore(Long movieId) {
         Double avg = userReviewRepository.getAverageViolenceScore(movieId);
         return avg != null ? Math.round(avg * 10) / 10.0 : 0.0; // 반올림 하는거
+    }
+  // 마이페이지에서 사용자가 작성한 모든 리뷰 조회 뷰
+    public List<UserReview> getMyReviews(String memberId) {
+        return userReviewRepository.findAllByMemberId(memberId);
     }
 }

@@ -138,4 +138,19 @@ public class movieRepository {
         jdbcTemplate.update(sql, avgRating, avgViolence, movieId);
         logger.info("영화 ID {}의 평점 및 폭력성지수 평균 업데이트 완료.", movieId);
     }
+    //마이페이지 전용 메서드
+    public movie findTitleAndPosterById(Long id) {
+        String sql = "SELECT id, title, poster_path FROM movies WHERE id = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                movie m = new movie();
+                m.setId(rs.getLong("id"));
+                m.setTitle(rs.getString("title"));
+                m.setPosterPath(rs.getString("poster_path"));
+                return m;
+            }, id);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
 }

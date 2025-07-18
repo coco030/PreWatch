@@ -114,9 +114,9 @@
                                         <img src="${apiMovie.posterPath}" alt="${apiMovie.title} 포스터" />
                                     </c:when>
                                     <c:otherwise>
-                                                         <%--  이미지 출처는 https://commons.wikimedia.org/wiki/File:No-Image-Placeholder.svg
-                                        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png/>" alt="기본 포스터" /> --%>
-                                        <img src="<c:url value='/resources/images/movies/default_poster.jpg'/>" alt="기본 포스터" />
+                                                         <%--  이미지 출처는 https://commons.wikimedia.org/wiki/File:No-Image-Placeholder.svg --%>
+                                        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 포스터" />
+                                        <%-- <img src="<c:url value='/resources/images/movies/default_poster.jpg'/>" alt="기본 포스터" /> --%>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
