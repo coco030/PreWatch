@@ -1,25 +1,29 @@
 package com.springmvc.domain;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDate;     
+import java.time.LocalDateTime; 
 
+// movie 클래스: 애플리케이션에서 관리하는 영화 정보를 담는 도메인 클래스.
+// 목적: 영화 등록, 조회, 수정, 삭제 등 영화 관련 데이터 주고받기.
 public class movie {
-    private Long id;
-    private String apiId;
-    private String title;
-    private String director;
-    private int year;
-    private LocalDate releaseDate;
-    private String genre;
-    private double rating;
-    private double violence_score_avg;
-    private String overview;
-    private String posterPath; // posterPath 필드 확인
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Long id;                  // 영화의 고유 ID (PRIMARY KEY)
+    private String apiId;             // 외부 영화 API 고유 ID (예: OMDb의 "tt1234567")
+    private String title;             // 영화 제목
+    private String director;          // 영화 감독
+    private int year;                 // 영화 개봉 연도
+    private LocalDate releaseDate;    // 영화 개봉일
+    private String genre;             // 영화 장르
+    private double rating;            // 영화의 평균 만족도 평점 (0.0 ~ 10.0)
+    private double violence_score_avg; // 영화의 평균 폭력성 점수 (0.0 ~ 10.0)
+    private String overview;          // 영화 줄거리/설명
+    private String posterPath;        // 영화 포스터 이미지 경로 또는 URL
+    private LocalDateTime createdAt;  // DB에 처음 저장된 시간
+    private LocalDateTime updatedAt;  // 마지막으로 업데이트된 시간
 
+    // 기본 생성자: 매개변수 없이 객체 생성.
     public movie() {}
 
+    // 일부 필드만 포함하는 생성자.
     public movie(Long id, String title, String director, int year, String genre) {
         this.id = id;
         this.title = title;
@@ -28,7 +32,8 @@ public class movie {
         this.genre = genre;
     }
 
-    public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath, // posterPath 생성자 파라미터 확인
+    // 모든 필드를 포함하는 생성자.
+    public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
                  LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.apiId = apiId;
@@ -40,11 +45,12 @@ public class movie {
         this.rating = rating;
         this.violence_score_avg = violence_score_avg;
         this.overview = overview;
-        this.posterPath = posterPath; // 할당 확인
+        this.posterPath = posterPath;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
+    // API에서 가져온 필수 정보를 초기화하는 생성자.
     public movie(String apiId, String title, String director, int year,
                  LocalDate releaseDate, String genre, String overview, String posterPath) {
         this.apiId = apiId;
@@ -54,17 +60,13 @@ public class movie {
         this.releaseDate = releaseDate;
         this.genre = genre;
         this.overview = overview;
-        this.posterPath = posterPath; // 할당 확인
-    }
-    // --- posterPath에 대한 Getter와 Setter 추가 ---
-    public String getPosterPath() {
-        return posterPath;
-    }
-
-    public void setPosterPath(String posterPath) {
         this.posterPath = posterPath;
     }
-    // --- 다른 필드 Getter/Setter 유지 ---
+
+    // Getter/Setter: 각 필드에 대한 값 읽기/쓰기 접근 메서드.
+    public String getPosterPath() { return posterPath; }
+    public void setPosterPath(String posterPath) { this.posterPath = posterPath; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -89,7 +91,7 @@ public class movie {
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
-    public double getviolence_score_avg() { return violence_score_avg; }  // ← 타입에 맞춰 수정
+    public double getviolence_score_avg() { return violence_score_avg; }
     public void setviolence_score_avg(double violence_score_avg) { this.violence_score_avg = violence_score_avg; }
 
     public String getOverview() { return overview; }

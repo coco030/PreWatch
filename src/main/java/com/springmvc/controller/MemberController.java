@@ -1,3 +1,14 @@
+/*
+    파일명: MemberController.java
+    설명:
+        이 class는 회원(Member) 관련 기능을 처리하는 컨트롤러입니다.
+        회원가입, 회원 정보 수정(비밀번호), 회원 탈퇴(비활성화), 마이페이지 등의 요청을 담당합니다.
+
+    목적:
+        사용자가 회원 정보를 관리(가입, 수정, 탈퇴)하고 개인화된 페이지(마이페이지)에 접근하기 위함.
+
+*/
+
 package com.springmvc.controller;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,87 +21,98 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.springmvc.domain.Member;
 import com.springmvc.service.MemberService;
 
-@Controller
-@RequestMapping("/member") 
+@Controller // Spring이 컨트롤러로 인식
+@RequestMapping("/member") // 기본 URL 경로 "/member" 설정
 public class MemberController {
 
     @Autowired
-    private MemberService memberService;
-    
-    // 메인 페이지 보여주기
+    private MemberService memberService; // 회원 비즈니스 로직을 위임하기 위해 MemberService 주입
+
+    // --- Read(all) Home ---
+    // showHomePage 메서드: "/member/" 경로에 대한 GET 요청 처리
+    // 목적: (HomeController가 메인을 담당하므로 현재는 역할 중복, 테스트/경로 확인용)
     @GetMapping("/")
     public String showHomePage() {
     	System.out.println("Membercontroller 메인 보여주기");
-        return "home"; // home.jsp
-    }
-    
-    // 회원가입 폼 보여주기
-    @GetMapping("/join")
-    public String showJoinForm(Model model) {	
-    	System.out.println("Membercontroller 회원가입 폼 보여주기");
-        model.addAttribute("member", new Member()); 
-        return "joinForm"; // joinForm.jsp
+        return "home"; // "home.jsp" 뷰 반환
     }
 
-    // 회원가입 처리
+    // --- Create ---
+    // showJoinForm 메서드: "/member/join" 경로에 대한 GET 요청 처리
+    // 목적: 회원가입 입력 폼을 사용자에게 보여주고, 폼 바인딩을 위해 빈 Member 객체 모델에 추가
+    @GetMapping("/join")
+    public String showJoinForm(Model model) {
+    	System.out.println("Membercontroller 회원가입 폼 보여주기");
+        model.addAttribute("member", new Member()); // 빈 Member 객체 추가
+        return "joinForm"; // "joinForm.jsp" 뷰 반환
+    }
+
+    // processJoin 메서드: "/member/join" 경로에 대한 POST 요청 처리
+    // 목적: 사용자 입력 회원 정보를 받아 회원가입 처리. ID 중복 시 에러 메시지 표시
     @PostMapping("/join")
     public String processJoin(@ModelAttribute Member member, Model model) {
     	System.out.println("[MemberController] 회원가입 처리 시도: id=" + member.getId());
-        if (memberService.existsById(member.getId())) {
+        if (memberService.existsById(member.getId())) { // ID 중복 확인 (Read - one)
             model.addAttribute("errorMessage", "이미 존재하는 ID입니다.");
             System.out.println("아이디 중복으로 다시 회원가입 화면으로 돌아옴: id=" + member.getId());
-            return "joinForm";
+            return "joinForm"; // 에러와 함께 폼으로 돌아감
         }
-        memberService.save(member);
-        return "joinResult"; // joinResult.jsp
+        memberService.save(member); // 회원 정보 저장 (Create)
+        return "joinResult"; // "joinResult.jsp" 뷰 반환 (성공 페이지)
     }
-    // 비밀번호 수정 폼: GET /member/editForm
-    @GetMapping("/editForm") // RequestMapping에서 GetMapping으로.
+
+    // --- Update ---
+    // showEditForm 메서드: "/member/editForm" 경로에 대한 GET 요청 처리
+    // 목적: 로그인한 사용자에게 비밀번호 수정 폼을 보여줌
+    @GetMapping("/editForm")
     public String showEditForm(HttpSession session) {
         System.out.println("회원정보 수정 컨트롤러 진입");
-        return "editForm";
+        return "editForm"; // "editForm.jsp" 뷰 반환
     }
-    //비밀번호 수정 처리: POST /member/editPassword였지만 폼으로 전송되지 않았으므로
-   // POST /member/updatePassword 주소를 처리하도록 수정
-    @PostMapping("/updatePassword") 
-    public String editPassword(HttpServletRequest request) {	
-    	String id = request.getParameter("id");
-        String pw = request.getParameter("pw");
-        String confirmPassword = request.getParameter("confirmPassword");
+
+    // updatePassword 메서드: "/member/updatePassword" 경로에 대한 POST 요청 처리
+    // 목적: 사용자가 입력한 새 비밀번호로 회원 비밀번호 업데이트
+   @PostMapping("/updatePassword")
+    public String updatePassword(HttpServletRequest request) {
+    	String id = request.getParameter("id");             // 사용자 ID
+        String pw = request.getParameter("pw");             // 새 비밀번호
+        String confirmPassword = request.getParameter("confirmPassword"); // 비밀번호 확인 (현재 사용되지 않음)
 
         System.out.println("[Controller] 비밀번호 수정 요청 도착");
         System.out.println("[Controller] 파라미터 id = " + id + ", pw = " + pw);
 
-        memberService.updatePassword(id, pw);
+        memberService.updatePassword(id, pw); // 비밀번호 업데이트 (Update)
         System.out.println("[Controller] 비밀번호 수정 후 editForm으로 리다이렉트");
-        // 성공 후 어디로 갈지? 보통 마이페이지나 메인으로 가지만 여기선 수정폼으로 되돌아가도록 함.
-        return "redirect:/"; // 메인 페이지로 이동
+        return "redirect:/"; // 메인 페이지로 리다이렉트
     }
-    
-    //회원탈퇴. (상태만 'INACTIVE' 로 두어서 리뷰나 별점을 남겨둡니다. 그래서 실제로는 update 기능)
-    @PostMapping("/deactivateUser") 
+
+    // deactivateUser 메서드: "/member/deactivateUser" 경로에 대한 POST 요청 처리
+    // 목적: 로그인한 회원의 계정 상태를 'INACTIVE'로 변경하고, 세션을 무효화하여 로그아웃 처리 (논리적 삭제)
+    @PostMapping("/deactivateUser")
     public String deactivateUser(HttpServletRequest request) {
     	System.out.println("회원 탈퇴 컨트롤러 진입");
-    	
-    	Member member = (Member) request.getSession().getAttribute("loginMember");
-    	String id = member.getId();
+
+    	Member member = (Member) request.getSession().getAttribute("loginMember"); // 세션에서 로그인 Member 객체 가져옴 (Read - one)
+    	String id = member.getId(); // 로그인된 사용자의 ID
+
         System.out.println("탈퇴 요청 ID: " + id);
-        memberService.deactivate(id);       // 여기서 상태 변경
+        memberService.deactivate(id);       // 회원 비활성화 (Update - status)
         System.out.println("상태 변경 완료, 세션 끊기기 직전.");
-        request.getSession().invalidate();   // 세션 끊기
+        request.getSession().invalidate();   // 세션 무효화 (로그아웃)
         System.out.println("세션 끊었음. 사용자는 이후 메인 페이지로 돌아갑니다.");
-    	return "redirect:/"; // 탈퇴 후 메인 페이지로 이동
-    	
+    	return "redirect:/"; // 메인 페이지로 리다이렉트
     }
-    //마이페이지. 나의 영화 리뷰나 별점 목록 (볼 수만 있고 이 페이지에서 수정삭제 불가)
+
+    // --- Read (One/My Page) ---
+    // showMyPage 메서드: "/member/mypage" 경로에 대한 GET 요청 처리
+    // 목적: 로그인한 사용자에게 마이페이지를 제공 (현재는 빈 페이지, 추후 리뷰 목록 등 추가 예정)
     @GetMapping("/mypage")
     public String showMyPage() {
     	System.out.println("마이페이지로 이동");
-        return "mypage";
+        return "mypage"; // "mypage.jsp" 뷰 반환
     }
 }

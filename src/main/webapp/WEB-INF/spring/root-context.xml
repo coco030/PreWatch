@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans 
-	http://www.springframework.org/schema/beans/spring-beans.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 	
-	<!-- Root Context: defines shared resources visible to all other web components 
-	"루트 컨텍스트는 모든 웹 컴포넌트에서 볼 수 있는 공용 자원을 정의함."-->
-		
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<!-- dataSource-->
+	<bean id="dataSource"
+         class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	    <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/> 
+	    <property name="url" 
+	         value="jdbc:mysql://localhost:3306/prewatch_db?serverTimezone=UTC"/>  
+	    <property name="username" value="root"/> 
+	    <property name="password" value="1234"/>
+	</bean>
+	
+	<!-- JdbcTemplate 빈 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+        
 </beans>

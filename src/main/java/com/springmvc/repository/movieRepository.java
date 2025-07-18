@@ -1,193 +1,141 @@
 package com.springmvc.repository;
 
-import com.springmvc.domain.movie;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.sql.Date;            
+import java.sql.SQLException;      
+import java.time.LocalDate;        
+import java.util.List;             
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import org.slf4j.Logger;         
+import org.slf4j.LoggerFactory; 
+import org.springframework.beans.factory.annotation.Autowired;       
+import org.springframework.dao.EmptyResultDataAccessException;       
+import org.springframework.jdbc.core.BeanPropertyRowMapper;          
+import org.springframework.jdbc.core.JdbcTemplate;                   
+import org.springframework.stereotype.Repository;                    
 
-@Repository
+import com.springmvc.domain.movie; 
+
+// movieRepository 클래스: 영화 데이터 접근(CRUD) 메서드 구현.
+// 목적: JdbcTemplate을 사용하여 'movies' 테이블과 상호작용.
+@Repository // Spring 빈으로 등록
 public class movieRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(movieRepository.class);
+	@Autowired // JdbcTemplate 빈 자동 주입
+	private JdbcTemplate jdbcTemplate;
 
-    private final DataSource dataSource;
+	private static final Logger logger = LoggerFactory.getLogger(movieRepository.class); // Logger 객체 초기화
 
-    @Autowired
-    public movieRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-        logger.info("movieRepository 초기화: DataSource 주입 완료.");
+    // 생성자를 통한 JdbcTemplate 주입
+    public movieRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        logger.info("movieRepository 초기화: JdbcTemplate 주입 완료.");
     }
 
+    // findAll 메서드: 'movies' 테이블의 모든 영화 정보 조회.
+    // 목적: 영화 목록 표시.
     public List<movie> findAll() {
         logger.debug("movieRepository.findAll() 호출: DB에서 모든 영화 조회 시도.");
-        List<movie> list = new ArrayList<>();
-
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at FROM movies";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            logger.debug("SQL 실행: {}", sql);
-            while (rs.next()) {
-                movie movie = new movie();
-                movie.setId(rs.getLong("id"));
-                movie.setApiId(rs.getString("api_id"));
-                movie.setTitle(rs.getString("title"));
-                movie.setDirector(rs.getString("director"));
-                movie.setYear(rs.getInt("year"));
-                Date sqlDate = rs.getDate("release_date");
-                movie.setReleaseDate(sqlDate != null ? sqlDate.toLocalDate() : null);
-                movie.setGenre(rs.getString("genre"));
-                movie.setRating(rs.getDouble("rating")); // rating 조회
-                movie.setviolence_score_avg(rs.getDouble("violence_score_avg")); // violence_score_avg 조회
-                movie.setOverview(rs.getString("overview"));
-                movie.setPosterPath(rs.getString("poster_path"));
-                Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
-                if (createdAtTimestamp != null) {
-                    movie.setCreatedAt(createdAtTimestamp.toLocalDateTime());
-                }
-                Timestamp updatedAtTimestamp = rs.getTimestamp("updated_at");
-                if (updatedAtTimestamp != null) {
-                    movie.setUpdatedAt(updatedAtTimestamp.toLocalDateTime());
-                }
-                list.add(movie);
-            }
-            logger.info("DB에서 {}개의 영화 레코드 성공적으로 가져옴.", list.size());
-
-        } catch (SQLException e) {
-            logger.error("DB 영화 목록 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("영화 목록 조회 실패", e);
-        }
-
+        // JdbcTemplate.query(): 여러 행 결과를 movie 객체 리스트로 매핑 (BeanPropertyRowMapper 사용)
+        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        logger.info("DB에서 {}개의 영화 레코드 성공적으로 가져옴.", list.size());
         return list;
     }
 
+    // findById 메서드: 주어진 ID에 해당하는 영화 정보 조회.
+    // 목적: 특정 영화 상세 정보 표시, 수정/삭제 전 정보 가져오기.
     public movie findById(Long id) {
         logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
-
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at FROM movies WHERE id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-            logger.debug("SQL 실행: {}", sql);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                movie movie = new movie();
-                movie.setId(rs.getLong("id"));
-                movie.setApiId(rs.getString("api_id"));
-                movie.setTitle(rs.getString("title"));
-                movie.setDirector(rs.getString("director"));
-                movie.setYear(rs.getInt("year"));
-                Date sqlDate = rs.getDate("release_date");
-                movie.setReleaseDate(sqlDate != null ? sqlDate.toLocalDate() : null);
-                movie.setGenre(rs.getString("genre"));
-                movie.setRating(rs.getDouble("rating")); // rating 조회
-                movie.setviolence_score_avg(rs.getDouble("violence_score_avg")); // violence_score_avg 조회
-                movie.setOverview(rs.getString("overview"));
-                movie.setPosterPath(rs.getString("poster_path"));
-                Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
-                if (createdAtTimestamp != null) {
-                    movie.setCreatedAt(createdAtTimestamp.toLocalDateTime());
-                }
-                Timestamp updatedAtTimestamp = rs.getTimestamp("updated_at");
-                if (updatedAtTimestamp != null) {
-                    movie.setUpdatedAt(updatedAtTimestamp.toLocalDateTime());
-                }
-                logger.info("DB에서 영화 ID {} 레코드 성공적으로 가져옴.", id);
-                return movie;
-            } else {
-                logger.warn("DB에서 영화 ID {}를 찾을 수 없습니다.", id);
-            }
-
-        } catch (SQLException e) {
+        try {
+            // JdbcTemplate.queryForObject(): 단일 행 결과를 movie 객체로 매핑 (BeanPropertyRowMapper 사용)
+            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), id);
+            logger.info("DB에서 영화 ID {} 레코드 성공적으로 가져옴.", id);
+            return movie;
+        } catch (EmptyResultDataAccessException e) {
+            logger.warn("DB에서 영화 ID {}를 찾을 수 없습니다.", id);
+            return null; // 영화 없으면 null 반환
+        } catch (Exception e) {
             logger.error("DB 영화 ID {} 조회 중 오류 발생: {}", id, e.getMessage(), e);
-            throw new RuntimeException("영화 조회 실패", e);
+            throw new RuntimeException("영화 조회 실패", e); // 런타임 예외로 감싸서 던짐
         }
-        return null;
     }
 
+    // findByApiId 메서드: 외부 API ID (imdbID)를 사용하여 영화 조회.
+    // 목적: API 검색 결과에 로컬 평점/폭력성지수 덮어쓰기 위해 사용.
+    public movie findByApiId(String apiId) {
+        logger.debug("movieRepository.findByApiId({}) 호출: DB에서 API ID로 영화 조회 시도.", apiId);
+        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at FROM movies WHERE api_id = ?";
+        try {
+            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), apiId);
+            logger.info("DB에서 API ID '{}'에 해당하는 영화 레코드 성공적으로 가져옴.", apiId);
+            return movie;
+        } catch (EmptyResultDataAccessException e) {
+            logger.warn("DB에서 API ID '{}'에 해당하는 영화를 찾을 수 없습니다.", apiId);
+            return null;
+        } catch (Exception e) {
+            logger.error("DB 영화 API ID '{}' 조회 중 오류 발생: {}", apiId, e.getMessage(), e);
+            throw new RuntimeException("영화 조회 실패", e);
+        }
+    }
+
+    // save 메서드: 새 movie 객체를 'movies' 테이블에 삽입.
+    // 목적: 새 영화 직접 등록 또는 API 영화 등록.
     public void save(movie movie) {
         logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
         String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, movie.getApiId());
-            ps.setString(2, movie.getTitle());
-            ps.setString(3, movie.getDirector());
-            ps.setInt(4, movie.getYear());
-            ps.setDate(5, movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null);
-            ps.setString(6, movie.getGenre());
-            ps.setDouble(7, movie.getRating()); // rating 바인딩
-            ps.setDouble(8, movie.getviolence_score_avg());  // violence_score_avg 바인딩
-            ps.setString(9, movie.getOverview());
-            ps.setString(10, movie.getPosterPath());
-
-            int rowsAffected = ps.executeUpdate();
-            logger.info("DB에 영화 '{}' 저장 완료. {}개 행 영향받음.", movie.getTitle(), rowsAffected);
-
-        } catch (SQLException e) {
-            logger.error("DB에 영화 '{}' 저장 중 오류 발생: {}", movie.getTitle(), e.getMessage(), e);
-            throw new RuntimeException("영화 저장 실패", e);
-        }
+        // JdbcTemplate.update(): INSERT 쿼리 실행 (LocalDate를 sql.Date로 변환)
+        jdbcTemplate.update(sql,
+            movie.getApiId(),
+            movie.getTitle(),
+            movie.getDirector(),
+            movie.getYear(),
+            movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
+            movie.getGenre(),
+            movie.getRating(),
+            movie.getviolence_score_avg(),
+            movie.getOverview(),
+            movie.getPosterPath());
+        logger.info("DB에 영화 '{}' 저장 완료.", movie.getTitle());
     }
 
+    // update 메서드: 기존 movie 객체 정보를 'movies' 테이블에서 업데이트.
+    // 목적: 관리자가 영화 정보 수정.
     public void update(movie movie) {
         logger.debug("movieRepository.update() 호출: 영화 ID {} 업데이트 시도.", movie.getId());
-
         String sql = "UPDATE movies SET api_id=?, title=?, director=?, year=?, release_date=?, genre=?, rating=?, violence_score_avg=?, overview=?, poster_path=? WHERE id=?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, movie.getApiId());
-            ps.setString(2, movie.getTitle());
-            ps.setString(3, movie.getDirector());
-            ps.setInt(4, movie.getYear());
-            ps.setDate(5, movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null);
-            ps.setString(6, movie.getGenre());
-            ps.setDouble(7, movie.getRating()); // rating 바인딩
-            ps.setDouble(8, movie.getviolence_score_avg());  
-            ps.setString(9, movie.getOverview());
-            ps.setString(10, movie.getPosterPath());
-            ps.setLong(11, movie.getId()); 
-
-            int rowsAffected = ps.executeUpdate();
-            logger.info("DB에서 영화 ID {} 업데이트 완료. {}개 행 영향받음.", movie.getId(), rowsAffected);
-
-        } catch (SQLException e) {
-            logger.error("DB 영화 ID {} 업데이트 중 오류 발생: {}", movie.getId(), e.getMessage(), e);
-            throw new RuntimeException("영화 업데이트 실패", e);
-        }
+        // JdbcTemplate.update(): UPDATE 쿼리 실행 (LocalDate를 sql.Date로 변환)
+        jdbcTemplate.update(sql,
+            movie.getApiId(),
+            movie.getTitle(),
+            movie.getDirector(),
+            movie.getYear(),
+            movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
+            movie.getGenre(),
+            movie.getRating(),
+            movie.getviolence_score_avg(),
+            movie.getOverview(),
+            movie.getPosterPath(),
+            movie.getId());
+        logger.info("DB에서 영화 ID {} 업데이트 완료.", movie.getId());
     }
 
+    // delete 메서드: 주어진 ID에 해당하는 영화 정보 삭제.
+    // 목적: 관리자가 영화 삭제. (관련 포스터 파일도 삭제될 수 있음)
     public void delete(Long id) {
         logger.debug("movieRepository.delete({}) 호출: DB에서 영화 삭제 시도.", id);
         String sql = "DELETE FROM movies WHERE id=?";
+        // JdbcTemplate.update(): DELETE 쿼리 실행
+        jdbcTemplate.update(sql, id);
+        logger.info("DB에서 영화 ID {} 삭제 완료.", id);
+    }
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-            int rowsAffected = ps.executeUpdate();
-            logger.info("DB에서 영화 ID {} 삭제 완료. {}개 행 영향받음.", id, rowsAffected);
-
-        } catch (SQLException e) {
-            logger.error("DB 영화 ID {} 삭제 중 오류 발생: {}", id, e.getMessage(), e);
-            throw new RuntimeException("영화 삭제 실패", e);
-        }
+    // updateAverageScores 메서드: 특정 영화의 평균 평점과 폭력성 점수 업데이트.
+    // 목적: 사용자 리뷰가 변경될 때 해당 영화의 평균 값 반영.
+    public void updateAverageScores(Long movieId, double avgRating, double avgViolence) {
+        String sql = "UPDATE movies SET rating = ?, violence_score_avg = ? WHERE id = ?";
+        jdbcTemplate.update(sql, avgRating, avgViolence, movieId);
+        logger.info("영화 ID {}의 평점 및 폭력성지수 평균 업데이트 완료.", movieId);
     }
 }

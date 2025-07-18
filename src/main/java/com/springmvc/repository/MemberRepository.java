@@ -1,11 +1,22 @@
 package com.springmvc.repository;
 
-import com.springmvc.domain.Member;
+import com.springmvc.domain.Member; // Member 도메인 클래스
 
+// MemberRepository 인터페이스: 회원 데이터 접근(CRUD) 메서드 정의.
+// 목적: 데이터베이스 상호작용의 '계약' 역할. 서비스 계층에서 일관된 데이터 접근 제공.
 public interface MemberRepository {
-    void save(Member member);// 회원 정보를 DB에 저장
-    Member login(String id, String password); //로그인하기
-    boolean existsById(String id); // 회원가입 시 중복된 ID가 있는지 확인 (DB 조회 기반의 비즈니스 유효성 검사)
-	void updatePassword(String id, String pw);//비밀번호 변경
-	void deactivate(String id); //회원 비활성화
+    // 회원 정보 DB에 저장 (C - Create)
+    void save(Member member);
+
+    // ID, 비밀번호 일치 및 'ACTIVE' 상태인 회원 정보 반환 (R - Read)
+    Member login(String id, String password);
+
+    // ID 중복 여부 확인
+    boolean existsById(String id);
+
+    // 특정 회원 비밀번호 업데이트 (U - Update)
+    void updatePassword(String id, String pw);
+
+    // 회원 상태 'INACTIVE'로 변경 (U - Update, 논리적 삭제)
+    void deactivate(String id);
 }
