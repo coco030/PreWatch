@@ -1,24 +1,26 @@
 package com.springmvc.domain;
 
-import java.time.LocalDate;     
-import java.time.LocalDateTime; 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 // movie 클래스: 애플리케이션에서 관리하는 영화 정보를 담는 도메인 클래스.
 // 목적: 영화 등록, 조회, 수정, 삭제 등 영화 관련 데이터 주고받기.
 public class movie {
-    private Long id;                  // 영화의 고유 ID (PRIMARY KEY)
-    private String apiId;             // 외부 영화 API 고유 ID (예: OMDb의 "tt1234567")
-    private String title;             // 영화 제목
-    private String director;          // 영화 감독
-    private int year;                 // 영화 개봉 연도
-    private LocalDate releaseDate;    // 영화 개봉일
-    private String genre;             // 영화 장르
-    private double rating;            // 영화의 평균 만족도 평점 (0.0 ~ 10.0)
+    private Long id;              // 영화의 고유 ID (PRIMARY KEY)
+    private String apiId;         // 외부 영화 API 고유 ID (예: OMDb의 "tt1234567")
+    private String title;         // 영화 제목
+    private String director;      // 영화 감독
+    private int year;             // 영화 개봉 연도
+    private LocalDate releaseDate; // 영화 개봉일
+    private String genre;         // 영화 장르
+    private double rating;        // 영화의 평균 만족도 평점 (0.0 ~ 10.0)
     private double violence_score_avg; // 영화의 평균 폭력성 점수 (0.0 ~ 10.0)
-    private String overview;          // 영화 줄거리/설명
-    private String posterPath;        // 영화 포스터 이미지 경로 또는 URL
-    private LocalDateTime createdAt;  // DB에 처음 저장된 시간
-    private LocalDateTime updatedAt;  // 마지막으로 업데이트된 시간
+    private String overview;      // 영화 줄거리/설명
+    private String posterPath;    // 영화 포스터 이미지 경로 또는 URL
+    private LocalDateTime createdAt; // DB에 처음 저장된 시간
+    private LocalDateTime updatedAt; // 마지막으로 업데이트된 시간
+    private boolean isLiked; // ⭐ 추가: 현재 로그인된 사용자가 이 영화를 찜했는지 여부. (DB에는 저장되지 않고 뷰 계층에 데이터를 전달하기 위한 임시 필드)
+    private int likeCount;   // ⭐ 추가: 찜 개수 (DB에 저장될 필드)
 
     // 기본 생성자: 매개변수 없이 객체 생성.
     public movie() {}
@@ -33,8 +35,9 @@ public class movie {
     }
 
     // 모든 필드를 포함하는 생성자.
+    // likeCount 포함하도록 수정 (기존 데이터와 호환성을 위해 기본값 0)
     public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
-                 LocalDateTime createdAt, LocalDateTime updatedAt) {
+                 LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount) {
         this.id = id;
         this.apiId = apiId;
         this.title = title;
@@ -48,9 +51,11 @@ public class movie {
         this.posterPath = posterPath;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.likeCount = likeCount; // ⭐ likeCount 추가 ⭐
     }
 
     // API에서 가져온 필수 정보를 초기화하는 생성자.
+    // likeCount 포함하도록 수정 (API에서 가져올 때는 기본값 0)
     public movie(String apiId, String title, String director, int year,
                  LocalDate releaseDate, String genre, String overview, String posterPath) {
         this.apiId = apiId;
@@ -61,6 +66,7 @@ public class movie {
         this.genre = genre;
         this.overview = overview;
         this.posterPath = posterPath;
+        this.likeCount = 0; // API에서 가져올 때는 찜 개수 기본 0
     }
 
     // Getter/Setter: 각 필드에 대한 값 읽기/쓰기 접근 메서드.
@@ -91,8 +97,10 @@ public class movie {
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
-    public double getviolence_score_avg() { return violence_score_avg; }
-    public void setviolence_score_avg(double violence_score_avg) { this.violence_score_avg = violence_score_avg; }
+    // ⭐ Getter 이름 수정: getviolence_score_avg() -> getViolence_score_avg() ⭐
+    public double getViolence_score_avg() { return violence_score_avg; }
+    // ⭐ Setter 이름 수정: setviolence_score_avg() -> setViolence_score_avg() ⭐
+    public void setViolence_score_avg(double violence_score_avg) { this.violence_score_avg = violence_score_avg; }
 
     public String getOverview() { return overview; }
     public void setOverview(String overview) { this.overview = overview; }
@@ -102,4 +110,22 @@ public class movie {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // ⭐ isLiked 필드에 대한 Getter 이름 변경: getIsLiked() -> isLiked() (Boolean 관례) ⭐
+    public boolean isLiked() {
+        return isLiked;
+    }
+
+    public void setIsLiked(boolean isLiked) {
+        this.isLiked = isLiked;
+    }
+
+    // ⭐ likeCount 필드에 대한 Getter/Setter 추가 ⭐
+    public int getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
 }

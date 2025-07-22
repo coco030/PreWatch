@@ -125,7 +125,7 @@ public class externalMovieApiService {
                 movie.setPosterPath(rootNode.has("Poster") ? rootNode.get("Poster").asText() : "N/A");
 
                 movie.setRating(0.0);             // OMDb 평점 무시, 0.0으로 고정
-                movie.setviolence_score_avg(0.0); // OMDb 폭력성지수 무시, 0.0으로 고정
+                movie.setViolence_score_avg(0.0); // OMDb 폭력성지수 무시, 0.0으로 고정
 
                 logger.info("OMDb API에서 영화 '{}' (ID: {}) 정보 성공적으로 파싱. 평점/폭력성지수는 0.0으로 설정됨.", movie.getTitle(), movie.getApiId());
                 return movie;

@@ -32,11 +32,15 @@ import com.springmvc.domain.movie;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.MemberService;
 import com.springmvc.service.UserReviewService;
+import com.springmvc.service.userCartService;
 
 @Controller // Spring이 컨트롤러로 인식
 @RequestMapping("/member") // 기본 URL 경로 "/member" 설정
 
 public class MemberController {
+	
+	@Autowired
+    private userCartService userCartService; 
 	
 	@Autowired
 	private movieRepository movieRepository;
@@ -153,5 +157,22 @@ public class MemberController {
         model.addAttribute("myReviews", myReviews);
         model.addAttribute("movieMap", movieMap);
         return "mypage";
+    }
+    // --- Read (wishlist) ---
+ 
+    @GetMapping("/wishlist")
+    public String showMyPage(HttpSession session, Model model) { // ⭐ Model 추가: 찜 목록을 JSP로 전달하기 위함
+    	System.out.println("마이페이지로 이동");
+        Member loginMember = (Member) session.getAttribute("loginMember"); // 세션에서 로그인 멤버 가져옴
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // 로그인했고 일반 회원인 경우
+            List<movie> likedMovies = userCartService.getLikedMovies(loginMember.getId()); // 찜한 영화 목록 조회 (Read - some)
+            model.addAttribute("likedMovies", likedMovies); // 모델에 찜한 영화 목록 추가
+            return "wishlist"; // "wishlist.jsp" 뷰 반환
+        } else {
+            // 로그인하지 않았거나 관리자 계정인 경우
+            // 마이페이지는 일반 회원 전용이므로, 접근 권한 없음을 알리거나 홈으로 리다이렉트.
+            System.out.println("비로그인 또는 관리자 계정으로 마이페이지 접근 시도.");
+            return "redirect:/accessDenied"; // 또는 "redirect:/"
+        }
     }
 }

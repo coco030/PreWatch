@@ -1,12 +1,12 @@
 package com.springmvc.service;
 
-import com.springmvc.domain.movie; 
-import com.springmvc.repository.movieRepository; 
-import org.springframework.stereotype.Service; 
-import org.slf4j.Logger; 
-import org.slf4j.LoggerFactory; 
+import com.springmvc.domain.movie;
+import com.springmvc.repository.movieRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-import java.util.List; 
+import java.util.List;
 
 // movieService 클래스: 영화(movie) 관련 비즈니스 로직 구현.
 // 목적: Controller와 Repository 사이에서 비즈니스 규칙 적용 및 트랜잭션 관리.
@@ -48,7 +48,7 @@ public class movieService {
     /**
      * findByApiId 메서드: API ID (imdbID)를 사용하여 DB에서 영화 조회.
      * 목적: 외부 API 검색 결과에 로컬 평점/잔혹도 덮어씌울 때 사용.
-     * apiId OMDb 등 외부 API의 고유 ID.
+     * @param apiId OMDb 등 외부 API의 고유 ID.
      * @return 해당 apiId를 가진 movie 객체, 없으면 null.
      */
     public movie findByApiId(String apiId) {
@@ -84,5 +84,26 @@ public class movieService {
         logger.debug("movieService.delete() 호출: 영화 ID = {}", id);
         movieRepository.delete(id);
         logger.info("영화 ID {}가 삭제되었습니다.", id);
+    }
+
+    // --- ⭐ 새로운 메서드: 추천 랭킹 영화 조회 ⭐ ---
+    /**
+     * 찜 개수(like_count)를 기준으로 정렬된 상위 5개 추천 영화 목록을 조회합니다.
+     * @return 찜 개수 기준 상위 5개 추천 영화 목록
+     */
+    public List<movie> getTop5RecommendedMovies() {
+        logger.debug("movieService.getTop5RecommendedMovies() 호출.");
+        return movieRepository.findTop5RecommendedMoviesByLikeCount();
+    }
+
+    // --- 새로운 메서드: 최근 등록된 영화 조회 ---
+    /**
+     * 최근 등록된 영화를 개봉일 기준으로 내림차순 정렬하여 지정된 개수만큼 조회합니다.
+     * @param limit 가져올 영화의 개수
+     * @return 최근 등록된 영화 목록
+     */
+    public List<movie> getRecentMovies(int limit) {
+        logger.debug("movieService.getRecentMovies({}) 호출.", limit);
+        return movieRepository.findRecentMovies(limit);
     }
 }
