@@ -143,4 +143,12 @@ public class ReviewController {
         model.addAttribute("reviewList", reviewList); // 태그만 뽑을 거라 리뷰 전체 보내면 됨
         return "reviewModule/reviewTagAll"; // 파일명 그대로
     }
+    
+    //폭력성 주의문구 뷰로 뿌려주기
+    @GetMapping("/sensitivity")
+    public String getViolenceSensitivity(@RequestParam Long movieId, Model model) {
+        // 이미 movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
+        model.addAttribute("movieId", movieId);
+        return "reviewModule/reviewSensitivity"; // → /WEB-INF/views/reviewModule/reviewSensitivity.jsp
+    }
 }

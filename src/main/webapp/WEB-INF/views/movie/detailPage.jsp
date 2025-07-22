@@ -24,7 +24,13 @@
 </head> 
 <%-- 헤더 --%>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
-    
+
+<%-- 폭력성 주의문구 띄우기--%>
+	<c:import url="/review/sensitivity">
+	 <c:param name="movieId" value="${movie.id}" />
+	</c:import>   
+<%-- // 폭력성 주의문구 띄우기--%>
+ 
 <h1>${movie.title}</h1>
 <%--
         포스터 이미지 표시
@@ -57,7 +63,6 @@
     <c:if test="${empty movie.posterPath or movie.posterPath eq 'N/A'}">
         <p>(이미지 없음)</p>
     </c:if>
-
     <%-- 영화 기본 정보 표시--%>
     <p>감독: ${movie.director}</p>
     <p>연도: ${movie.year}</p>
@@ -84,7 +89,6 @@
         </c:choose>
         / 10.0
     </p>
-
     <p>폭력성 평균:
         <c:choose>
             <c:when test="${movie.violence_score_avg == 0.0}">

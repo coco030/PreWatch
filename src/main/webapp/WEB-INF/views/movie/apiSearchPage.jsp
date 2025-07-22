@@ -15,6 +15,12 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+</head> 
+<%-- 헤더 --%>
+<jsp:include page="/WEB-INF/views/layout/header.jsp" />
     <title>영화 검색</title>
     <style>
         table { width: 100%; border-collapse: collapse; }
@@ -23,8 +29,8 @@
     </style>
 </head>
 <body>
-    <h1>영화 검색</h1>
-    <%--
+    <%-- <h1>영화 검색</h1>
+ 
         관리자에게만 보이는 "내 영화 관리페이지로 돌아가기" 링크
         목적: 관리자가 API 검색 페이지에서 직접 등록/관리하는 영화 목록 페이지로 쉽게 돌아갈 수 있도록 편의성을 제공합니다.
         변수: `${userRole}` (세션 스코프의 `userRole` 속성)
@@ -49,10 +55,14 @@
             - 검색 후 페이지가 다시 로드될 때, 이전에 검색했던 키워드를 입력 필드에 다시 표시하여 사용자 편의성을 높입니다.
             - `movieController`에서 `model.addAttribute("query", query);`를 통해 전달된 값입니다.
     --%>
-    <form action="<c:url value='/search'/>" method="get">
+ 
+ 
+ 
+  <%--   헤더 넣으면서 검색창 들어가서 잠시 뺌
+  	<form action="<c:url value='/search'/>" method="get">
         영화 제목 또는 키워드: <input type="text" name="query" value="${query}" placeholder="영화 검색..." />
         <button type="submit">검색</button>
-    </form>
+    </form>  --%>
 
     <hr>
 
@@ -202,5 +212,8 @@
             </table>
         </c:if>
     </c:if>
+     <%-- 푸터 --%>
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
 </html>
