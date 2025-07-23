@@ -135,4 +135,27 @@ public class UserReviewRepository {
         System.out.println("▶ 태그 저장 완료");
     }
 
+    public int getTotalReviewCount(String memberId) {
+    	System.out.println("▶ 모든 마이 페이지의 리뷰 세어보기 완료");
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ?";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
+    }
+
+    public List<UserReview> getPagedReviews(String memberId, int page, int pageSize) {
+    	System.out.println("▶ 마이 페이지의 리뷰 세어보기 완료");
+    	int offset = (page - 1) * pageSize;
+        String sql = "SELECT * FROM user_reviews WHERE member_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        return jdbcTemplate.query(sql, new Object[]{memberId, pageSize, offset}, (rs, rowNum) -> {
+            UserReview review = new UserReview();
+            review.setId(rs.getLong("id"));
+            review.setMemberId(rs.getString("member_id"));
+            review.setMovieId(rs.getLong("movie_id"));
+            review.setUserRating(rs.getObject("user_rating") != null ? rs.getInt("user_rating") : null);
+            review.setViolenceScore(rs.getObject("violence_score") != null ? rs.getInt("violence_score") : null);
+            review.setReviewContent(rs.getString("review_content"));
+            review.setTags(rs.getString("tags"));
+            review.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            return review;
+        });
+    }
 }

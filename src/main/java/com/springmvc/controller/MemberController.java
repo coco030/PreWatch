@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
@@ -125,23 +126,21 @@ public class MemberController {
     	return "redirect:/"; // 메인 페이지로 리다이렉트
     }
     
-    // --- Read (One/My Page) ---
-    // showMyPage 메서드: "/member/mypage" 경로에 대한 GET 요청 처리
-    // 목적: 로그인한 사용자에게 사용자가 작성한 모든 리뷰 조회 뷰
+    // 마이페이지의 개인리뷰 조회하고 페이징 처리 25.07.24 오전 12시 15분 coco030
     @GetMapping("/mypage")
-    public String myPage(Model model, HttpSession session) {
-    	System.out.println("마이페이지의 사용자 모든 리뷰 조회하기");
-    	Member loginMember = (Member) session.getAttribute("loginMember");
+    public String myPage(@RequestParam(defaultValue = "1") int page,
+                         Model model, HttpSession session) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember == null) {
             return "redirect:/login";
         }
 
         String memberId = loginMember.getId();
+        int pageSize = 5;
 
-        // 1. 내가 쓴 리뷰 목록 가져오기
-        List<UserReview> myReviews = userReviewService.getMyReviews(memberId);
-
-        // 2. 영화 정보 가져와서 Map에 저장
+        // 1. 리뷰 목록 (페이징)
+        List<UserReview> myReviews = userReviewService.getPagedReviews(memberId, page, pageSize);
+        // 2. 영화 정보 Map
         Map<Long, movie> movieMap = new HashMap<>();
         for (UserReview r : myReviews) {
             Long movieId = r.getMovieId();
@@ -152,13 +151,19 @@ public class MemberController {
                 }
             }
         }
+        // 3. 총 페이지 수
+        int totalCount = userReviewService.getTotalReviewCount(memberId);
+        int totalPages = (int) Math.ceil(totalCount / (double) pageSize);
 
-        // 3. 모델에 담기
         model.addAttribute("myReviews", myReviews);
         model.addAttribute("movieMap", movieMap);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+
         return "mypage";
     }
-    // --- Read (wishlist) 25.07.23. wishlist 뷰 만들고 경로 수정 coco030---
+
+    // 25.07.23. wishlist 뷰 만들고 경로 수정 coco030
  
     @GetMapping("/wishlist")
     public String showMyPage(HttpSession session, Model model) { // ⭐ Model 추가: 찜 목록을 JSP로 전달하기 위함
@@ -167,12 +172,10 @@ public class MemberController {
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // 로그인했고 일반 회원인 경우
             List<movie> likedMovies = userCartService.getLikedMovies(loginMember.getId()); // 찜한 영화 목록 조회 (Read - some)
             model.addAttribute("likedMovies", likedMovies); // 모델에 찜한 영화 목록 추가
-            return "movie/wishlist"; // "wishlist.jsp" 뷰 반환
+            return "movie/wishlist";
         } else {
-            // 로그인하지 않았거나 관리자 계정인 경우
-            // 마이페이지는 일반 회원 전용이므로, 접근 권한 없음을 알리거나 홈으로 리다이렉트.
             System.out.println("비로그인 또는 관리자 계정으로 마이페이지 접근 시도.");
-            return "redirect:/accessDenied"; // 또는 "redirect:/"
+            return "redirect:/accessDenied"; 
         }
     }
 }

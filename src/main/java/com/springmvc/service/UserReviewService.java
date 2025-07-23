@@ -12,7 +12,8 @@ import com.springmvc.repository.movieRepository;
 
 @Service
 public class UserReviewService {
-    
+	
+
     @Autowired
     private UserReviewRepository userReviewRepository;
     
@@ -73,4 +74,15 @@ public class UserReviewService {
 	public void saveTag(String memberId, Long movieId, String tag) {
 	    userReviewRepository.saveOrUpdateTag(memberId, movieId, tag);
 	}
+
+	   // 사용자 리뷰 페이징 조회
+    public List<UserReview> getPagedReviews(String memberId, int page, int pageSize) {
+        return userReviewRepository.getPagedReviews(memberId, page, pageSize);
+    }
+
+    // 사용자 리뷰 총 개수 조회
+    public int getTotalReviewCount(String memberId) {
+        return userReviewRepository.getTotalReviewCount(memberId);
+    }
+
 }
