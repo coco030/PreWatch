@@ -22,19 +22,6 @@ public class UserReviewService {
     @Autowired
     private movieRepository movieRepository;
     
-    // 리뷰 저장/수정
-    public void saveReview(UserReview review) {
-    	System.out.println("▶ 리뷰 저장 서비스 페이지 진입");
-        userReviewRepository.saveOrUpdate(review);
-
-        // 추가: 리뷰 저장 후 평균 점수 계산해서 영화 테이블에 반영
-        Long movieId = review.getMovieId();
-        double avgRating = getAverageRating(movieId);
-        double avgViolence = getAverageViolenceScore(movieId);
-        System.out.println("계산된 평균 평점: " + avgRating);
-        System.out.println("계산된 평균 잔혹도: " + avgViolence);
-        movieRepository.updateAverageScores(movieId, avgRating, avgViolence);
-    }
     
     // 영화별 리뷰 목록 조회
     public List<UserReview> getReviewsByMovie(Long movieId) {
@@ -62,4 +49,15 @@ public class UserReviewService {
     public List<UserReview> getMyReviews(String memberId) {
         return userReviewRepository.findAllByMemberId(memberId);
     }
+
+    // 영화 만족도 리뷰 1개 저장
+    public void saveUserRating(String memberId, Long movieId, int userRating) {
+        userReviewRepository.saveOrUpdateRating(memberId, movieId, userRating);
+
+        double avgRating = getAverageRating(movieId);
+        double avgViolence = getAverageViolenceScore(movieId);
+
+        movieRepository.updateAverageScores(movieId, avgRating, avgViolence);
+    }
+
 }

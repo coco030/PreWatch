@@ -28,37 +28,37 @@ public class ReviewController {
     @Autowired
     private UserReviewService userReviewService;
     
-    // 리뷰 저장 (별점, 폭력성, 리뷰, 태그 통합)
-    @PostMapping("/save")  // → /review/save
+    // 리뷰 저장 (별점)
+    @PostMapping("/saveRating")
     @ResponseBody
-    public ResponseEntity<?> saveReview(@RequestParam Long movieId,
-                                      @RequestParam(required = false) Integer userRating,
-                                      @RequestParam(required = false) Integer violenceScore,
-                                      @RequestParam(required = false) String reviewContent,
-                                      @RequestParam(required = false) String tags,
-                                      HttpSession session) {
-        
-        // 세션에서 로그인 멤버 정보 가져오기
+    public ResponseEntity<Map<String, Object>> saveRating(@RequestParam Long movieId,
+                                                          @RequestParam Integer userRating,
+                                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        System.out.println(">>> saveRating() 호출됨");
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
-            return ResponseEntity.badRequest().body("로그인이 필요합니다.");
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response); // JSON 반환
         }
-        
+
         Member loginMember = (Member) loginMemberObj;
         String memberId = loginMember.getId();
-        
-        UserReview review = new UserReview(memberId, movieId, userRating, violenceScore, reviewContent, tags);
-        
-        userReviewService.saveReview(review);
-        
-        // 업데이트된 평균 점수 반환
-        Map<String, Object> response = new HashMap<>();
-        response.put("avgRating", userReviewService.getAverageRating(movieId));
-        response.put("avgViolence", userReviewService.getAverageViolenceScore(movieId));
+
+        userReviewService.saveUserRating(memberId, movieId, userRating);
+
+        double avgRating = userReviewService.getAverageRating(movieId);
+        double avgViolence = userReviewService.getAverageViolenceScore(movieId);
+
+        response.put("avgRating", avgRating);
+        response.put("avgViolence", avgViolence);
         response.put("success", true);
-        
+
         return ResponseEntity.ok(response);
     }
+
+
     
     // 내가 쓴 리뷰 조회
     @GetMapping("/my/{movieId}")  // → /review/my/{movieId}
@@ -98,16 +98,9 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    //영화 만족도 평점 (아작스 처리용이라 현재는 쉬는 중)
-//    @GetMapping("/rating")
-//    public String loadRatingModule(@RequestParam("movieId") Long movieId, Model model) {
-//        model.addAttribute("movieId", movieId);
-//        return "reviewModule/01_rating";
-//    }
-    
-    //리뷰폼 합친 것 여기서 평점 입력/리뷰/태그 다 입력함. 임시
-    @GetMapping("/form")
-    public String reviewForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
+    // 영화 만족도 평점 
+    @GetMapping("/rating")
+    public String loadRatingForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
         model.addAttribute("movieId", movieId);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -116,10 +109,52 @@ public class ReviewController {
             model.addAttribute("myReview", myReview);
         }
 
-        return "reviewModule/reviewForm";
+        return "reviewModule/userRatingForm";
     }
-
     
+ // 영화 폭력성 점수 입력
+    @GetMapping("/violence")
+    public String loadViolenceForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/violenceScoreForm";
+    }
+    
+ // 영화 리뷰 내용 입력
+    @GetMapping("/content")
+    public String loadReviewContentForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/reviewContentForm";
+    }
+    
+ // 영화 태그 입력
+    @GetMapping("/tag")
+    public String loadTagInputForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/tagForm";
+    }
+    
+
     // 리뷰를 뷰로 뿌려주기 
     @GetMapping("/list")
     public String listReviews(@RequestParam Long movieId, Model model, HttpSession session) {

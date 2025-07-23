@@ -32,27 +32,39 @@ public class UserReviewRepository {
             return review;
         }
     };
-
-    //  리뷰 저장 or 업데이트
-    public void saveOrUpdate(UserReview review) {
-        System.out.println("★ 리뷰 저장 시도: " + review);
-        String sql = "INSERT INTO user_reviews (member_id, movie_id, user_rating, violence_score, review_content, tags) " +
-                     "VALUES (?, ?, ?, ?, ?, ?) " +
-                     "ON DUPLICATE KEY UPDATE " +
-                     "user_rating = VALUES(user_rating), " +
-                     "violence_score = VALUES(violence_score), " +
-                     "review_content = VALUES(review_content), " +
-                     "tags = VALUES(tags)";
-        int result = jdbcTemplate.update(sql,
-                review.getMemberId(),
-                review.getMovieId(),
-                review.getUserRating(),
-                review.getViolenceScore(),
-                review.getReviewContent(),
-                review.getTags()
-        );
-        System.out.println("★ DB 저장 결과: " + result);
+    
+    
+    // 별점만 저장/수정 (중복 시 update)
+    public void saveOrUpdateRating(String memberId, Long movieId, int userRating) {
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, user_rating) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE user_rating = VALUES(user_rating)";
+        jdbcTemplate.update(sql, memberId, movieId, userRating);
     }
+
+//    //  리뷰 저장 or 업데이트
+//    public void saveOrUpdate(UserReview review) {
+//        System.out.println("★ 리뷰 저장 시도: " + review);
+//        String sql = "INSERT INTO user_reviews (member_id, movie_id, user_rating, violence_score, review_content, tags) " +
+//                     "VALUES (?, ?, ?, ?, ?, ?) " +
+//                     "ON DUPLICATE KEY UPDATE " +
+//                     "user_rating = VALUES(user_rating), " +
+//                     "violence_score = VALUES(violence_score), " +
+//                     "review_content = VALUES(review_content), " +
+//                     "tags = VALUES(tags)";
+//        int result = jdbcTemplate.update(sql,
+//                review.getMemberId(),
+//                review.getMovieId(),
+//                review.getUserRating(),
+//                review.getViolenceScore(),
+//                review.getReviewContent(),
+//                review.getTags()
+//        );
+//        System.out.println("★ DB 저장 결과: " + result);
+//    }
+    
+    
+
 
  // 특정 영화의 전체 리뷰 (최신순)
     public List<UserReview> findByMovieId(Long movieId) {

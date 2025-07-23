@@ -136,9 +136,30 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>
 
+<%-- 별점 작성 폼 --%>
+<c:if test="${not empty sessionScope.loginMember}">
+    <c:import url="/review/rating">
+        <c:param name="movieId" value="${movie.id}" />
+    </c:import>
+</c:if>
+
+<%-- 폭력성 작성 폼 --%>
+<c:if test="${not empty sessionScope.loginMember}">
+    <c:import url="/review/violence">
+        <c:param name="movieId" value="${movie.id}" />
+    </c:import>
+</c:if>
+
 <%-- 리뷰 작성 폼 --%>
 <c:if test="${not empty sessionScope.loginMember}">
-    <c:import url="/review/form">
+    <c:import url="/review/content">
+        <c:param name="movieId" value="${movie.id}" />
+    </c:import>
+</c:if>
+
+<%-- 태그 작성 폼 --%>
+<c:if test="${not empty sessionScope.loginMember}">
+    <c:import url="/review/tag">
         <c:param name="movieId" value="${movie.id}" />
     </c:import>
 </c:if>
