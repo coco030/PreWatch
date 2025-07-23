@@ -158,16 +158,16 @@ public class MemberController {
         model.addAttribute("movieMap", movieMap);
         return "mypage";
     }
-    // --- Read (wishlist) ---
+    // --- Read (wishlist) 25.07.23. wishlist 뷰 만들고 경로 수정 coco030---
  
     @GetMapping("/wishlist")
     public String showMyPage(HttpSession session, Model model) { // ⭐ Model 추가: 찜 목록을 JSP로 전달하기 위함
-    	System.out.println("마이페이지로 이동");
+    	System.out.println("wishlist 뷰 이동");
         Member loginMember = (Member) session.getAttribute("loginMember"); // 세션에서 로그인 멤버 가져옴
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // 로그인했고 일반 회원인 경우
             List<movie> likedMovies = userCartService.getLikedMovies(loginMember.getId()); // 찜한 영화 목록 조회 (Read - some)
             model.addAttribute("likedMovies", likedMovies); // 모델에 찜한 영화 목록 추가
-            return "wishlist"; // "wishlist.jsp" 뷰 반환
+            return "movie/wishlist"; // "wishlist.jsp" 뷰 반환
         } else {
             // 로그인하지 않았거나 관리자 계정인 경우
             // 마이페이지는 일반 회원 전용이므로, 접근 권한 없음을 알리거나 홈으로 리다이렉트.

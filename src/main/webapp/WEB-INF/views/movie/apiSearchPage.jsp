@@ -126,7 +126,7 @@
             </table>
         </c:if>
     </c:if>
-     <%-- 푸터 --%>
+      <%-- 푸터 삽입 위치: body 안쪽 --%>
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>

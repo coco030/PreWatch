@@ -44,6 +44,10 @@
             <%-- `LoginController.java`의 `logout` (GET /auth/logout) 메서드로 연결. --%>
         </c:if>
         <c:if test="${userRole != null && userRole eq 'MEMBER'}">
+        
+            <a href="${pageContext.request.contextPath}/member/wishlist">보고 싶어요</a> |
+            <%--` 25.07.23 추가한 위시리스트.  coco030--%>
+            
             <%-- 회원만 사용 가능한 기능을 사용할 수 있음--%>
             <a href="${pageContext.request.contextPath}/member/mypage">나의 영화 기록</a> |
             <%--`MemberController.java`의 `showMyPage` (GET /member/mypage) 메서드로 연결. --%>

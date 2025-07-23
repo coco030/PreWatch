@@ -12,8 +12,17 @@
 --%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%System.out.println("영화 등록 폼 진입"); %> <%-- 서버 콘솔에 페이지 진입 로그 출력 --%>
 <html>
-<head><title>영화 ${movie.id == null ? '등록' : '수정'}</title></head>
+<head>
+<title>영화 ${movie.id == null ? '등록' : '수정'}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+</head>
+<%-- 헤더 --%>
+<jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <body>
 <h1>${movie.id == null ? '영화 등록' : '영화 수정'}</h1>
 
@@ -43,5 +52,8 @@
 </form>
 
 <a href="<c:url value='/movies'/>">목록으로</a>
+    <%-- 푸터 삽입 위치: body 안쪽 --%>
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
 </html>

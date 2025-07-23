@@ -26,5 +26,8 @@
     <p>이 페이지에 접근할 권한이 없습니다.</p>
     <p>로그인 상태를 확인하거나, 관리자에게 문의해주세요.</p>
     <p><a href="${pageContext.request.contextPath}/">홈으로 돌아가기</a></p>
+    <%-- 푸터 삽입 위치: body 안쪽 --%>
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
 </html>

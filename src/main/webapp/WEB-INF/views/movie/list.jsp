@@ -21,15 +21,16 @@
 
 <head>
 <title>영화 관리</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 <style>
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     img { max-width: 100px; height: auto; }
 </style>
 <html>
+<%-- 헤더 --%>
+<jsp:include page="/WEB-INF/views/layout/header.jsp" />
 </head>
 <body>
 <h1>영화 관리</h1>
@@ -144,5 +145,8 @@
         </tr>
     </c:if>
 </table>
+    <%-- 푸터 삽입 위치: body 안쪽 --%>
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
 </html>
