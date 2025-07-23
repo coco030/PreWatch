@@ -1,47 +1,75 @@
-/*
-    파일명: HomeController.java
-    설명:
-        이 class는 home.jsp 요청을 처리하하기 위한 컨트롤러입니다.
-
-    목적:
-        사용자가 웹사이트에 처음 접속했을 때 home.jsp(http://localhost:8080/PreWatch/)로 이동하게 하기 위해서.
-     */
-
 package com.springmvc.controller;
 
-import com.springmvc.service.movieService; 
+import com.springmvc.domain.Member; // Member 클래스 임포트 추가
+import com.springmvc.domain.movie; // movie 클래스 임포트 추가
+import com.springmvc.service.movieService;
+import com.springmvc.service.userCartService; // userCartService 임포트 추가 (찜 상태 확인용)
 
-import org.slf4j.Logger;         
-import org.slf4j.LoggerFactory;  
-import org.springframework.beans.factory.annotation.Autowired; 
-import org.springframework.stereotype.Controller;            
-import org.springframework.ui.Model;                         
-import org.springframework.web.bind.annotation.GetMapping;   
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.transaction.annotation.Transactional; // 트랜잭션 관리를 위해 추가
+
+import java.util.List;
+
+import javax.servlet.http.HttpSession; // HttpSession 임포트 추가
 
 
-
-@Controller 
+@Controller
 public class HomeController {
-	private static final Logger logger = LoggerFactory.getLogger(HomeController.class); 
-	//Logger 객체 초기화
+    private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
     @Autowired
-    private movieService movieService; 
-    // 메인 페이지에 표시할 영화 목록을 가져오기 위해 movieService를 주입.
+    private movieService movieService; // 영화 데이터 가져오기 위해 주입
+
+    @Autowired
+    private userCartService userCartService; // 찜 상태 확인을 위해 주입
 
     public HomeController() {
-        System.out.println("public HomeController 객체생성"); 
-        // 디버깅용 로그
+        System.out.println("public HomeController 객체생성");
     }
 
-    @GetMapping("/") 
-    public String home(Model model) { 
-    	// Model 객체를 주입받습니다. 뷰에 데이터를 전달하는 데 사용.
-        logger.info("루트 경로 '/' 요청이 감지되었습니다. 홈페이지를 불러옵니다.");
-        model.addAttribute("movies", movieService.findAll());
-        // `home.jsp`에 포함된 `main.jsp`에서 화면에 표시하기 위해 주입받은 movieService를 통해 모든 영화 목록을 조회하여 'movies'라는 이름으로 모델에 추가.
-        logger.debug("movieService.findAll() 호출 완료. 홈페이지에 영화 목록을 표시합니다.");
-        return "home"; 
-        // "home.jsp 주소 반환.
+    // ⭐ 루트 경로 '/' 요청을 처리하며, 메인 페이지 데이터를 제공합니다. ⭐
+    @GetMapping("/")
+    @Transactional(readOnly = true) // 데이터 조회만 하므로 readOnly 트랜잭션 설정
+    public String home(Model model, HttpSession session) {
+        logger.info("루트 경로 '/' 요청이 감지되었습니다. 메인 홈페이지 데이터를 불러옵니다.");
+
+        // 1. 최근 등록된 영화 목록 가져오기 (상위 3개)
+        List<movie> recentMovies = movieService.getRecentMovies(3);
+        model.addAttribute("movies", recentMovies); // 'movies'는 main.jsp의 "최근 등록된 영화" 섹션에 바인딩
+
+        // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개)
+        List<movie> recommendedMovies = movieService.getTop5RecommendedMovies();
+        model.addAttribute("recommendedMovies", recommendedMovies); // 'recommendedMovies'는 main.jsp의 "추천 랭킹" 섹션에 바인딩
+
+        // 3. 로그인된 회원의 찜 상태 반영 (movieController에서 가져온 로직)
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            logger.debug("메인 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
+            // recentMovies와 recommendedMovies 모두에 찜 상태 반영
+            for (movie movie : recentMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isMovieLikedByCurrentUser);
+                logger.debug("  - 최근 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+            }
+            for (movie movie : recommendedMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isMovieLikedByCurrentUser);
+                logger.debug("  - 추천 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+            }
+            logger.debug("메인 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
+        } else {
+            logger.debug("메인 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+        }
+
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("메인 홈페이지 데이터 로딩 완료.");
+        // 여기서 "home"을 반환하면 /WEB-INF/views/home.jsp를 찾게 됩니다.
+        // home.jsp에서 main.jsp를 include하고 있다면 그 구조를 유지합니다.
+        return "home"; // home.jsp 반환
     }
 }

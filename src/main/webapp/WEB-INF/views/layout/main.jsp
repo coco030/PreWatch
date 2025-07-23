@@ -25,7 +25,7 @@
                                             </c:if>
                                         </c:when>
                                         <c:otherwise>
-                                            ${pageContext.request.contextPath}/resources/images/default_poster.jpg
+                                            <c:set var="posterSrc" value="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" />
                                         </c:otherwise>
                                     </c:choose>
                                 </c:set>
@@ -60,20 +60,18 @@
                             <a href="<c:url value='/movies/${movie.id}'/>">
                                 <c:set var="posterSrc">
                                     <c:choose>
-									    <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-									        <c:choose>
-									            <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-									                <c:set var="posterSrc" value="${movie.posterPath}" />
-									            </c:when>
-									            <c:otherwise>
-									                <c:set var="posterSrc" value="${pageContext.request.contextPath}${movie.posterPath}" />
-									            </c:otherwise>
-									        </c:choose>
-									    </c:when>
-									    <c:otherwise>
-									        <c:set var="posterSrc" value="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" />
-									    </c:otherwise>
-									</c:choose>
+                                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                                            <c:if test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                                                ${movie.posterPath}
+                                            </c:if>
+                                            <c:if test="${not (fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://'))}">
+                                                ${pageContext.request.contextPath}${movie.posterPath}
+                                            </c:if>
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${pageContext.request.contextPath}/resources/images/default_poster.jpg
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:set>
                                 <img src="${posterSrc}" alt="${movie.title} 포스터" />
                                 <h3>${movie.title}</h3>
