@@ -49,13 +49,25 @@
 
     <hr/> <%-- 구분선 추가 --%>
 
+    <div class="banner-section">
+        <div class="banner-content">
+            <button class="banner-button" onclick="location.href='#'">추천</button>
+            <button class="banner-button" onclick="location.href='#'">캘린더</button>
+            <button class="banner-button" onclick="location.href='#'">이벤트</button>
+            <button class="banner-button" onclick="location.href='#'">취향 분석</button>
+        </div>
+    </div>
+    <hr/> <%-- 구분선 추가 --%>
+
     <div class="second_container">
         <h2 class="section-title">PreWatch 추천 랭킹</h2>
         <div class="movie-grid">
             <c:choose>
                 <c:when test="${not empty recommendedMovies}"> <%-- 'recommendedMovies'는 추천 랭킹 영화를 위해 사용됩니다 --%>
                     <%-- recommendedMovies 리스트에서 상위 5개만 표시 (Controller에서 5개만 가져올 것을 가정) --%>
+                    <c:set var="rank" value="0" /> <%-- 순위 변수 초기화 --%>
                     <c:forEach var="movie" items="${recommendedMovies}">
+                        <c:set var="rank" value="${rank + 1}" /> <%-- 순위 1씩 증가 --%>
                         <div class="movie-card">
                             <a href="<c:url value='/movies/${movie.id}'/>">
                                 <c:set var="posterSrc">
@@ -74,6 +86,7 @@
                                     </c:choose>
                                 </c:set>
                                 <img src="${posterSrc}" alt="${movie.title} 포스터" />
+                                <div class="rank-badge">${rank}</div> <%-- 순위 배지 추가 --%>
                                 <h3>${movie.title}</h3>
                                 <p>${movie.year} | ${movie.genre}</p>
                                 <p>평점: <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>

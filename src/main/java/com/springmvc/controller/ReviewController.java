@@ -28,7 +28,7 @@ public class ReviewController {
     @Autowired
     private UserReviewService userReviewService;
     
-    // 리뷰 저장 (별점)
+    // 별점 저장
     @PostMapping("/saveRating")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveRating(@RequestParam Long movieId,
@@ -57,6 +57,38 @@ public class ReviewController {
 
         return ResponseEntity.ok(response);
     }
+    
+    // 폭력성 점수 저장
+    @PostMapping("/saveViolence")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveViolence(@RequestParam Long movieId,
+                                                            @RequestParam Integer violenceScore,
+                                                            HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        System.out.println(">>> saveViolence() 호출됨");
+
+        Object loginMemberObj = session.getAttribute("loginMember");
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveViolenceScore(memberId, movieId, violenceScore);
+
+        double avgRating = userReviewService.getAverageRating(movieId);
+        double avgViolence = userReviewService.getAverageViolenceScore(movieId);
+
+        response.put("avgRating", avgRating);
+        response.put("avgViolence", avgViolence);
+        response.put("success", true);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
     
@@ -185,5 +217,53 @@ public class ReviewController {
         // 이미 movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
         model.addAttribute("movieId", movieId);
         return "reviewModule/reviewSensitivity"; // → /WEB-INF/views/reviewModule/reviewSensitivity.jsp
+    }
+    
+    //리뷰 본문 저장
+    @PostMapping("/saveContent")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveReviewContent(@RequestParam Long movieId,
+                                                                 @RequestParam String reviewContent,
+                                                                 HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Object loginMemberObj = session.getAttribute("loginMember");
+
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveReviewContent(memberId, movieId, reviewContent);
+
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
+    
+    // 태그 저장
+    @PostMapping("/saveTag")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveTag(@RequestParam Long movieId,
+                                                       @RequestParam String tag,
+                                                       HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Object loginMemberObj = session.getAttribute("loginMember");
+
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveTag(memberId, movieId, tag);
+
+        response.put("success", true);
+        return ResponseEntity.ok(response);
     }
 }

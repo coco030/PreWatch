@@ -9,38 +9,6 @@
     <title>PreWatch: 상세</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" />
-    <style>
-        .favorite-button-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-top: 20px;
-        }
-        .favorite-button {
-            background-color: #f44336;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        .favorite-button:hover {
-            background-color: #d32f2f;
-        }
-        .favorite-button.disabled,
-        .favorite-button.processing {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .like-count-detail {
-            font-size: 1.2em;
-            color: #555;
-            font-weight: bold;
-        }
-    </style>
 </head> 
 
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
@@ -164,7 +132,7 @@
     </c:import>
 </c:if>
 
-<%-- 리뷰 리스트 --%>
+<%-- 다른 사용자의 리뷰 리스트 --%>
 <c:import url="/review/list">
     <c:param name="movieId" value="${movie.id}" />
 </c:import>

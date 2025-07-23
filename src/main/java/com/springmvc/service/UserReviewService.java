@@ -13,9 +13,6 @@ import com.springmvc.repository.movieRepository;
 @Service
 public class UserReviewService {
     
-	@Autowired
-	private UserReviewService userReviewService;
-	
     @Autowired
     private UserReviewRepository userReviewRepository;
     
@@ -45,7 +42,7 @@ public class UserReviewService {
         Double avg = userReviewRepository.getAverageViolenceScore(movieId);
         return avg != null ? Math.round(avg * 10) / 10.0 : 0.0; // 반올림 하는거
     }
-  // 마이페이지에서 사용자가 작성한 모든 리뷰 조회 뷰
+    // 마이페이지에서 사용자가 작성한 모든 리뷰 조회 뷰
     public List<UserReview> getMyReviews(String memberId) {
         return userReviewRepository.findAllByMemberId(memberId);
     }
@@ -59,5 +56,21 @@ public class UserReviewService {
 
         movieRepository.updateAverageScores(movieId, avgRating, avgViolence);
     }
+    // 폭력성 점수 1개 저장
+    public void saveViolenceScore(String memberId, Long movieId, Integer violenceScore) {
+        userReviewRepository.saveOrUpdateViolenceScore(memberId, movieId, violenceScore);
 
+        double avgRating = getAverageRating(movieId);
+        double avgViolence = getAverageViolenceScore(movieId);
+
+        movieRepository.updateAverageScores(movieId, avgRating, avgViolence);
+    }
+    //1인 리뷰
+	public void saveReviewContent(String memberId, Long movieId, String reviewContent) {
+	    userReviewRepository.saveOrUpdateReviewContent(memberId, movieId, reviewContent);
+	}
+	// 1인 태그
+	public void saveTag(String memberId, Long movieId, String tag) {
+	    userReviewRepository.saveOrUpdateTag(memberId, movieId, tag);
+	}
 }

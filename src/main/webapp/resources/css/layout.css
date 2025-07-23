@@ -12,31 +12,66 @@
     text-decoration: underline;
 }
 
-/* 메인 콘텐츠와 추천 랭킹을 감싸는 wrapper (이것이 이제 전체 페이지의 중앙 박스 역할) */
+/* 메인 콘텐츠와 추천 랭킹을 감싸는 wrapper */
 .main-content-wrapper {
     display: flex;
-    flex-direction: column; /* 자식 요소들을 세로로 배치 */
-    gap: 40px; /* main container와 second_container 사이의 간격을 좀 더 벌립니다. */
-    align-items: center; /* 자식 요소들을 가로 중앙에 정렬 */
-    max-width: 1200px; /* 전체 wrapper의 최대 너비 */
-    margin: 20px auto; /* wrapper 자체를 페이지 중앙에 정렬 */
-    padding: 0; /* 내부 패딩은 이제 각 하위 박스가 가짐 */
-    background-color: transparent; /* wrapper 자체의 배경색은 투명하게 */
-    box-shadow: none; /* wrapper 자체의 그림자 제거 */
-    border-radius: 0; /* wrapper 자체의 테두리 둥글게 제거 */
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* wishlist (기존과 동일) */
+.wishlist.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+/* wishlist 컨테이너 영화 카드 레이아웃 (기존과 동일) */
+.wishlist .movie-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(350px, 1fr));
+    gap: 20px;
+    max-width: 1090px;
+    width: 100%;
+    margin: 0 auto;
+    justify-content: center;
 }
 
 /* 개별 섹션 컨테이너 스타일 (main.container와 second_container에 공통 적용) */
 .main.container, .second_container {
     display: flex;
     flex-direction: column;
-    align-items: center; /* 내부 콘텐츠 가로 중앙 정렬 유지 */
-    width: 100%; /* 부모(main-content-wrapper) 너비에 맞춰 확장 */
-    padding: 20px; /* 박스 내부 패딩 */
-    background-color: white; /* 박스 배경색 */
-    border-radius: 8px; /* 박스 테두리 둥글게 */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 박스 그림자 */
-    box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 */
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+/* 마진 조정: main.container 하단 마진 제거 */
+.main.container {
+    margin-bottom: 0;
+}
+
+/* 마진 조정: second_container 상단 마진 제거 */
+.second_container {
+    margin-top: 0;
 }
 
 
@@ -46,33 +81,31 @@
     margin-bottom: 15px;
     border-bottom: 2px solid #eee;
     padding-bottom: 10px;
-    width: 100%; /* 제목도 부모 너비에 맞춰 확장 */
-    text-align: left; /* 제목은 왼쪽 정렬 */
+    width: 100%;
+    text-align: left;
     box-sizing: border-box;
 }
 
-/* 메인 컨테이너 영화 카드 레이아웃: 반응형 그리드 (더 큰 카드, 3개 제한에 맞춤) */
+/* 메인 컨테이너 영화 카드 레이아웃: 반응형 그리드 */
 .main .movie-grid {
     display: grid;
-    /* 3개의 큰 카드가 오도록 너비 고정: (350px * 3) + (20px * 2) = 1090px */
-    grid-template-columns: repeat(3, minmax(350px, 1fr)); /* 3개로 고정 */
+    grid-template-columns: repeat(3, minmax(350px, 1fr));
     gap: 20px;
-    max-width: 1090px; /* 3개 카드의 최대 너비 */
+    max-width: 1090px;
     width: 100%;
-    margin: 0 auto; /* 가로 중앙 정렬 */
-    justify-content: center; /* 그리드 아이템을 그리드 컨테이너 내에서 중앙 정렬 */
+    margin: 0 auto;
+    justify-content: center;
 }
 
-/* 추천 랭킹 컨테이너 영화 카드 레이아웃: 반응형 그리드 (기존 크기, 5개 제한에 맞춤) */
+/* 추천 랭킹 컨테이너 영화 카드 레이아웃: 반응형 그리드 */
 .second_container .movie-grid {
     display: grid;
-    /* 5개의 작은 카드가 오도록 너비 고정: (180px * 5) + (20px * 4) = 900px + 80px = 980px */
-    grid-template-columns: repeat(5, minmax(180px, 1fr)); /* 5개로 고정 */
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
     gap: 20px;
-    max-width: 980px; /* 5개 카드의 최대 너비 */
+    max-width: 980px;
     width: 100%;
-    margin: 0 auto; /* 가로 중앙 정렬 */
-    justify-content: center; /* 그리드 아이템을 그리드 컨테이너 내에서 중앙 정렬 */
+    margin: 0 auto;
+    justify-content: center;
 }
 
 /* 개별 영화 카드 스타일 */
@@ -83,9 +116,27 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     text-align: center;
     padding-bottom: 15px;
+    position: relative; /* 자식 요소의 절대 위치 지정을 위해 추가 */
 }
 
-/* 메인 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 (큰 카드) */
+/* **순위 배지 스타일** */
+.movie-card .rank-badge {
+    position: absolute;
+    top: 10px; /* 상단에서 10px 떨어진 위치 */
+    left: 10px; /* 좌측에서 10px 떨어진 위치 */
+    background-color: rgba(100, 100, 100, 0.8); /* 어두운 회색 배경 (반투명) */
+    color: white; /* 흰색 글자 */
+    font-size: 1.1em; /* 글자 크기 */
+    font-weight: bold; /* 글자 굵게 */
+    padding: 5px 8px; /* 내부 여백 */
+    border-radius: 5px; /* 모서리 둥글게 */
+    z-index: 10; /* 포스터 위에 표시되도록 z-index 설정 */
+    min-width: 25px; /* 한 자리 숫자, 두 자리 숫자 모두 보기 좋게 최소 너비 설정 */
+    text-align: center; /* 숫자 중앙 정렬 */
+}
+
+
+/* 메인 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 */
 .main .movie-card img {
     width: 100%;
     height: auto;
@@ -93,7 +144,7 @@
     object-fit: cover;
 }
 
-/* 추천 랭킹 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 (기존 크기) */
+/* 추천 랭킹 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 */
 .second_container .movie-card img {
     width: 100%;
     height: 270px;
@@ -159,4 +210,100 @@
     text-decoration: underline;
 }
 
+.favorite-button-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+.favorite-button {
+    background-color: #f44336;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+.favorite-button:hover {
+    background-color: #d32f2f;
+}
+.favorite-button.disabled,
+.favorite-button.processing {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+.like-count-detail {
+    font-size: 1.2em;
+    color: #555;
+    font-weight: bold;
+}
 
+/* 배너 섹션 스타일 */
+.banner-section {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 60px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+
+/* **배너 섹션 스타일 업데이트** */
+.banner-section {
+    width: 100%;
+    /* max-width는 main-content-wrapper와 동일하게 유지 */
+    max-width: 1200px;
+    /* 상하 마진을 0으로 설정하여 위아래 요소에 딱 붙게 함 */
+    margin: 0 auto;
+    /* 좌우 패딩을 더 넓게 설정하여 거의 끝까지 닿도록 함 */
+    padding: 15px 60px; /* 기존 40px에서 60px로 늘림 */
+    background-color: white; /* 배경색 흰색 유지 */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+
+/* 배너 내부 콘텐츠 및 버튼 스타일은 이전과 동일 */
+.banner-content {
+    display: flex;
+    gap: 20px;
+}
+
+.banner-button {
+    background-color: #E2E2E2;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-left:50px;
+    margin-right:50px;
+}
+
+.banner-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.banner-button:active {
+    background-color: #004085;
+    transform: translateY(0);
+}

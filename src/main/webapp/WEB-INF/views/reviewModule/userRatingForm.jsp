@@ -30,6 +30,17 @@
         </span>
     </c:forEach>
 </div>
+<p>
+  <strong>영화 만족도 : </strong>
+  <c:choose>
+    <c:when test="${not empty myReview.userRating}">
+      ${myReview.userRating} / 10
+    </c:when>
+    <c:otherwise>
+      <span style="color:gray;">아직 만족도 평가를 하지 않으셨어요.</span>
+    </c:otherwise>
+  </c:choose>
+</p>
 
 <!-- ⭐ 별점 관련 CSS (마우스 반응 및 별색 표현) -->
 <style>

@@ -41,29 +41,16 @@ public class UserReviewRepository {
                      "ON DUPLICATE KEY UPDATE user_rating = VALUES(user_rating)";
         jdbcTemplate.update(sql, memberId, movieId, userRating);
     }
+    
+    // 폭력성 점수만 저장/수정 (중복 시 update)
+    public void saveOrUpdateViolenceScore(String memberId, Long movieId, int violenceScore) {
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, violence_score) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE violence_score = VALUES(violence_score)";
+        jdbcTemplate.update(sql, memberId, movieId, violenceScore);
+    }
 
-//    //  리뷰 저장 or 업데이트
-//    public void saveOrUpdate(UserReview review) {
-//        System.out.println("★ 리뷰 저장 시도: " + review);
-//        String sql = "INSERT INTO user_reviews (member_id, movie_id, user_rating, violence_score, review_content, tags) " +
-//                     "VALUES (?, ?, ?, ?, ?, ?) " +
-//                     "ON DUPLICATE KEY UPDATE " +
-//                     "user_rating = VALUES(user_rating), " +
-//                     "violence_score = VALUES(violence_score), " +
-//                     "review_content = VALUES(review_content), " +
-//                     "tags = VALUES(tags)";
-//        int result = jdbcTemplate.update(sql,
-//                review.getMemberId(),
-//                review.getMovieId(),
-//                review.getUserRating(),
-//                review.getViolenceScore(),
-//                review.getReviewContent(),
-//                review.getTags()
-//        );
-//        System.out.println("★ DB 저장 결과: " + result);
-//    }
-    
-    
+
 
 
  // 특정 영화의 전체 리뷰 (최신순)
@@ -121,4 +108,31 @@ public class UserReviewRepository {
         String sql = "SELECT * FROM user_reviews WHERE member_id = ? ORDER BY created_at DESC";
         return jdbcTemplate.query(sql, rowMapper, memberId);
     }
+
+    // 리뷰 내용 저장 또는 수정
+    public void saveOrUpdateReviewContent(String memberId, Long movieId, String reviewContent) {
+        System.out.println("▶ 리뷰 내용 저장 요청: memberId=" + memberId + ", movieId=" + movieId + ", reviewContent=" + reviewContent);
+
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, review_content) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE review_content = VALUES(review_content)";
+
+        jdbcTemplate.update(sql, memberId, movieId, reviewContent);
+
+        System.out.println("▶ 리뷰 내용 저장 완료");
+    }
+
+    // 태그 저장 또는 수정
+    public void saveOrUpdateTag(String memberId, Long movieId, String tag) {
+        System.out.println("▶ 태그 저장 요청: memberId=" + memberId + ", movieId=" + movieId + ", tags=" + tag);
+
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, tags) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE tags = VALUES(tags)";
+
+        jdbcTemplate.update(sql, memberId, movieId, tag);
+
+        System.out.println("▶ 태그 저장 완료");
+    }
+
 }
