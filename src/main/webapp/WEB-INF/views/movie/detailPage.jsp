@@ -123,12 +123,11 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>
 
-<%-- 태그 작성 폼 --%>
-<c:if test="${not empty sessionScope.loginMember}">
+<%-- 태그 작성 폼  (항상 호출)  --%>
     <c:import url="/review/tag">
         <c:param name="movieId" value="${movie.id}" />
     </c:import>
-</c:if>
+
 
 <%-- 다른 사용자의 리뷰 리스트 --%>
 <c:import url="/review/list">

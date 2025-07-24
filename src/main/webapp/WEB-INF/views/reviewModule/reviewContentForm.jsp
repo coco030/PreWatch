@@ -13,8 +13,6 @@
 
 <!-- review-section은 항상 출력됨 -->
 <div id="review-section" class="my-4">
-    <h5>내 리뷰</h5>
-
     <!-- 로그인 여부 확인 -->
     <c:if test="${not empty loginMember}">
         <!-- 작성창 (내 리뷰가 없을 때) -->

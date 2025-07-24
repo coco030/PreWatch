@@ -56,12 +56,23 @@
                                 </c:choose>
                             </p>
                             <p class="card-text mb-1">
-                                <strong>리뷰:</strong>
-                                <c:choose>
-                                    <c:when test="${empty review.reviewContent}">(아직 리뷰 작성을 하지 않으셨어요)</c:when>
-                                    <c:otherwise>${review.reviewContent}</c:otherwise>
-                                </c:choose>
-                            </p>
+							
+							<fmt:parseDate value="${review.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="writtenDate" />
+							
+							<p class="card-text mb-1">
+							    <strong>리뷰</strong><br>
+							    <c:choose>
+							        <c:when test="${empty review.reviewContent}">
+							            (아직 리뷰 작성을 하지 않으셨어요)
+							        </c:when>
+							        <c:otherwise>
+							            ${review.reviewContent}<br>
+							            <span class="badge bg-light text-dark" style="font-size: 0.95em;">
+							                <fmt:formatDate value="${writtenDate}" pattern="yyyy.MM.dd HH:mm" />
+							            </span>
+							        </c:otherwise>
+							    </c:choose>
+							</p>
                             <p class="card-text">
                                 <strong>태그:</strong>
                                 <c:choose>

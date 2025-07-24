@@ -1,4 +1,17 @@
+
+
+
 /* 공통 헤더 스타일 */
+
+
+/* 모바일로 폭 줄였을 때 오른쪽 메뉴가 겹쳐지는 대신 감춰지도록 */
+
+@media (max-width: 768px) {
+  .header-right-wrapper {
+    display: none;
+  }
+}
+
 
 /* ========== 헤더 전체 컨테이너  ========== */
 .header-wrapper {
@@ -13,32 +26,65 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    min-height: 55px; /* 최소 높이 설정 */
+    max-height: 60px; /* 최대 높이 설정 */
+    flex-wrap: nowrap; /* 줄바꿈 방지  이유 : 폭 좁히면 헤더 높이가 높아져서*/
 }
 
 /* ========== 헤더 왼쪽: 로고  ========== */
 .header-left a {
-    font-size: 30px; 
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-decoration: none;
-    cursor: pointer;
-    transition: transform 0.2s ease;
+  position: relative;
+  display: inline-block;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
 }
 
-.header-left a:hover {
-    transform: translateY(-1px);
+/* 광택 애니메이션 레이어 */
+.header-left a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
 }
+
+/* hover 시 광택 애니메이션 */
+.header-left a:hover::before {
+  animation: shine 0.8s ease-out forwards;
+}
+
+/* 키프레임 정의 */
+@keyframes shine {
+  0% {
+    left: -75%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+
+
 
 /* ========== 헤더 가운데: 검색창 - 더 넓게 ========== */
 .header-center {
     flex: 1; /* 남은 공간 최대 활용 */
     max-width: 700px; /* 최대 폭 늘림 */
-    margin: 0 40px; /* 좌우 여백 */
+    margin: 0 30px; /* 좌우 여백 */
 }
 
 .search-form {
@@ -117,35 +163,31 @@
 
 /* ========== 헤더 오른쪽: 링크들  ========== */
 
-/* 모든 버튼: 플랫, 미니멀, 조화로운 중립 톤 */
+/* 로그인/회원가입 등 우측 메뉴를 단순 텍스트 링크로 보이게 */
 .header-right-wrapper a {
-    padding: 6px 14px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    color: #444;
     text-decoration: none;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    color: #333;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    margin-left: 10px;
+    margin-left: 12px;
+    transition: color 0.2s ease;
 }
 
-/* Hover 효과: 살짝 톤업 정도만 */
 .header-right-wrapper a:hover {
-    background-color: #f1f1f1;
-    border-color: #999;
-    color: #111;
+    color: blue;
+    text-decoration: none;
+    font-weight: 600;
 }
 
 /* 사용자 이름 출력: 버튼 아님, 자연스럽게 텍스트 처리 */
 .header-right-wrapper span {
     margin-left: 12px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     color: #444;
 }
 
+
+/* // ========== 헤더 오른쪽: 링크들  ========== */
 
 
 /* 메인 콘텐츠와 추천 랭킹을 감싸는 wrapper */
