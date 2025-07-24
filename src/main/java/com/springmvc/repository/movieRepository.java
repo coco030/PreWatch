@@ -31,7 +31,7 @@ public class movieRepository {
     // 목적: 영화 목록을 보여줄 때 사용되며, 찜 개수(like_count)를 기준으로 내림차순 정렬됩니다.
     public List<movie> findAll() {
         logger.debug("movieRepository.findAll() 호출: DB에서 모든 영화 조회 시도.");
-        // ⭐ like_count 컬럼 추가 및 like_count 기준 내림차순 정렬 추가 ⭐
+        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies ORDER BY like_count DESC, created_at DESC";
 
         List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
@@ -44,7 +44,7 @@ public class movieRepository {
     // 목적: 특정 영화의 상세 정보를 보여주거나, 수정/삭제 전에 기존 정보를 가져올 때 사용됩니다.
     public movie findById(Long id) {
         logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
-        // ⭐ like_count 컬럼 추가 ⭐
+        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies WHERE id = ?";
         try {
             movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), id);
@@ -63,7 +63,7 @@ public class movieRepository {
     // 목적: API 검색 결과에 로컬 평점/잔혹도를 덮어쓸 때 사용됩니다.
     public movie findByApiId(String apiId) {
         logger.debug("movieRepository.findByApiId({}) 호출: DB에서 API ID로 영화 조회 시도.", apiId);
-        // ⭐ like_count 컬럼 추가 ⭐
+        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies WHERE api_id = ?";
         try {
             movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), apiId);
@@ -82,7 +82,7 @@ public class movieRepository {
     // 목적: 관리자가 새 영화를 직접 등록하거나, API에서 가져온 영화를 등록할 때 사용됩니다.
     public void save(movie movie) {
         logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
-        // ⭐ like_count 컬럼 추가 ⭐
+        // is_recommended 컬럼 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // like_count 포함 총 11개 파라미터
 
@@ -94,10 +94,10 @@ public class movieRepository {
             movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
             movie.getGenre(),
             movie.getRating(),
-            movie.getViolence_score_avg(), // 필드명 통일 (violence_score_avg -> getViolence_score_avg)
+            movie.getViolence_score_avg(),
             movie.getOverview(),
             movie.getPosterPath(),
-            movie.getLikeCount()); // ⭐ movie.getLikeCount() 추가 ⭐ (기본값 0으로 들어갈 것입니다)
+            movie.getLikeCount());
 
         logger.info("DB에 영화 '{}' 저장 완료.", movie.getTitle());
     }
@@ -106,7 +106,7 @@ public class movieRepository {
     // 목적: 관리자가 영화 정보를 수정할 때 사용됩니다.
     public void update(movie movie) {
         logger.debug("movieRepository.update() 호출: 영화 ID {} 업데이트 시도.", movie.getId());
-        // ⭐ like_count 컬럼 추가 ⭐
+        // is_recommended 컬럼 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "UPDATE movies SET api_id=?, title=?, director=?, year=?, release_date=?, genre=?, rating=?, violence_score_avg=?, overview=?, poster_path=?, like_count=? WHERE id=?"; // like_count 포함
         jdbcTemplate.update(sql,
             movie.getApiId(),
@@ -116,10 +116,10 @@ public class movieRepository {
             movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
             movie.getGenre(),
             movie.getRating(),
-            movie.getViolence_score_avg(), // 필드명 통일 (violence_score_avg -> getViolence_score_avg)
+            movie.getViolence_score_avg(),
             movie.getOverview(),
             movie.getPosterPath(),
-            movie.getLikeCount(), // ⭐ movie.getLikeCount() 추가 ⭐
+            movie.getLikeCount(),
             movie.getId());
 
         logger.info("DB에서 영화 ID {} 업데이트 완료.", movie.getId());
@@ -139,7 +139,7 @@ public class movieRepository {
         jdbcTemplate.update(sql, avgRating, avgViolence, movieId);
         logger.info("영화 ID {}의 평점 및 잔혹도 평균 업데이트 완료.", movieId);
     }
-    
+
     //마이페이지 전용 메서드
     public movie findTitleAndPosterById(Long id) {
         String sql = "SELECT id, title, poster_path FROM movies WHERE id = ?";
@@ -172,23 +172,23 @@ public class movieRepository {
         logger.info("영화 ID {}의 찜 개수 1 감소 완료.", movieId);
     }
 
-    // --- ⭐ 새로운 메서드: 추천 랭킹 (like_count 기준) 영화 조회 ⭐ ---
+    // --- ⭐ 기존 메서드: 추천 랭킹 (like_count 기준) 영화 조회 ⭐ (7-24 오후12:41 추가 된 코드)
     /**
-     * 찜 개수(like_count)를 기준으로 내림차순 정렬하여 상위 5개의 영화 목록을 조회합니다.
-     * 찜 개수가 같을 경우, created_at 최신순으로 정렬됩니다.
-     * @return 찜 개수 기준 상위 5개 영화 목록
+     * 찜 개수(like_count)를 기준으로 내림차순 정렬하여 상위 5개의 영화 목록을 조회합니다. (7-24 오후12:41 추가 된 코드)
+     * 찜 개수가 같을 경우, created_at 최신순으로 정렬됩니다. (7-24 오후12:41 추가 된 코드)
+     * @return 찜 개수 기준 상위 5개 영화 목록 (7-24 오후12:41 추가 된 코드)
      */
-    public List<movie> findTop5RecommendedMoviesByLikeCount() {
-        logger.debug("movieRepository.findTop5RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 5개 영화 조회 시도.");
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " +
-                     "FROM movies " +
-                     "ORDER BY like_count DESC, created_at DESC " + // 찜 개수 내림차순, 동점 시 생성일 최신순
-                     "LIMIT 5"; // 상위 5개만 가져오기
+    public List<movie> findTop5RecommendedMoviesByLikeCount() { // (7-24 오후12:41 추가 된 코드)
+        logger.debug("movieRepository.findTop5RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 5개 영화 조회 시도."); // (7-24 오후12:41 추가 된 코드)
+        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " + // (7-24 오후12:41 추가 된 코드)
+                     "FROM movies " + // (7-24 오후12:41 추가 된 코드)
+                     "ORDER BY like_count DESC, created_at DESC " + // 찜 개수 내림차순, 동점 시 생성일 최신순 (7-24 오후12:41 추가 된 코드)
+                     "LIMIT 5"; // 상위 5개만 가져오기 (7-24 오후12:41 추가 된 코드)
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
-        logger.info("DB에서 찜 개수 기준 상위 5개 영화 레코드 {}개 성공적으로 가져옴.", list.size());
-        return list;
-    }
+        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class)); // (7-24 오후12:41 추가 된 코드)
+        logger.info("DB에서 찜 개수 기준 상위 5개 영화 레코드 {}개 성공적으로 가져옴.", list.size()); // (7-24 오후12:41 추가 된 코드)
+        return list; // (7-24 오후12:41 추가 된 코드)
+    } // (7-24 오후12:41 추가 된 코드)
 
     // --- 추가: 최근 등록된 영화 조회 메서드 (main.jsp의 "최근 등록된 영화" 섹션을 위함) ---
     /**
@@ -198,9 +198,10 @@ public class movieRepository {
      */
     public List<movie> findRecentMovies(int limit) {
         logger.debug("movieRepository.findRecentMovies({}) 호출: 최근 등록된 영화 조회 시도.", limit);
+        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " +
                      "FROM movies " +
-                     "ORDER BY created_at DESC " + // 가장 최근에 등록된 영화부터
+                     "ORDER BY created_at DESC " +
                      "LIMIT ?";
 
         List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), limit);
@@ -208,7 +209,7 @@ public class movieRepository {
         return list;
     }
     
-    // ============ coco030이 추가한 내역 ====
+    // ============ coco030이 추가한 내역 25.07.24 오후 ====
     // 최근 개봉 예정작
 
 	public List<Map<String, Object>> getUpcomingMoviesWithDday() {
@@ -230,6 +231,5 @@ public class movieRepository {
 // ===========coco030이 추가한 내역  끝 ==== ///
 	
 	
-	
-
+    
 }

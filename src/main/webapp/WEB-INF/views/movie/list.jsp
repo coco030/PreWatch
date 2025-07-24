@@ -6,7 +6,6 @@
         관리자는 이 페이지에서 영화를 '수정'하거나 '삭제'할 수 있는 버튼을 추가로 볼 수 있습니다.  
         로그인한 일반 사용자에게는 찜(하트) 기능을 제공합니다.  
         각 영화 아래에 찜 아이콘 및 찜 개수를 표시합니다.  
-
     목적:  
         - 시스템에 등록된 모든 영화 정보를 한눈에 볼 수 있도록 합니다.  
         - 영화 제목 클릭 시 상세 페이지로 이동하여 더 많은 정보를 확인하도록 유도합니다.  
@@ -36,8 +35,8 @@
 <h1>영화 관리</h1>
 
 <c:if test="${userRole == 'ADMIN'}">
-    <p><a href="<c:url value='/movies/search-api'/>">API에서 영화 검색 및 등록</a></p>
     <p><a href="<c:url value='/movies/new'/>">새 영화 직접 등록</a></p>
+    <p><a href="<c:url value='/admin/banner-movies'/>">추천 영화 관리</a></p> <%-- (7-24 오후12:41 추가 된 코드) --%>
 </c:if>
 
 <c:if test="${not empty param.error}">
@@ -84,16 +83,6 @@
             </td>
             <td>
                 <a href="<c:url value='/movies/${movie.id}'/>">${movie.title}</a>
-                <%-- ⭐ 찜 아이콘 및 찜 개수 컨테이너 (영화 목록) ⭐ --%>
-                <div class="heart-info-container-list">
-                    <i class="heart-icon-list
-                        <c:choose>
-                            <c:when test="${movie.isLiked()}">fas fa-heart</c:when>
-                            <c:otherwise>far fa-heart</c:otherwise>
-                        </c:choose>
-                        <c:if test="${empty sessionScope.loginMember || sessionScope.userRole == 'ADMIN'}">disabled</c:if>"data-movie-id="${movie.id}"onclick="toggleCart(this)"></i>
-                    <span class="like-count-list" id="likeCount_${movie.id}">${movie.likeCount}</span>
-                </div>
             </td>
             <td>${movie.director}</td>
             <td>${movie.year}</td>
@@ -122,7 +111,7 @@
             <td>${movie.apiId}</td>
             <c:if test="${userRole == 'ADMIN'}">
                 <td>
-   
+
                     <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>
 
                     <form action="<c:url value='/movies/${movie.id}/delete'/>" method="post" style="display:inline">
@@ -149,4 +138,3 @@
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
-</html>

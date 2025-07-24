@@ -2,10 +2,13 @@ package com.springmvc.domain;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.io.Serializable; // Serializable 인터페이스 추가 (필요시)
 
 // movie 클래스: 애플리케이션에서 관리하는 영화 정보를 담는 도메인 클래스.
 // 목적: 영화 등록, 조회, 수정, 삭제 등 영화 관련 데이터 주고받기.
-public class movie {
+public class movie implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private Long id;              // 영화의 고유 ID (PRIMARY KEY)
     private String apiId;         // 외부 영화 API 고유 ID (예: OMDb의 "tt1234567")
     private String title;         // 영화 제목
@@ -21,12 +24,20 @@ public class movie {
     private LocalDateTime updatedAt; // 마지막으로 업데이트된 시간
     private boolean isLiked; // ⭐ 추가: 현재 로그인된 사용자가 이 영화를 찜했는지 여부. (DB에는 저장되지 않고 뷰 계층에 데이터를 전달하기 위한 임시 필드)
     private int likeCount;   // ⭐ 추가: 찜 개수 (DB에 저장될 필드)
+    // isRecommended 필드는 이 요구사항에서 movie 도메인에서 제거됩니다. (7-24 오후12:41 추가 된 코드)
 
     // 기본 생성자: 매개변수 없이 객체 생성.
-    public movie() {}
+    public movie() {
+        this.rating = 0.0;
+        this.violence_score_avg = 0.0;
+        this.likeCount = 0;
+        this.isLiked = false;
+        // isRecommended 초기화 로직 제거 (7-24 오후12:41 추가 된 코드)
+    }
 
     // 일부 필드만 포함하는 생성자.
     public movie(Long id, String title, String director, int year, String genre) {
+        this(); // 기본 생성자 호출하여 필드 초기화
         this.id = id;
         this.title = title;
         this.director = director;
@@ -35,9 +46,9 @@ public class movie {
     }
 
     // 모든 필드를 포함하는 생성자.
-    // likeCount 포함하도록 수정 (기존 데이터와 호환성을 위해 기본값 0)
+    // likeCount 포함하도록 수정
     public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
-                 LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount) {
+                 LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount) { // isRecommended 파라미터 제거 (7-24 오후12:41 추가 된 코드)
         this.id = id;
         this.apiId = apiId;
         this.title = title;
@@ -51,13 +62,15 @@ public class movie {
         this.posterPath = posterPath;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.likeCount = likeCount; // ⭐ likeCount 추가 ⭐
+        this.likeCount = likeCount;
+        // isRecommended 초기화 로직 제거 (7-24 오후12:41 추가 된 코드)
     }
 
     // API에서 가져온 필수 정보를 초기화하는 생성자.
     // likeCount 포함하도록 수정 (API에서 가져올 때는 기본값 0)
     public movie(String apiId, String title, String director, int year,
                  LocalDate releaseDate, String genre, String overview, String posterPath) {
+        this(); // 기본 생성자 호출하여 필드 초기화
         this.apiId = apiId;
         this.title = title;
         this.director = director;
@@ -66,7 +79,6 @@ public class movie {
         this.genre = genre;
         this.overview = overview;
         this.posterPath = posterPath;
-        this.likeCount = 0; // API에서 가져올 때는 찜 개수 기본 0
     }
 
     // Getter/Setter: 각 필드에 대한 값 읽기/쓰기 접근 메서드.
@@ -97,9 +109,7 @@ public class movie {
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
-    // ⭐ Getter 이름 수정: getviolence_score_avg() -> getViolence_score_avg() ⭐
     public double getViolence_score_avg() { return violence_score_avg; }
-    // ⭐ Setter 이름 수정: setviolence_score_avg() -> setViolence_score_avg() ⭐
     public void setViolence_score_avg(double violence_score_avg) { this.violence_score_avg = violence_score_avg; }
 
     public String getOverview() { return overview; }
@@ -111,7 +121,6 @@ public class movie {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    // ⭐ isLiked 필드에 대한 Getter 이름 변경: getIsLiked() -> isLiked() (Boolean 관례) ⭐
     public boolean isLiked() {
         return isLiked;
     }
@@ -120,7 +129,6 @@ public class movie {
         this.isLiked = isLiked;
     }
 
-    // ⭐ likeCount 필드에 대한 Getter/Setter 추가 ⭐
     public int getLikeCount() {
         return likeCount;
     }
@@ -128,4 +136,6 @@ public class movie {
     public void setLikeCount(int likeCount) {
         this.likeCount = likeCount;
     }
+
+    // isRecommended 필드에 대한 Getter/Setter 제거 (7-24 오후12:41 추가 된 코드)
 }

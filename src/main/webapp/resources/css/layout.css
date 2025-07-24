@@ -230,7 +230,7 @@
 }
 
 /* 개별 섹션 컨테이너 스타일 (main.container와 second_container에 공통 적용) */
-.main.container, .second_container {
+.main.container, .second_container, .third_container { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -250,6 +250,11 @@
 /* 마진 조정: second_container 상단 마진 제거 */
 .second_container {
     margin-top: 0;
+}
+
+/* ⭐ third_container 상단 마진 조정 (7-24 오후12:41 추가 된 코드) */
+.third_container {
+    margin-top: 0; /* (7-24 오후12:41 추가 된 코드) */
 }
 
 
@@ -276,7 +281,7 @@
 }
 
 /* 추천 랭킹 컨테이너 영화 카드 레이아웃: 반응형 그리드 */
-.second_container .movie-grid {
+.second_container .movie-grid, .third_container .movie-grid { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
     display: grid;
     grid-template-columns: repeat(5, minmax(180px, 1fr));
     gap: 20px;
@@ -323,7 +328,7 @@
 }
 
 /* 추천 랭킹 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 */
-.second_container .movie-card img {
+.second_container .movie-card img, .third_container .movie-card img { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
     width: 100%;
     height: 270px;
     object-fit: cover;

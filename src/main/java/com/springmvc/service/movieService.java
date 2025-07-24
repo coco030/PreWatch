@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.springmvc.domain.movie;
@@ -89,15 +88,15 @@ public class movieService {
         logger.info("영화 ID {}가 삭제되었습니다.", id);
     }
 
-    // --- ⭐ 새로운 메서드: 추천 랭킹 영화 조회 ⭐ ---
+    // --- ⭐ 기존 메서드: 추천 랭킹 영화 조회 (like_count 기준) ⭐ (7-24 오후12:41 추가 된 코드)
     /**
-     * 찜 개수(like_count)를 기준으로 정렬된 상위 5개 추천 영화 목록을 조회합니다.
-     * @return 찜 개수 기준 상위 5개 추천 영화 목록
+     * 찜 개수(like_count)를 기준으로 정렬된 상위 5개 추천 영화 목록을 조회합니다. (7-24 오후12:41 추가 된 코드)
+     * @return 찜 개수 기준 상위 5개 추천 영화 목록 (7-24 오후12:41 추가 된 코드)
      */
-    public List<movie> getTop5RecommendedMovies() {
-        logger.debug("movieService.getTop5RecommendedMovies() 호출.");
-        return movieRepository.findTop5RecommendedMoviesByLikeCount();
-    }
+    public List<movie> getTop5RecommendedMovies() { // (7-24 오후12:41 추가 된 코드)
+        logger.debug("movieService.getTop5RecommendedMovies() 호출."); // (7-24 오후12:41 추가 된 코드)
+        return movieRepository.findTop5RecommendedMoviesByLikeCount(); // (7-24 오후12:41 추가 된 코드)
+    } // (7-24 오후12:41 추가 된 코드)
 
     // --- 새로운 메서드: 최근 등록된 영화 조회 ---
     /**
@@ -109,11 +108,8 @@ public class movieService {
         logger.debug("movieService.getRecentMovies({}) 호출.", limit);
         return movieRepository.findRecentMovies(limit);
     }
-    
-    
-    
-    
-    // ============ coco030이 추가한 내역 ====
+
+    // ============ coco030이 추가한 내역 25.07.24 오후 3시쯤====
     // 최근 개봉 예정작
 
     public List<Map<String, Object>> getUpcomingMoviesWithDday() {
