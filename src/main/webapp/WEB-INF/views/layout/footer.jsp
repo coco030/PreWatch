@@ -126,7 +126,7 @@
 		   <i class="bi bi-heart"></i>보고싶어요
 		</a>
         <a href="${pageContext.request.contextPath}/member/mypage">
-            <i class="bi bi-journal-text"></i>기록
+            <i class="bi bi-journal-text"></i>나의 기록
         </a>
         <a href="${pageContext.request.contextPath}/auth/logout">
             <i class="bi bi-box-arrow-right"></i>로그아웃

@@ -10,6 +10,7 @@
     <meta charset="UTF-8">
     <title>PreWatch: 마이페이지</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 <style>
     /* 카드 전체에 hover 시 부드럽게 어두워짐 */
@@ -17,6 +18,11 @@
         background-color: rgba(0, 0, 0, 0.05); /* 아주 약한 회색 톤 */
         transition: background-color 0.2s ease;
     }
+    /* 포스터 여백 */
+	.poster-img {
+	    margin: 12px;
+	    border-radius: 8px;
+	}
 </style>
 </head>
 <body class="bg-white">
@@ -24,8 +30,11 @@
 <!-- 헤더 -->
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
-<div class="container mt-5">
-    <h2 class="mb-4">${sessionScope.loginMember.id}님의 영화 기록</h2>
+<div class="container pt-2 mt-2">
+	<div class="bg-light p-3 rounded d-flex align-items-center mb-3">
+	  <i class="fas fa-film me-2 text-secondary"></i>
+	  <strong class="text-dark">${sessionScope.loginMember.id}님의 영화 기록</strong>
+	</div>
 
     <c:forEach var="review" items="${myReviews}">
         <c:set var="movie" value="${movieMap[review.movieId]}" />
@@ -33,11 +42,11 @@
         <a href="${pageContext.request.contextPath}/movies/${movie.id}" class="text-decoration-none text-dark">
             <div class="card mb-4 shadow-sm">
                 <div class="row g-0">
-                    <div class="col-md-3">
-                        <c:if test="${not empty movie.posterPath}">
-                            <img src="${movie.posterPath}" class="img-fluid rounded-start" alt="포스터">
-                        </c:if>
-                    </div>
+                    <div class="col-md-3 text-center">
+					    <c:if test="${not empty movie.posterPath}">
+					        <img src="${movie.posterPath}" class="img-fluid mx-auto d-block poster-img" alt="포스터" />
+					    </c:if>
+					</div>
                     <div class="col-md-9">
                         <div class="card-body">
                             <h5 class="card-title">${movie.title}</h5>
@@ -106,7 +115,8 @@
         </ul>
     </nav>
 </div>
-
+<!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
+<div class="d-block d-md-none" style="height: 80px;"></div>
 <!-- 푸터 -->
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

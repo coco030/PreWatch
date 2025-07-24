@@ -136,7 +136,7 @@ public class MemberController {
         }
 
         String memberId = loginMember.getId();
-        int pageSize = 5;
+        int pageSize = 1; // 페이지 리뷰 갯수 변경하는 숫자. 모바일에서 보니 5개는 너무 많아서 수정
 
         // 1. 리뷰 목록 (페이징)
         List<UserReview> myReviews = userReviewService.getPagedReviews(memberId, page, pageSize);
