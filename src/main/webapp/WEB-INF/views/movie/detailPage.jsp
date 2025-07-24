@@ -118,12 +118,10 @@
     </c:import>
 </c:if>
 
-<%-- 리뷰 작성 폼 --%>
-<c:if test="${not empty sessionScope.loginMember}">
-    <c:import url="/review/content">
-        <c:param name="movieId" value="${movie.id}" />
-    </c:import>
-</c:if>
+<%-- 리뷰 작성 폼 (항상 호출) --%>
+<c:import url="/review/content">
+    <c:param name="movieId" value="${movie.id}" />
+</c:import>
 
 <%-- 태그 작성 폼 --%>
 <c:if test="${not empty sessionScope.loginMember}">

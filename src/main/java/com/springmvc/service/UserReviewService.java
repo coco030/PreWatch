@@ -85,4 +85,9 @@ public class UserReviewService {
         return userReviewRepository.getTotalReviewCount(memberId);
     }
 
+    // 사용자 리뷰 삭제하기
+    public boolean deleteReview(String memberId, Long movieId) {
+        return userReviewRepository.deleteByMemberIdAndMovieId(memberId, movieId); 
+    }
+
 }

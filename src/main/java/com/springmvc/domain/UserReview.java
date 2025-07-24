@@ -105,4 +105,6 @@ public class UserReview {
 	public List<String> getTagList() {
 	    return tags != null ? Arrays.asList(tags.split(",")) : Collections.emptyList();
 	}
+	
+
 }

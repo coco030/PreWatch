@@ -172,7 +172,7 @@ public class ReviewController {
         return "reviewModule/reviewContentForm";
     }
     
- // 영화 태그 입력
+    // 영화 태그 입력
     @GetMapping("/tag")
     public String loadTagInputForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
         model.addAttribute("movieId", movieId);
@@ -182,7 +182,6 @@ public class ReviewController {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
             model.addAttribute("myReview", myReview);
         }
-
         return "reviewModule/tagForm";
     }
     
@@ -266,4 +265,34 @@ public class ReviewController {
         response.put("success", true);
         return ResponseEntity.ok(response);
     }
+    
+    
+ // 리뷰 삭제
+    @PostMapping("/deleteReview")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteReview(@RequestParam Long movieId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Object loginMemberObj = session.getAttribute("loginMember");
+
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        boolean deleted = userReviewService.deleteReview(memberId, movieId);
+        response.put("success", deleted);
+
+        if (!deleted) {
+            response.put("message", "삭제 실패: 리뷰가 존재하지 않거나 삭제 중 오류 발생");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+    
+
+
 }

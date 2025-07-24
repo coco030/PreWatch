@@ -158,4 +158,12 @@ public class UserReviewRepository {
             return review;
         });
     }
+    
+    // 유저 리뷰 삭제하기
+    public boolean deleteByMemberIdAndMovieId(String memberId, Long movieId) {
+        String sql = "DELETE FROM user_reviews WHERE member_id = ? AND movie_id = ?";
+        int rowsAffected = jdbcTemplate.update(sql, memberId, movieId);
+        return rowsAffected > 0;
+    }
+
 }
