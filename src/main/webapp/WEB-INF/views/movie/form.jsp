@@ -44,6 +44,7 @@
     장르: <input type="text" name="genre" value="${movie.genre}" /><br/>
     평점: <input type="number" name="rating" value="${movie.rating}" step="0.1" min="0.0" max="10.0" /><br/>
     폭력성: <input type="number" name="violence_score_avg" value="${movie.violence_score_avg}" step="0.1" min="0.0" max="10.0" /><br/>
+  	개봉일: <input type="date" name="release_date" value="${movie.release_date}" /><br/>
     개요: <textarea name="overview">${movie.overview}</textarea><br/>
 
     포스터: <input type="file" name="posterImage" /><br/>

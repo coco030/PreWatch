@@ -11,36 +11,39 @@
     <input type="hidden" id="memberId" value="${loginMember.id}" />
 </c:if>
 
-<!-- review-section은 항상 출력됨 -->
-<div id="review-section" class="my-4">
-    <!-- 로그인 여부 확인 -->
-    <c:if test="${not empty loginMember}">
-        <!-- 작성창 (내 리뷰가 없을 때) -->
-        <div id="reviewWriteBox" <c:if test="${not empty myReview.reviewContent}">style="display:none;"</c:if>>
-            <textarea id="reviewContentInput" rows="4" cols="60"
-                      placeholder="리뷰를 작성해주세요."></textarea><br>
-            <button id="saveReviewContentBtn">리뷰 저장</button>
-        </div>
+<!-- 부트스트랩 CSS 추가 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        <!-- 출력창 (내 리뷰가 있을 때) -->
-        <div id="reviewDisplayBox" <c:if test="${empty myReview.reviewContent}">style="display:none;"</c:if>>
-            <strong>리뷰 :</strong>
-            <div id="reviewContentBox">
-                <span id="reviewText">${fn:escapeXml(myReview.reviewContent)}</span>
-            </div>
-            <button id="editReviewBtn">수정</button>
-            <button id="deleteReviewBtn">삭제</button>
-        </div>
-    </c:if>
-
-    <c:if test="${empty loginMember}">
-        <!-- 로그인하지 않은 경우에도 항상 뜨는 안내 메시지 -->
-        <div style="color: gray; margin-top: 8px;">
-            리뷰를 작성하시려면 로그인해주세요.
-        </div>
-    </c:if>
+<!-- 리뷰 작성창 -->
+<div id="reviewWriteBox" class="mb-4" <c:if test="${not empty myReview.reviewContent}">style="display:none;"</c:if>>
+  <textarea class="form-control border-0 border-bottom rounded-0 px-0" 
+            id="reviewContentInput" 
+            rows="4" 
+            placeholder="아직 리뷰를 남기지 않으셨어요." 
+            style="resize: none; background-color: transparent;"></textarea>
+  <div class="text-end mt-2">
+    <button class="btn btn-dark btn-sm" id="saveReviewContentBtn">리뷰 저장</button>
+  </div>
 </div>
 
+<!-- 리뷰 출력창 -->
+<div id="reviewDisplayBox" class="mb-4" <c:if test="${empty myReview.reviewContent}">style="display:none;"</c:if>>
+  <div id="reviewContentBox" class="mb-2" style="white-space: pre-wrap;">
+    ${fn:escapeXml(myReview.reviewContent)}
+  </div>
+  <div class="text-end">
+    <button class="btn btn-outline-secondary btn-sm me-2" id="editReviewBtn">수정</button>
+    <button class="btn btn-outline-danger btn-sm" id="deleteReviewBtn">삭제</button>
+  </div>
+</div>
+
+  <!-- 비로그인 시 안내 -->
+  <c:if test="${empty loginMember}">
+    <div class="alert alert-light text-secondary mt-2" role="alert">
+      리뷰를 작성하시려면 로그인해주세요.
+    </div>
+  </c:if>
+</div>
 
 <!-- JS -->
 <script>

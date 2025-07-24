@@ -8,8 +8,6 @@
 }
 </style>
 
-<hr>
-<h5>리뷰 + </h5>
 
 <c:forEach var="review" items="${reviewList}">
     <c:if test="${not empty review.reviewContent}">

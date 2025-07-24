@@ -46,7 +46,8 @@
             </c:choose>
         </div>
     </div>
-
+    
+   
     <hr/> <%-- 구분선 추가 --%>
 
     <div class="banner-section">
@@ -58,6 +59,14 @@
         </div>
     </div>
     <hr/> <%-- 구분선 추가 --%>
+    
+   <hr/> <%-- coco030이 추가한 내역 --%>
+	<div class="upcoming-movie-section">
+	  <%--  <h2 class="section-title">개봉 예정작</h2> --%>
+	    <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
+	</div>
+	<hr/> <%-- coco030이 추가한 내역 끝 + 다음 섹션 구분선 --%>
+    
 
     <div class="second_container">
         <h2 class="section-title">PreWatch 추천 랭킹</h2>

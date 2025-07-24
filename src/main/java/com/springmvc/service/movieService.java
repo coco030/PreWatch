@@ -1,12 +1,15 @@
 package com.springmvc.service;
 
-import com.springmvc.domain.movie;
-import com.springmvc.repository.movieRepository;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.springmvc.domain.movie;
+import com.springmvc.repository.movieRepository;
 
 // movieService 클래스: 영화(movie) 관련 비즈니스 로직 구현.
 // 목적: Controller와 Repository 사이에서 비즈니스 규칙 적용 및 트랜잭션 관리.
@@ -106,4 +109,16 @@ public class movieService {
         logger.debug("movieService.getRecentMovies({}) 호출.", limit);
         return movieRepository.findRecentMovies(limit);
     }
+    
+    
+    
+    
+    // ============ coco030이 추가한 내역 ====
+    // 최근 개봉 예정작
+
+    public List<Map<String, Object>> getUpcomingMoviesWithDday() {
+        return movieRepository.getUpcomingMoviesWithDday();
+    }
+// ===========coco030이 추가한 내역  끝 ==== ///
+	
 }

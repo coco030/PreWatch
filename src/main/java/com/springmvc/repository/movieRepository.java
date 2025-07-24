@@ -1,9 +1,8 @@
 package com.springmvc.repository;
 
 import java.sql.Date;
-import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -208,4 +207,29 @@ public class movieRepository {
         logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
+    
+    // ============ coco030이 추가한 내역 ====
+    // 최근 개봉 예정작
+
+	public List<Map<String, Object>> getUpcomingMoviesWithDday() {
+	    String sql = """
+	        SELECT 
+	            id,
+	            title,
+	            release_date,
+	            poster_path,
+	            DATEDIFF(release_date, CURDATE()) AS dday
+	        FROM movies
+	        ORDER BY release_date ASC
+	        LIMIT 5
+	    """;
+	
+	    return jdbcTemplate.queryForList(sql);
+	}
+	
+// ===========coco030이 추가한 내역  끝 ==== ///
+	
+	
+	
+
 }
