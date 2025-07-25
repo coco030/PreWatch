@@ -2,7 +2,9 @@ package com.springmvc.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,6 +15,13 @@ import com.springmvc.domain.UserReview;
 
 @Repository
 public class UserReviewRepository {
+	
+	// 장르를 나누기 위한 상수 추가
+	private static final List<String> GENRES = List.of(
+		    "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
+		    "Drama", "Family", "Fantasy", "Film-Noir", "History", "Horror", "Music", "Musical",
+		    "Mystery", "Romance", "Sci-Fi", "Sport", "Thriller", "War", "Western", "Reality-TV", "Game-Show"
+		);
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -165,5 +174,64 @@ public class UserReviewRepository {
         int rowsAffected = jdbcTemplate.update(sql, memberId, movieId);
         return rowsAffected > 0;
     }
+    
+    // 유저가 자주 평가한 장르
+    
+    // 장르별 평가 수 집계
+    public Map<String, Integer> getGenreCountsByMemberId(String memberId) {
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ");
+        for (int i = 0; i < GENRES.size(); i++) {
+            String genre = GENRES.get(i);
+            String alias = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_count";
+            sqlBuilder.append("SUM(CASE WHEN LOWER(m.genre) LIKE '%")
+                      .append(genre.toLowerCase())
+                      .append("%' THEN 1 ELSE 0 END) AS ")
+                      .append(alias);
+            if (i < GENRES.size() - 1) sqlBuilder.append(", ");
+        }
+        sqlBuilder.append(" FROM user_reviews ur JOIN movies m ON ur.movie_id = m.id WHERE ur.member_id = ?");
+
+        String sql = sqlBuilder.toString();
+        return jdbcTemplate.query(sql, rs -> {
+            Map<String, Integer> genreCounts = new java.util.HashMap<>();
+            if (rs.next()) {
+                for (String genre : GENRES) {
+                    String key = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_count";
+                    genreCounts.put(genre, rs.getInt(key));
+                }
+            }
+            return genreCounts;
+        }, memberId);
+    }
+
+    
+    // 장르 집계 8점 이상 점수를 줬으니 긍정적이란 메시지를 출력하기 위함
+    public Map<String, Integer> getPositiveRatingGenreCounts(String memberId) {
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ");
+        for (int i = 0; i < GENRES.size(); i++) {
+            String genre = GENRES.get(i);
+            String alias = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_pos_count";
+            sqlBuilder.append("SUM(CASE WHEN LOWER(m.genre) LIKE '%")
+                      .append(genre.toLowerCase())
+                      .append("%' AND ur.user_rating >= 8 THEN 1 ELSE 0 END) AS ")
+                      .append(alias);
+            if (i < GENRES.size() - 1) sqlBuilder.append(", ");
+        }
+        sqlBuilder.append(" FROM user_reviews ur JOIN movies m ON ur.movie_id = m.id WHERE ur.member_id = ?");
+
+        String sql = sqlBuilder.toString();
+        return jdbcTemplate.query(sql, rs -> {
+            Map<String, Integer> result = new java.util.HashMap<>();
+            if (rs.next()) {
+                for (String genre : GENRES) {
+                    String key = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_pos_count";
+                    result.put(genre, rs.getInt(key));
+                }
+            }
+            return result;
+        }, memberId);
+    }
+
+
 
 }

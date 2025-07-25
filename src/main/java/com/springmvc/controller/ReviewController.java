@@ -19,11 +19,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
+import com.springmvc.repository.UserReviewRepository;
 import com.springmvc.service.UserReviewService;
 
 @Controller
 @RequestMapping("/review")
 public class ReviewController {
+	
+	@Autowired
+	private UserReviewRepository userReviewRepository;
     
     @Autowired
     private UserReviewService userReviewService;
@@ -35,7 +39,7 @@ public class ReviewController {
                                                           @RequestParam Integer userRating,
                                                           HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        System.out.println(">>> saveRating() 호출됨");
+        System.out.println(">>> saveRating(별점 저장) 호출됨");
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
             response.put("success", false);
@@ -65,7 +69,7 @@ public class ReviewController {
                                                             @RequestParam Integer violenceScore,
                                                             HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        System.out.println(">>> saveViolence() 호출됨");
+        System.out.println(">>> saveViolence(폭력성 점수 저장) 호출됨");
 
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
@@ -97,6 +101,7 @@ public class ReviewController {
     @ResponseBody
     public ResponseEntity<UserReview> getMyReview(@PathVariable Long movieId, 
                                                 HttpSession session) {
+    	System.out.println(">>>my/{movieId}(내가 쓴 리뷰 조회) 호출됨");
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
             return ResponseEntity.badRequest().build();
@@ -113,7 +118,8 @@ public class ReviewController {
     @GetMapping("/movie/{movieId}")  // → /review/movie/{movieId}
     @ResponseBody
     public ResponseEntity<List<UserReview>> getMovieReviews(@PathVariable Long movieId) {
-        List<UserReview> reviews = userReviewService.getReviewsByMovie(movieId);
+    	System.out.println(">>>/movie/{movieId}(영화별 리뷰 목록 조회) 호출됨");
+    	List<UserReview> reviews = userReviewService.getReviewsByMovie(movieId);
         return ResponseEntity.ok(reviews);
     }
     
@@ -121,7 +127,8 @@ public class ReviewController {
     @GetMapping("/avg/{movieId}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getAverageScores(@PathVariable Long movieId) {
-        Map<String, Object> response = new HashMap<>();
+    	System.out.println(">>>avg/{movieId}(영화 평균 점수 조회) 호출됨");
+    	Map<String, Object> response = new HashMap<>();
 
         // 평균
         response.put("avgRating", userReviewService.getAverageRating(movieId));
@@ -133,7 +140,8 @@ public class ReviewController {
     // 영화 만족도 평점 
     @GetMapping("/rating")
     public String loadRatingForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
+    	System.out.println(">>>rating(영화 만족도 평점  입력) 호출됨");
+    	model.addAttribute("movieId", movieId);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null) {
@@ -147,7 +155,8 @@ public class ReviewController {
  // 영화 폭력성 점수 입력
     @GetMapping("/violence")
     public String loadViolenceForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
+    	System.out.println(">>>violence(영화 폭력성 점수 입력) 호출됨");
+    	model.addAttribute("movieId", movieId);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null) {
@@ -161,7 +170,8 @@ public class ReviewController {
  // 영화 리뷰 내용 입력
     @GetMapping("/content")
     public String loadReviewContentForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
+    	System.out.println(">>> content(영화 리뷰 내용 입력) 호출됨");
+    	model.addAttribute("movieId", movieId);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null) {
@@ -175,7 +185,8 @@ public class ReviewController {
     // 영화 태그 입력
     @GetMapping("/tag")
     public String loadTagInputForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
+    	System.out.println(">>> tag(영화태그입력) 호출됨");
+    	model.addAttribute("movieId", movieId);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null) {
@@ -186,10 +197,11 @@ public class ReviewController {
     }
     
 
-    // 리뷰를 뷰로 뿌려주기 
+    // 모든 리뷰를 뷰로 뿌려주기 
     @GetMapping("/list")
     public String listReviews(@RequestParam Long movieId, Model model, HttpSession session) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
+    	System.out.println(">>> list(모든 리뷰를 뷰로 뿌려주기 ) 호출됨");
+    	Member loginMember = (Member) session.getAttribute("loginMember");
 
         if (loginMember != null) {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
@@ -205,7 +217,8 @@ public class ReviewController {
     // 모든 태그를 뷰로 뿌려주기
     @GetMapping("/tags")
     public String tagList(@RequestParam Long movieId, Model model) {
-        List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
+    	System.out.println(">>> tags(모든 태그를 뷰로) 호출됨");
+    	List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
         model.addAttribute("reviewList", reviewList); // 태그만 뽑을 거라 리뷰 전체 보내면 됨
         return "reviewModule/reviewTagAll"; // 파일명 그대로
     }
@@ -213,7 +226,8 @@ public class ReviewController {
     //폭력성 주의문구 뷰로 뿌려주기
     @GetMapping("/sensitivity")
     public String getViolenceSensitivity(@RequestParam Long movieId, Model model) {
-        // 이미 movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
+    	System.out.println(">>> sensitivity(폭력성 주의문구 뷰로 뿌려주기) 호출됨");
+    	// 이미 movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
         model.addAttribute("movieId", movieId);
         return "reviewModule/reviewSensitivity"; // → /WEB-INF/views/reviewModule/reviewSensitivity.jsp
     }
@@ -224,6 +238,7 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> saveReviewContent(@RequestParam Long movieId,
                                                                  @RequestParam String reviewContent,
                                                                  HttpSession session) {
+    	System.out.println(">>> saveContent(리뷰 본문 저장) 호출됨");
         Map<String, Object> response = new HashMap<>();
         Object loginMemberObj = session.getAttribute("loginMember");
 
@@ -248,6 +263,7 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> saveTag(@RequestParam Long movieId,
                                                        @RequestParam String tag,
                                                        HttpSession session) {
+    	System.out.println(">>> saveTag(태그 저장) 호출됨");
         Map<String, Object> response = new HashMap<>();
         Object loginMemberObj = session.getAttribute("loginMember");
 
@@ -271,7 +287,8 @@ public class ReviewController {
     @PostMapping("/deleteReview")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> deleteReview(@RequestParam Long movieId, HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
+    	System.out.println(">>> deleteReview(리뷰 삭제) 호출됨");
+    	Map<String, Object> response = new HashMap<>();
         Object loginMemberObj = session.getAttribute("loginMember");
 
         if (loginMemberObj == null) {
@@ -292,6 +309,31 @@ public class ReviewController {
 
         return ResponseEntity.ok(response);
     }
+    
+    // 유저가 평가한 장르 통계 25.07.25 오전 10시 기능 추가
+    @GetMapping("/statistics")
+    public String showReviewStatistics(HttpSession session, Model model) {
+        System.out.println(">>> statistics(유저가 평가한 장르 통계) 호출됨");
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null) return "redirect:/login";  // 💡 null 체크 먼저
+
+        String memberId = loginMember.getId();
+        System.out.println(">>> loginMember = " + loginMember);
+        System.out.println(">>> memberId = " + memberId);
+
+        Map<String, Integer> genreStats = userReviewRepository.getGenreCountsByMemberId(memberId);
+        Map<String, Integer> positiveGenreStats = userReviewRepository.getPositiveRatingGenreCounts(memberId);
+
+        System.out.println(">>> genreStats = " + genreStats);
+        System.out.println(">>> positiveGenreStats = " + positiveGenreStats);
+
+        model.addAttribute("genreStats", genreStats);
+        model.addAttribute("positiveGenreStats", positiveGenreStats);
+
+        return "reviewModule/statistics"; 
+    }
+
     
 
 

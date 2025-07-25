@@ -1,6 +1,7 @@
 package com.springmvc.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -89,5 +90,18 @@ public class UserReviewService {
     public boolean deleteReview(String memberId, Long movieId) {
         return userReviewRepository.deleteByMemberIdAndMovieId(memberId, movieId); 
     }
+    
+    // 사용자가 자주 평가한 영화 장르
+
+    public Map<String, Integer> getUserGenreStats(String memberId) {
+        return userReviewRepository.getGenreCountsByMemberId(memberId);
+    }
+    
+    // 사용자가 긍정적으로 평가한 장르
+    public Map<String, Integer> getPositiveGenreStats(String memberId) {
+        return userReviewRepository.getPositiveRatingGenreCounts(memberId);
+    }
+
+    
 
 }
