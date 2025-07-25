@@ -322,10 +322,12 @@ public class ReviewController {
         String memberId = loginMember.getId();
         System.out.println(">>> memberId = " + memberId);
 
-        // 장르별 평가 통계 (전체/긍정/부정)
+        // 장르별 평가 통계 
         Map<String, Integer> genreStats = userReviewRepository.getGenreCountsByMemberId(memberId);
         Map<String, Integer> positiveGenreStats = userReviewRepository.getPositiveRatingGenreCounts(memberId);
         Map<String, Integer> negativeGenreStats = userReviewRepository.getNegativeRatingGenreCounts(memberId);
+        Map<Integer, Integer> ratingCounts = userReviewRepository.getRatingDistribution(memberId);
+        Map<String, Double> genreAverageRatingMap = userReviewRepository.getGenreAverageRatings(memberId);
 
         // 평균 점수 및 평가 횟수
         Double averageUserRating = userReviewRepository.getAverageUserRatingByMemberId(memberId);
@@ -340,6 +342,10 @@ public class ReviewController {
         if (negativeRatingTotal == null) negativeRatingTotal = 0;
 
         // 모델에 데이터 추가
+       
+
+        model.addAttribute("ratingCounts", ratingCounts);
+        model.addAttribute("genreAverageRatingMap", genreAverageRatingMap);
         model.addAttribute("memberId", memberId);
         model.addAttribute("genreStats", genreStats);
         model.addAttribute("positiveGenreStats", positiveGenreStats);
@@ -348,8 +354,8 @@ public class ReviewController {
         model.addAttribute("averageViolenceScore", averageViolenceScore);
         model.addAttribute("userRatingCount", userRatingCount);
         model.addAttribute("violenceScoreCount", violenceScoreCount);
-        model.addAttribute("positiveRatingTotal", positiveRatingTotal); // 요약용
-        model.addAttribute("negativeRatingTotal", negativeRatingTotal); // 요약용
+        model.addAttribute("positiveRatingTotal", positiveRatingTotal); 
+        model.addAttribute("negativeRatingTotal", negativeRatingTotal); 
 
         return "reviewModule/myreviewSummary";
     }

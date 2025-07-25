@@ -290,6 +290,49 @@ public class UserReviewRepository {
         String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ? AND user_rating <= 4";
         return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
     }
+    // 한 유저의 별점 분포 (히스토그램)  → 1점 ~ 10점에 몇 개씩 줬는지
+    public Map<Integer, Integer> getRatingDistribution(String memberId) {
+        String sql = "SELECT user_rating, COUNT(*) AS count " +
+                     "FROM user_reviews " +
+                     "WHERE member_id = ? AND user_rating IS NOT NULL " +
+                     "GROUP BY user_rating ORDER BY user_rating";
+
+        return jdbcTemplate.query(sql, rs -> {
+            Map<Integer, Integer> ratingCounts = new HashMap<>();
+            while (rs.next()) {
+                ratingCounts.put(rs.getInt("user_rating"), rs.getInt("count"));
+            }
+            return ratingCounts;
+        }, memberId);
+    }
+
+	// 한 유저의 영화 장르별 평균 별점	→ Action 장르엔 평균 몇 점 줬는지
+    public Map<String, Double> getGenreAverageRatings(String memberId) {
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ");
+        for (int i = 0; i < GENRES.size(); i++) {
+            String genre = GENRES.get(i);
+            String alias = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_avg";
+            sqlBuilder.append("AVG(CASE WHEN LOWER(m.genre) LIKE '%")
+                      .append(genre.toLowerCase())
+                      .append("%' THEN ur.user_rating ELSE NULL END) AS ")
+                      .append(alias);
+            if (i < GENRES.size() - 1) sqlBuilder.append(", ");
+        }
+        sqlBuilder.append(" FROM user_reviews ur JOIN movies m ON ur.movie_id = m.id WHERE ur.member_id = ?");
+
+        String sql = sqlBuilder.toString();
+        return jdbcTemplate.query(sql, rs -> {
+            Map<String, Double> result = new HashMap<>();
+            if (rs.next()) {
+                for (String genre : GENRES) {
+                    String key = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_avg";
+                    result.put(genre, rs.getDouble(key));
+                }
+            }
+            return result;
+        }, memberId);
+    }
+
 
 
 }

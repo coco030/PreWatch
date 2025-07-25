@@ -29,10 +29,10 @@
 
 <!-- 헤더 -->
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
-<!-- 사용자 개인통계
-<a href="${pageContext.request.contextPath}/review/statistics">나의 개인통계</a> -->
+<!-- 사용자 개인통계 -->
+<a href="${pageContext.request.contextPath}/review/myreviewSummary">나의 개인통계</a>
 
-<jsp:include page="/WEB-INF/views/reviewModule/myreviewSummary.jsp" />
+
 
 <div class="container pt-2 mt-2">
 	<div class="bg-light p-3 rounded d-flex align-items-center mb-3">
