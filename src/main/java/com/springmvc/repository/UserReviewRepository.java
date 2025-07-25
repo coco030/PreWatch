@@ -279,6 +279,17 @@ public class UserReviewRepository {
         return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
     }
 
+    // 한 유저의 ★ 긍정 평가 수 (user_rating ≥ 8)
+    public Integer getPositiveRatingTotalCount(String memberId) {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ? AND user_rating >= 8";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
+    }
+
+    // 한 유저의 ★ 부정 평가 수 (user_rating ≤ 4)
+    public Integer getNegativeRatingTotalCount(String memberId) {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ? AND user_rating <= 4";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
+    }
 
 
 }

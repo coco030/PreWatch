@@ -310,26 +310,36 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    // 유저가 평가한 장르 통계 25.07.25 오전 10시 기능 추가
+    // 유저가 평가한 장르 통계 및 평균 점수 통계 뷰에 출력 25.07.25 오전 10시
     @GetMapping("/statistics")
     public String showReviewStatistics(HttpSession session, Model model) {
         System.out.println(">>> statistics(유저가 평가한 장르 통계) 호출됨");
 
+        // 로그인 사용자 확인
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember == null) return "redirect:/login";
 
         String memberId = loginMember.getId();
         System.out.println(">>> memberId = " + memberId);
 
+        // 장르별 평가 통계 (전체/긍정/부정)
         Map<String, Integer> genreStats = userReviewRepository.getGenreCountsByMemberId(memberId);
         Map<String, Integer> positiveGenreStats = userReviewRepository.getPositiveRatingGenreCounts(memberId);
         Map<String, Integer> negativeGenreStats = userReviewRepository.getNegativeRatingGenreCounts(memberId);
 
+        // 평균 점수 및 평가 횟수
         Double averageUserRating = userReviewRepository.getAverageUserRatingByMemberId(memberId);
         Double averageViolenceScore = userReviewRepository.getAverageViolenceScoreByMemberId(memberId);
         Integer userRatingCount = userReviewRepository.getUserRatingCount(memberId);
         Integer violenceScoreCount = userReviewRepository.getViolenceScoreCount(memberId);
 
+        // 긍정/부정 평가 총합 (null 방지 처리)
+        Integer positiveRatingTotal = userReviewRepository.getPositiveRatingTotalCount(memberId);
+        Integer negativeRatingTotal = userReviewRepository.getNegativeRatingTotalCount(memberId);
+        if (positiveRatingTotal == null) positiveRatingTotal = 0;
+        if (negativeRatingTotal == null) negativeRatingTotal = 0;
+
+        // 모델에 데이터 추가
         model.addAttribute("memberId", memberId);
         model.addAttribute("genreStats", genreStats);
         model.addAttribute("positiveGenreStats", positiveGenreStats);
@@ -338,12 +348,12 @@ public class ReviewController {
         model.addAttribute("averageViolenceScore", averageViolenceScore);
         model.addAttribute("userRatingCount", userRatingCount);
         model.addAttribute("violenceScoreCount", violenceScoreCount);
+        model.addAttribute("positiveRatingTotal", positiveRatingTotal); // 요약용
+        model.addAttribute("negativeRatingTotal", negativeRatingTotal); // 요약용
 
         return "reviewModule/statistics";
     }
 
-
-    
 
 
 }
