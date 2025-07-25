@@ -316,25 +316,35 @@ public class ReviewController {
         System.out.println(">>> statistics(유저가 평가한 장르 통계) 호출됨");
 
         Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/login";  // 💡 null 체크 먼저
+        if (loginMember == null) return "redirect:/login";
 
         String memberId = loginMember.getId();
-        System.out.println(">>> loginMember = " + loginMember);
         System.out.println(">>> memberId = " + memberId);
 
         Map<String, Integer> genreStats = userReviewRepository.getGenreCountsByMemberId(memberId);
         Map<String, Integer> positiveGenreStats = userReviewRepository.getPositiveRatingGenreCounts(memberId);
+        Map<String, Integer> negativeGenreStats = userReviewRepository.getNegativeRatingGenreCounts(memberId);
 
-        System.out.println(">>> genreStats = " + genreStats);
-        System.out.println(">>> positiveGenreStats = " + positiveGenreStats);
+        Double averageUserRating = userReviewRepository.getAverageUserRatingByMemberId(memberId);
+        Double averageViolenceScore = userReviewRepository.getAverageViolenceScoreByMemberId(memberId);
+        Integer userRatingCount = userReviewRepository.getUserRatingCount(memberId);
+        Integer violenceScoreCount = userReviewRepository.getViolenceScoreCount(memberId);
 
+        model.addAttribute("memberId", memberId);
         model.addAttribute("genreStats", genreStats);
         model.addAttribute("positiveGenreStats", positiveGenreStats);
+        model.addAttribute("negativeGenreStats", negativeGenreStats);
+        model.addAttribute("averageUserRating", averageUserRating);
+        model.addAttribute("averageViolenceScore", averageViolenceScore);
+        model.addAttribute("userRatingCount", userRatingCount);
+        model.addAttribute("violenceScoreCount", violenceScoreCount);
 
-        return "reviewModule/statistics"; 
+        return "reviewModule/statistics";
     }
+
 
     
 
 
 }
+

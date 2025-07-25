@@ -175,9 +175,8 @@ public class UserReviewRepository {
         return rowsAffected > 0;
     }
     
-    // 유저가 자주 평가한 장르
     
-    // 장르별 평가 수 집계
+    // 한 유저 대상. 유저가 자주 평가한 장르 장르별 평가 수 집계 25.07.25 오전 10시부터 작업
     public Map<String, Integer> getGenreCountsByMemberId(String memberId) {
         StringBuilder sqlBuilder = new StringBuilder("SELECT ");
         for (int i = 0; i < GENRES.size(); i++) {
@@ -205,7 +204,7 @@ public class UserReviewRepository {
     }
 
     
-    // 장르 집계 8점 이상 점수를 줬으니 긍정적이란 메시지를 출력하기 위함
+    // 한 유저의 장르별 긍정 평가 수 (8점 이상 기준)  25.07.25 오전 10시부터 작업하고 오전 11시 40분 완료
     public Map<String, Integer> getPositiveRatingGenreCounts(String memberId) {
         StringBuilder sqlBuilder = new StringBuilder("SELECT ");
         for (int i = 0; i < GENRES.size(); i++) {
@@ -230,6 +229,54 @@ public class UserReviewRepository {
             }
             return result;
         }, memberId);
+    }
+  // 한 유저의 장르별 부정 평가 수 (4점 이하 기준)
+    public Map<String, Integer> getNegativeRatingGenreCounts(String memberId) {
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ");
+        for (int i = 0; i < GENRES.size(); i++) {
+            String genre = GENRES.get(i);
+            String alias = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_neg_count";
+            sqlBuilder.append("SUM(CASE WHEN LOWER(m.genre) LIKE '%")
+                      .append(genre.toLowerCase())
+                      .append("%' AND ur.user_rating <= 4 THEN 1 ELSE 0 END) AS ")
+                      .append(alias);
+            if (i < GENRES.size() - 1) sqlBuilder.append(", ");
+        }
+        sqlBuilder.append(" FROM user_reviews ur JOIN movies m ON ur.movie_id = m.id WHERE ur.member_id = ?");
+
+        String sql = sqlBuilder.toString();
+        return jdbcTemplate.query(sql, rs -> {
+            Map<String, Integer> result = new HashMap<>();
+            if (rs.next()) {
+                for (String genre : GENRES) {
+                    String key = genre.toLowerCase().replace("-", "_").replace(" ", "_") + "_neg_count";
+                    result.put(genre, rs.getInt(key));
+                }
+            }
+            return result;
+        }, memberId);
+    }
+
+    // 한 유저가 평균 만족도 점수 매긴 것 user_rating
+    public Double getAverageUserRatingByMemberId(String memberId) {
+        String sql = "SELECT AVG(user_rating) FROM user_reviews WHERE member_id = ? AND user_rating IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Double.class, memberId);
+    }
+
+    // 한 유저가 평균 폭력성 점수 매긴 것 violence_score
+    public Double getAverageViolenceScoreByMemberId(String memberId) {
+        String sql = "SELECT AVG(violence_score) FROM user_reviews WHERE member_id = ? AND violence_score IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Double.class, memberId);
+    }
+    // 한 유저가 user_rating 점수를 남긴 횟수
+    public Integer getUserRatingCount(String memberId) {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ? AND user_rating IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
+    }
+    // 한 유저가 violence_score를 남긴 횟수
+    public Integer getViolenceScoreCount(String memberId) {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE member_id = ? AND violence_score IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
     }
 
 
