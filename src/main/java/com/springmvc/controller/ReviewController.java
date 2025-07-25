@@ -311,7 +311,7 @@ public class ReviewController {
     }
     
     // 유저가 평가한 장르 통계 및 평균 점수 통계 뷰에 출력 25.07.25 오전 10시
-    @GetMapping("/statistics")
+    @GetMapping("/myreviewSummary")
     public String showReviewStatistics(HttpSession session, Model model) {
         System.out.println(">>> statistics(유저가 평가한 장르 통계) 호출됨");
 
@@ -351,7 +351,7 @@ public class ReviewController {
         model.addAttribute("positiveRatingTotal", positiveRatingTotal); // 요약용
         model.addAttribute("negativeRatingTotal", negativeRatingTotal); // 요약용
 
-        return "reviewModule/statistics";
+        return "reviewModule/myreviewSummary";
     }
 
 
