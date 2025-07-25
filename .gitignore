@@ -13,6 +13,11 @@
 .factorypath
 .recommenders/
 
+# === API Key 보호용 ===
+application.properties
+application.yml
+.env
+
 # === OS 자동 파일 ===
 .DS_Store
 Thumbs.db
