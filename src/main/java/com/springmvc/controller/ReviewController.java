@@ -387,15 +387,12 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    
+    // globalStats 통계 컨트롤러
     @ControllerAdvice
     public class GlobalControllerAdvice {
-
         @Autowired
         private StatisticsService statisticsService;
-
-        // 이 메서드는 모든 컨트롤러의 메서드가 실행되기 전에 호출됩니다.
-        // 반환된 값은 "globalStats"라는 이름으로 모델에 추가됩니다.
+        // 모든 컨트롤러의 메서드가 실행되기 전에 호출. 반환된 값은 "globalStats"라는 이름으로 모델에 추가.
         @ModelAttribute("globalStats")
         public GlobalStatsDTO addGlobalStatsToModel() {
             return statisticsService.getGlobalStats();
