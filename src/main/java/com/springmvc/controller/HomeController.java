@@ -1,20 +1,22 @@
 package com.springmvc.controller;
 
-import com.springmvc.domain.Member; // (7-24 오후12:41 추가 된 코드)
-import com.springmvc.domain.movie; // (7-24 오후12:41 추가 된 코드)
-import com.springmvc.service.movieService;
-import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
-import com.springmvc.service.userCartService; // ⭐ userCartService 임포트 (7-24 오후12:41 추가 된 코드)
+import java.util.List; // (7-24 오후12:41 추가 된 코드)
+import java.util.Map;
 
+import javax.servlet.http.HttpSession; // (7-24 오후12:41 추가 된 코드)
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpSession; // (7-24 오후12:41 추가 된 코드)
-import java.util.List; // (7-24 오후12:41 추가 된 코드)
+import com.springmvc.domain.Member; // (7-24 오후12:41 추가 된 코드)
+import com.springmvc.domain.movie; // (7-24 오후12:41 추가 된 코드)
+import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
+import com.springmvc.service.movieService;
+import com.springmvc.service.userCartService; // ⭐ userCartService 임포트 (7-24 오후12:41 추가 된 코드)
 
 @Controller
 public class HomeController {
@@ -47,7 +49,11 @@ public class HomeController {
         // 3. ⭐ 관리자 수동 추천 영화 목록 가져오기 (새로운 배너용) ⭐ (7-24 오후12:41 추가 된 코드)
         List<movie> adminRecommendedMovies = adminBannerMovieService.getAdminRecommendedMovies(); // (7-24 오후12:41 추가 된 코드)
         model.addAttribute("adminRecommendedMovies", adminRecommendedMovies); // (7-24 오후12:41 추가 된 코드)
-
+        
+        // 07.26 coco030 오후 3시 20분
+        List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        model.addAttribute("upcomingMovies", upcomingMovies);
+        
         // 모든 영화 목록에 대해 찜 상태 반영 (7-24 오후12:41 추가 된 코드)
         Member loginMember = (Member) session.getAttribute("loginMember"); // (7-24 오후12:41 추가 된 코드)
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // (7-24 오후12:41 추가 된 코드)

@@ -1,8 +1,10 @@
 package com.springmvc.domain;
 
+import java.io.Serializable; // Serializable 인터페이스 추가 (필요시)
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.io.Serializable; // Serializable 인터페이스 추가 (필요시)
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 // movie 클래스: 애플리케이션에서 관리하는 영화 정보를 담는 도메인 클래스.
 // 목적: 영화 등록, 조회, 수정, 삭제 등 영화 관련 데이터 주고받기.
@@ -14,6 +16,9 @@ public class movie implements Serializable {
     private String title;         // 영화 제목
     private String director;      // 영화 감독
     private int year;             // 영화 개봉 연도
+    //
+    @DateTimeFormat(pattern = "yyyy-MM-dd") // 25.07.26 coco030 추가
+    //
     private LocalDate releaseDate; // 영화 개봉일
     private String genre;         // 영화 장르
     private double rating;        // 영화의 평균 만족도 평점 (0.0 ~ 10.0)
@@ -138,4 +143,5 @@ public class movie implements Serializable {
     }
 
     // isRecommended 필드에 대한 Getter/Setter 제거 (7-24 오후12:41 추가 된 코드)
+    
 }

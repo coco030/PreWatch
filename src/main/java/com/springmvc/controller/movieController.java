@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,14 +29,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.movie;
-import com.springmvc.service.userCartService;
+import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
-import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
+import com.springmvc.service.userCartService;
 
 @Controller
 public class movieController {
@@ -214,35 +215,38 @@ public class movieController {
     @GetMapping("/main") // (7-24 오후12:41 추가 된 코드)
     @Transactional(readOnly = true) // (7-24 오후12:41 추가 된 코드)
     public String mainPage(Model model, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
-        logger.info("[GET /main] 메인 페이지 (별도 경로) 요청이 들어왔습니다."); // (7-24 오후12:41 추가 된 코드)
-
+        logger.info("[GET /main] 메인 페이지 (별도 경로) 요청이 들어왔습니다."); // 
+        
         // 1. 최근 등록된 영화 목록 가져오기 (상위 3개) (7-24 오후12:41 추가 된 코드)
-        List<movie> recentMovies = movieService.getRecentMovies(3); // (7-24 오후12:41 추가 된 코드)
+        List<movie> recentMovies = movieService.getRecentMovies(3); // 
         model.addAttribute("movies", recentMovies); // 'movies'는 main.jsp의 "최근 등록된 영화" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
-        // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개) (7-24 오후12:41 추가 된 코드)
-        List<movie> recommendedMovies = movieService.getTop5RecommendedMovies(); // (7-24 오후12:41 추가 된 코드)
+        // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개) 
+        List<movie> recommendedMovies = movieService.getTop5RecommendedMovies(); //
         model.addAttribute("recommendedMovies", recommendedMovies); // 'recommendedMovies'는 main.jsp의 "추천 랭킹" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
+        // 07.26 coco030 오후 3시 20분
+        List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        model.addAttribute("upcomingMovies", upcomingMovies);
 
-        Member loginMember = (Member) session.getAttribute("loginMember"); // (7-24 오후12:41 추가 된 코드)
-        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // (7-24 오후12:41 추가 된 코드)
-            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId()); // (7-24 오후12:41 추가 된 코드)
-            // recentMovies와 recommendedMovies 모두에 찜 상태 반영 (7-24 오후12:41 추가 된 코드)
-            for (movie movie : recentMovies) { // (7-24 오후12:41 추가 된 코드)
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // (7-24 오후12:41 추가 된 코드)
-                movie.setIsLiked(isMovieLikedByCurrentUser); // (7-24 오후12:41 추가 된 코드)
-                logger.debug("  - 최근 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // (7-24 오후12:41 추가 된 코드)
-            } // (7-24 오후12:41 추가 된 코드)
+        Member loginMember = (Member) session.getAttribute("loginMember"); 
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId()); //
+            // recentMovies와 recommendedMovies 모두에 찜 상태 반영
+            for (movie movie : recentMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // 
+                movie.setIsLiked(isMovieLikedByCurrentUser); 
+                logger.debug("  - 최근 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // 
+            } 
             for (movie movie : recommendedMovies) { // (7-24 오후12:41 추가 된 코드)
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // (7-24 오후12:41 추가 된 코드)
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // 
                 movie.setIsLiked(isMovieLikedByCurrentUser); // (7-24 오후12:41 추가 된 코드)
-                logger.debug("  - 추천 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // (7-24 오후12:41 추가 된 코드)
+                logger.debug("  - 추천 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // 
             } // (7-24 오후12:41 추가 된 코드)
             // adminRecommendedMovies 찜 상태 반영 로직 제거 (7-24 오후12:41 추가 된 코드)
-            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId()); // (7-24 오후12:41 추가 된 코드)
+            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId()); // 
         } else { // (7-24 오후12:41 추가 된 코드)
-            logger.debug("메인 페이지 (별도 경로) - 비로그인 또는 관리자 계정으로 찜 상태 미반영."); // (7-24 오후12:41 추가 된 코드)
+            logger.debug("메인 페이지 (별도 경로) - 비로그인 또는 관리자 계정으로 찜 상태 미반영."); // 
         } // (7-24 오후12:41 추가 된 코드)
 
         model.addAttribute("userRole", session.getAttribute("userRole")); // (7-24 오후12:41 추가 된 코드)
@@ -592,6 +596,7 @@ public class movieController {
 
     @GetMapping("/movies/upcoming")
     public String showUpcomingMovies(Model model) {
+    	System.out.println("업커밍");
         List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         return "movie/upcomingMovies";

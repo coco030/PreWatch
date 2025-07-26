@@ -5,6 +5,19 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <div class="container main-content-wrapper">
+
+
+ <div class="container">        
+   <hr/> <%-- coco030이 추가한 내역 --%>
+	<div class="upcoming-movie-section">
+	  <%--  <h2 class="section-title">개봉 예정작</h2> --%>
+	    <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
+	</div>
+	<hr/> <%-- coco030이 추가한 내역 끝 + 다음 섹션 구분선 --%>
+</div>
+    
+
+
     <div class="main container">
         <h2 class="section-title">최근 등록된 영화</h2>
         <div class="movie-grid">
@@ -101,17 +114,7 @@
             </c:choose>
         </div>
     </div>
-    
-        
-   <hr/> <%-- coco030이 추가한 내역 --%>
-	<div class="upcoming-movie-section">
-	  <%--  <h2 class="section-title">개봉 예정작</h2> --%>
-	    <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
-	</div>
-	<hr/> <%-- coco030이 추가한 내역 끝 + 다음 섹션 구분선 --%>
-    
-    
-
+   
     <hr/> <%-- 구분선 추가 (7-24 오후12:41 추가 된 코드) --%>
 
     <div class="third_container"> <%-- 새로운 섹션 컨테이너 (7-24 오후12:41 추가 된 코드) --%>

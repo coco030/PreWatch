@@ -44,7 +44,11 @@
     장르: <input type="text" name="genre" value="${movie.genre}" /><br/>
     평점: <input type="number" name="rating" value="${movie.rating}" step="0.1" min="0.0" max="10.0" /><br/>
     폭력성: <input type="number" name="violence_score_avg" value="${movie.violence_score_avg}" step="0.1" min="0.0" max="10.0" /><br/>
-<%-- 	개봉일: <input type="date" name="release_date" value="${movie.release_date}" /><br/>  영화 개봉 예정작을 위해 추가하다가 중지해서 25.07.24--%>
+ <%-- 25.07.26 coco030 추가 --%>	
+	<label for="releaseDate">개봉일:</label>
+	<input type="date" name="releaseDate"
+       value="${movie.releaseDate}" /><br/>
+ <%-- // 25.07.26 coco030 추가 --%>	
     개요: <textarea name="overview">${movie.overview}</textarea><br/>
 
     포스터: <input type="file" name="posterImage" /><br/>

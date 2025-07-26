@@ -209,21 +209,22 @@ public class movieRepository {
         return list;
     }
     
-    // ============ coco030이 추가한 내역 25.07.24 오후 ====
+    // ============ coco030이 추가한 내역 25.07.26 추가 수정 ====
     // 최근 개봉 예정작
 
 	public List<Map<String, Object>> getUpcomingMoviesWithDday() {
 	    String sql = """
 	        SELECT 
-	            id,
-	            title,
-	            release_date,
-	            poster_path,
-	            DATEDIFF(release_date, CURDATE()) AS dday
-	        FROM movies
-	        ORDER BY release_date ASC
-	        LIMIT 5
-	    """;
+		    id,
+		    title,
+		    release_date,
+		    poster_path,
+		    DATEDIFF(release_date, CURDATE()) AS dday
+			FROM movies
+			WHERE DATEDIFF(release_date, CURDATE()) >= -7  -- D+7까지만 허용
+			ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
+			LIMIT 5
+	    	""";
 	
 	    return jdbcTemplate.queryForList(sql);
 	}
