@@ -338,6 +338,39 @@ public class UserReviewRepository {
         int result = jdbcTemplate.update(sql, updatedTags, memberId, movieId);
         return result > 0;
     }
+    
+ // UserReviewRepository.java 파일 하단에 추가
+
+    /**
+     * 사이트 전체에 작성된 리뷰 '내용'의 총 개수를 반환합니다.
+     * @return 리뷰 내용 총 개수
+     */
+    public long getTotalReviewContentCount() {
+        // 내용이 비어있지 않은 리뷰만 카운트합니다.
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE review_content IS NOT NULL AND review_content != ''";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return (count != null) ? count : 0L;
+    }
+
+    /**
+     * 사이트 전체에 작성된 '만족도 별점'의 총 개수를 반환합니다.
+     * @return 만족도 별점 총 개수
+     */
+    public long getTotalUserRatingCount() {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE user_rating IS NOT NULL";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return (count != null) ? count : 0L;
+    }
+
+    /**
+     * 사이트 전체에 작성된 '폭력성 점수'의 총 개수를 반환합니다.
+     * @return 폭력성 점수 총 개수
+     */
+    public long getTotalViolenceScoreCount() {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE violence_score IS NOT NULL";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return (count != null) ? count : 0L;
+    }
 
 
 }

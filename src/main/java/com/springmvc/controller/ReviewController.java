@@ -10,16 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.springmvc.domain.GlobalStatsDTO;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
+import com.springmvc.service.StatisticsService;
 import com.springmvc.service.UserReviewService;
 
 @Controller
@@ -381,6 +385,21 @@ public class ReviewController {
         response.put("success", true);
         response.put("updatedTags", "");
         return ResponseEntity.ok(response);
+    }
+    
+    
+    @ControllerAdvice
+    public class GlobalControllerAdvice {
+
+        @Autowired
+        private StatisticsService statisticsService;
+
+        // 이 메서드는 모든 컨트롤러의 메서드가 실행되기 전에 호출됩니다.
+        // 반환된 값은 "globalStats"라는 이름으로 모델에 추가됩니다.
+        @ModelAttribute("globalStats")
+        public GlobalStatsDTO addGlobalStatsToModel() {
+            return statisticsService.getGlobalStats();
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -12,7 +12,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 </head>
-<body class="bg-light">
+<body class="bg">
   <div class="container py-4">
 
     <!-- 최근 등록된 영화 -->
@@ -55,38 +55,24 @@
     <!-- 배너 버튼 -->
     <div class="banner-section">
       <div class="d-flex flex-wrap justify-content-center">
-        <a href="/recommend" class="banner-button">추천</a>
-        <a href="/calendar" class="banner-button">캘린더</a>
-        <a href="/event" class="banner-button">이벤트</a>
+        <a href="<c:url value='/recommend'/>" class="banner-button">추천</a>
+        <a href="<c:url value='/calendar'/>" class="banner-button">캘린더</a>
+        <a href="<c:url value='/event'/>" class="banner-button">이벤트</a>
         <c:choose>
           <c:when test="${not empty loginMember}">
-            <a href="${pageContext.request.contextPath}/review/myreviewSummary" class="banner-button">나의 취향 분석</a>
+            <a href="<c:url value='/review/myreviewSummary'/>" class="banner-button">나의 취향 분석</a>
           </c:when>
           <c:otherwise>
-            <!-- 이 버튼을 클릭하면 id="loginRequiredModal"인 모달이 열립니다 -->
-			<span class="banner-button" data-bs-toggle="modal" data-bs-target="#loginRequiredModal">나의 취향 분석</span>
+            <!-- id="iframeLoginModal"인 모달. -->
+            <span class="banner-button" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#iframeLoginModal" 
+                  style="cursor: pointer;">
+              나의 취향 분석
+            </span>
           </c:otherwise>
         </c:choose>
       </div>
-    </div>
-    
-        <!-- (추가됨) 로그인 필요 알림 모달 -->
-    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">알림</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    로그인하셔야 이용하실 수 있는 기능이에요.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                    <a href="auth/login" class="btn btn-primary">로그인 페이지로</a>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- 개봉 예정작 -->
@@ -179,20 +165,27 @@
       </c:otherwise>
     </c:choose>
 
+  </div> 
+
+
+  <!--  ==========로그인 모달===========   -->
+  <div class="modal fade" id="iframeLoginModal" tabindex="-1" aria-labelledby="iframeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="iframeModalLabel">로그인을 하셔야 이용하실 수 있어요</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0" style="height: 400px;">
+          <iframe src="<c:url value='/auth/login'/>" 
+                  style="width: 100%; height: 100%; border: none;"
+                  title="로그인 프레임">
+          </iframe>
+        </div>
+      </div>
+    </div>
   </div>
-
+  <!-- ==========로그인 모달 끝=========== -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- 툴팁 활성화 스크립트 (이 부분이 핵심입니다!) -->
-    <script>
-      // 페이지의 모든 툴팁 요소를 찾아서 활성화시킵니다.
-      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-      })
-    </script>
-  </body>
-</html>
-
 </body>
 </html>
