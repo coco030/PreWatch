@@ -51,7 +51,7 @@ public class HomeController {
         model.addAttribute("adminRecommendedMovies", adminRecommendedMovies); // (7-24 오후12:41 추가 된 코드)
         
         // 07.26 coco030 오후 3시 20분
-        List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         
         // 모든 영화 목록에 대해 찜 상태 반영 (7-24 오후12:41 추가 된 코드)

@@ -112,7 +112,8 @@ public class movieService {
     // ============ coco030이 추가한 내역 25.07.24 오후 3시쯤====
     // 최근 개봉 예정작
 
-    public List<Map<String, Object>> getUpcomingMoviesWithDday() {
+    public List<movie> getUpcomingMoviesWithDday() {
+		logger.debug("movieService.getUpcomingMoviesWithDday({}) 호출.");
         return movieRepository.getUpcomingMoviesWithDday();
     }
 // ===========coco030이 추가한 내역  끝 ==== ///

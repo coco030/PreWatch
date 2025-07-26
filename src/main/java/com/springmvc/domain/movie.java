@@ -144,4 +144,15 @@ public class movie implements Serializable {
 
     // isRecommended 필드에 대한 Getter/Setter 제거 (7-24 오후12:41 추가 된 코드)
     
+    // 25.07.26 coco030 오후 7시 9분
+    private Integer dday;
+
+    public Integer getDday() {
+        return dday;
+    }
+
+    public void setDday(Integer dday) {
+        this.dday = dday;
+    }
+    
 }

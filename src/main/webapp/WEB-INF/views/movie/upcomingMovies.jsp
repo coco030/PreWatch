@@ -4,62 +4,62 @@
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<div class="container mt-4">
-  <h2 class="section-title mb-4">🎬 개봉 예정작</h2>
-
+<h2 class="section-title">개봉 예정작</h2>
+<div class="row g-4 justify-content-center">
   <c:choose>
     <c:when test="${not empty upcomingMovies}">
-      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-4">
-        <c:forEach var="movie" items="${upcomingMovies}">
-          <div class="col">
-            <div class="card h-100 shadow-sm border-0">
+      <c:forEach var="movie" items="${upcomingMovies}">
 
-              <%-- 포스터 경로 처리 --%>
-              <c:set var="posterSrc">
-                <c:choose>
-                  <c:when test="${not empty movie.poster_path and movie.poster_path ne 'N/A'}">
-                    <c:choose>
-                      <c:when test="${fn:startsWith(movie.poster_path, 'http://') or fn:startsWith(movie.poster_path, 'https://')}">
-                        ${movie.poster_path}
-                      </c:when>
-                      <c:otherwise>
-                        ${pageContext.request.contextPath}${movie.poster_path}
-                      </c:otherwise>
-                    </c:choose>
-                  </c:when>
-                  <c:otherwise>
-                    ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                  </c:otherwise>
-                </c:choose>
-              </c:set>
+        <%-- 포스터 경로 처리 --%>
+        <c:set var="posterSrc">
+          <c:choose>
+            <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+              <c:choose>
+                <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                  ${movie.posterPath}
+                </c:when>
+                <c:otherwise>
+                  ${pageContext.request.contextPath}${movie.posterPath}
+                </c:otherwise>
+              </c:choose>
+            </c:when>
+            <c:otherwise>
+              ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+            </c:otherwise>
+          </c:choose>
+        </c:set>
 
-              <%-- 포스터 출력 --%>
-              <img src="${posterSrc}" class="card-img-top w-100" style="height: 250px; object-fit: cover;" alt="${movie.title} 포스터" />
-
-              <%-- 텍스트 출력 --%>
-              <div class="card-body text-center px-2">
-                <h6 class="card-title text-truncate mb-2" title="${movie.title}">${movie.title}</h6>
-
-                <c:choose>
-                  <c:when test="${movie.dday > 0}">
-                    <p class="text-primary mb-0">D-${movie.dday}</p>
-                  </c:when>
-                  <c:when test="${movie.dday == 0}">
-                    <p class="text-danger mb-0">D-DAY</p>
-                  </c:when>
-                  <c:otherwise>
-                    <p class="text-muted mb-0">D+${-movie.dday}</p>
-                  </c:otherwise>
-                </c:choose>
-              </div>
-
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+          <div class="movie-card">
+            <div class="rank-badge">
+              <c:choose>
+                <c:when test="${movie.dday > 0}">
+                  D-${movie.dday}
+                </c:when>
+                <c:when test="${movie.dday == 0}">
+                  D-DAY
+                </c:when>
+                <c:otherwise>
+                  D+${-movie.dday}
+                </c:otherwise>
+              </c:choose>
             </div>
+            <a href="<c:url value='/movies/${movie.id}'/>">
+              <img src="${posterSrc}" alt="${movie.title} 포스터" />
+              <div class="p-3">
+                <h5 class="fw-semibold small text-truncate" title="${movie.title}">${movie.title}</h5>
+                <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
+                <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
+              </div>
+            </a>
           </div>
-        </c:forEach>
-      </div>
+        </div>
+
+      </c:forEach>
     </c:when>
     <c:otherwise>
-      <p class="text-muted">개봉 예정 영화가 없습니다.</p>
+      <p class="text-muted text-center">개봉 예정 영화가 없습니다.</p>
     </c:otherwise>
   </c:choose>
 </div>
+		

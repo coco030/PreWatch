@@ -225,8 +225,8 @@ public class movieController {
         List<movie> recommendedMovies = movieService.getTop5RecommendedMovies(); //
         model.addAttribute("recommendedMovies", recommendedMovies); // 'recommendedMovies'는 main.jsp의 "추천 랭킹" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
-        // 07.26 coco030 오후 3시 20분
-        List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        // 07.26 coco030 오후 3시 20분 + 오후 7시 23분
+        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
 
         Member loginMember = (Member) session.getAttribute("loginMember"); 
@@ -528,9 +528,9 @@ public class movieController {
         }
     }
 
-    // ⭐ 관리자용 수동 추천 영화 관리 페이지 (Read-All for Admin) ⭐ (7-24 오후12:41 추가 된 코드)
+    // ⭐ 관리자용 수동 추천 영화 관리 페이지 (Read-All for Admin)
     @GetMapping("/admin/banner-movies") // (7-24 오후12:41 추가 된 코드)
-    public String adminBannerMovies(Model model, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
+    public String adminBannerMovies(Model model, HttpSession session) { 
         if (!isAdmin(session)) { // (7-24 오후12:41 추가 된 코드)
             logger.warn("[GET /admin/banner-movies] 권한 없음: 비관리자 접근 시도."); // (7-24 오후12:41 추가 된 코드)
             return "redirect:/accessDenied"; // (7-24 오후12:41 추가 된 코드)
@@ -546,8 +546,8 @@ public class movieController {
         return "admin/bannerMovieManage"; // ⭐ 새로운 JSP 파일 (admin/bannerMovieManage.jsp) (7-24 오후12:41 추가 된 코드)
     } // (7-24 오후12:41 추가 된 코드)
 
-    // ⭐ 관리자 수동 추천 영화 추가 처리 (Create for Admin) ⭐ (7-24 오후12:41 추가 된 코드)
-    @PostMapping("/admin/banner-movies/add") // (7-24 오후12:41 추가 된 코드)
+    // ⭐ 관리자 수동 추천 영화 추가 처리 (Create for Admin) 
+    @PostMapping("/admin/banner-movies/add") //
     public String addBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
         if (!isAdmin(session)) { // (7-24 오후12:41 추가 된 코드)
             logger.warn("[POST /admin/banner-movies/add] 권한 없음: 비관리자 추천 영화 추가 시도."); // (7-24 오후12:41 추가 된 코드)
@@ -597,7 +597,7 @@ public class movieController {
     @GetMapping("/movies/upcoming")
     public String showUpcomingMovies(Model model) {
     	System.out.println("업커밍");
-        List<Map<String, Object>> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         return "movie/upcomingMovies";
     }

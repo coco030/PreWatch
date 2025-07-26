@@ -28,7 +28,8 @@
         </div>
     </main>
 
-
+<!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
+<div class="d-block d-md-none" style="height: 80px;"></div>
     <%-- 푸터 삽입 위치: body 안쪽 --%>
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
