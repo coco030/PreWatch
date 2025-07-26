@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 </head> 
-
+<body>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
 <%-- 폭력성 주의문구 --%>
@@ -65,6 +65,12 @@
                 / 10.0
             </p>
             <p><strong>개요:</strong> ${movie.overview}</p>
+            <!-- 태그 목록 -->
+			 <div class="bg-body-bg rounded-3 p-3">
+				<c:import url="/review/reviewTagAll">
+					<c:param name="movieId" value="${movie.id}" />
+				</c:import>
+			 </div>
             <!-- 찜 버튼 및 개수 -->
 						<div class="favorite-button-wrapper">
 							<div class="favorite-button-wrapper">
@@ -96,12 +102,8 @@
 			 			</div>
 			        </div>
 			    </div>
-<hr>
+			    
 
-<!-- 태그 목록 -->
-<c:import url="/review/reviewTagAll">
-	<c:param name="movieId" value="${movie.id}" />
-</c:import>
                 
 <!-- 별점 작성 -->
 <c:if test="${not empty sessionScope.loginMember}">
@@ -157,13 +159,15 @@
             <c:param name="movieId" value="${movie.id}" />
         </c:import>
     </div>
+ </div>
 </div>
-
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>
 
-<jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />
 <script>
     $(document).ready(function() {
         $(document).off('click', '#toggleFavoriteBtn').on('click', '#toggleFavoriteBtn', function() {

@@ -10,7 +10,7 @@
 </c:if>
 
 <!-- 태그 표시 영역 -->
-<h6 class="mb-2 fw-bold"><i class="fas fa-tags text-info me-1"></i>태그</h5>
+<h6 class="mb-2 fw-bold"><i class="fas fa-tags text-info me-1"></i>태그</h6>
 <div id="tag-section" class="my-4">
     <c:if test="${not empty loginMember}">
         <p style="color: gray; font-size: 0.95em; margin-bottom: 6px;">
@@ -19,36 +19,33 @@
                     <span id="tagList">#${fn:replace(myReview.tags, ',', ' #')}</span>
                 </c:when>
                 <c:otherwise>
-                <!--    <span id="tagList">아직 태그를 달지 않으셨어요.</span>-->
+                <!--    <span id="tagList">아직 태그를 달지 않으셨어요.</span> -->
                 </c:otherwise>
             </c:choose>
         </p>
     </c:if>
 
+    <!-- 태그 입력창 -->
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <input type="text"
+               id="tagInput"
+               name="tag"
+               class="form-control border border-secondary-subtle rounded-pill px-3 py-1"
+               placeholder="예: 절단, 잔인함"
+               style="min-width: 150px; max-width: 100%; width: auto;" />
+    </div>
 
-<!-- 로그인한 경우에만 태그 입력창 노출 -->
-<div class="d-flex flex-wrap align-items-center gap-2">
-    <input type="text"
-           id="tagInput"
-           name="tag"
-           class="form-control border border-secondary-subtle rounded-pill px-3 py-1"
-           placeholder="예: 절단, 잔인함"
-           style="min-width: 150px; max-width: 100%; width: auto;" />
+    <!-- 태그 전체 삭제 버튼 -->
+    <div class="mt-2">
+        <button type="button"
+                class="btn btn-outline-danger btn-sm"
+                onclick="deleteAllTags()">
+            전체 태그 삭제
+        </button>
+    </div>
 </div>
 
-
-
-<%-- 로그인 안 한 상태에서 보여지는 건데, 지저분해보여서 주석처리함. 필요하면 살리겠음. 25.07.26 오전 10시 43분
-<c:otherwise>
-    <div style="color: gray; font-size: 0.9em; margin-top: 6px;">
-        태그를 추가하려면 로그인해주세요.
-    </div>
-</c:otherwise>
---%>
-
-
-
-<!-- JS (입력 Ajax 처리) -->
+<!-- JS (입력 및 삭제 Ajax 처리) -->
 <script>
 (function () {
     if (typeof $ === 'undefined') {
@@ -74,15 +71,13 @@
     function updateInputWidth() {
         const value = $tagInput.val() || $tagInput.attr('placeholder') || '';
         $mirror.text(value);
-        const newWidth = $mirror.width() + 30; // 약간의 여유 padding
+        const newWidth = $mirror.width() + 30;
         $tagInput.css('width', newWidth + 'px');
     }
 
-    // 초기 및 이벤트 연결
     updateInputWidth();
     $tagInput.on('input', updateInputWidth);
 
-    // 기존 Enter 처리 유지
     $tagInput.on('keydown', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -117,5 +112,29 @@
             });
         }
     });
-})();
+})(); // ← 기존 함수 닫힘 위치
+
+// 👇 여기부터 전체 삭제용 함수
+function deleteAllTags() {
+    const movieId = $('#movieId').val();
+
+    if (!confirm("정말 모든 태그를 삭제하시겠습니까?")) return;
+
+    $.ajax({
+        type: "POST",
+        url: "${pageContext.request.contextPath}/review/deleteAllTags",
+        data: { movieId: movieId },
+        success: function (response) {
+            if (response.success) {
+                $('#tagList').text('');
+                alert("태그가 모두 삭제되었습니다.");
+            } else {
+                alert("삭제 실패: " + (response.message || '알 수 없는 오류'));
+            }
+        },
+        error: function (xhr) {
+            alert("요청 오류: " + xhr.status);
+        }
+    });
+}
 </script>

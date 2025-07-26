@@ -360,7 +360,28 @@ public class ReviewController {
         return "reviewModule/myreviewSummary";
     }
 
+    @PostMapping("/deleteAllTags")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteAllTags(@RequestParam Long movieId, HttpSession session) {
+        System.out.println(">>> deleteAllTags(태그 전체 삭제) 호출됨");
+        Map<String, Object> response = new HashMap<>();
 
+        Object loginMemberObj = session.getAttribute("loginMember");
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveTag(memberId, movieId, "");  // 빈 문자열로 업데이트
+
+        response.put("success", true);
+        response.put("updatedTags", "");
+        return ResponseEntity.ok(response);
+    }
 
 }
 

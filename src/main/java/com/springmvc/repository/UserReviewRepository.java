@@ -333,6 +333,11 @@ public class UserReviewRepository {
         }, memberId);
     }
 
+    public boolean updateTags(String memberId, Long movieId, String updatedTags) {
+        String sql = "UPDATE user_reviews SET tags = ? WHERE member_id = ? AND movie_id = ?";
+        int result = jdbcTemplate.update(sql, updatedTags, memberId, movieId);
+        return result > 0;
+    }
 
 
 }

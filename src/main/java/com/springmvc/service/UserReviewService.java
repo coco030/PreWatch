@@ -1,9 +1,11 @@
 package com.springmvc.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.springmvc.domain.UserReview;
@@ -14,7 +16,9 @@ import com.springmvc.repository.movieRepository;
 @Service
 public class UserReviewService {
 	
-
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	
     @Autowired
     private UserReviewRepository userReviewRepository;
     
@@ -101,6 +105,23 @@ public class UserReviewService {
     public Map<String, Integer> getPositiveGenreStats(String memberId) {
         return userReviewRepository.getPositiveRatingGenreCounts(memberId);
     }
+
+    public boolean deleteTag(String memberId, Long movieId, String tagToDelete) {
+        UserReview review = userReviewRepository.findByMemberIdAndMovieId(memberId, movieId);
+        if (review == null || review.getTags() == null) return false;
+
+        String[] tags = review.getTags().split(",");
+        List<String> tagList = new ArrayList<>();
+        for (String tag : tags) {
+            if (!tag.trim().equals(tagToDelete)) {
+                tagList.add(tag.trim());
+            }
+        }
+
+        String updatedTags = String.join(",", tagList);
+        return userReviewRepository.updateTags(memberId, movieId, updatedTags);
+    }
+
 
     
 
