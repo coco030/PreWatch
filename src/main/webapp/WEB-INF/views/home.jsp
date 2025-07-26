@@ -31,9 +31,7 @@
     <div class="stats-display-box">
         <p>영화 리뷰 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
         <p>영화 만족도 별점 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>
- 	<!--예시 : <p>영화 xxx 평가가 <strong id="특정함수Count" data-count="${globalStats.total특정함수}">0</strong>개 쌓였어요.</p> -->
-    
+        <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>    
     </div>   
 
 <script>
@@ -70,7 +68,6 @@
         animateCountUp(document.getElementById('reviewCount'));
         animateCountUp(document.getElementById('ratingCount'));
         animateCountUp(document.getElementById('violenceCount'));
-  //  예시:   animateCountUp(document.getElementById('특정함수'));
     });
     </script>
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 
