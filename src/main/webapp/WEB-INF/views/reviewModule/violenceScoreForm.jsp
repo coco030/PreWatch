@@ -17,26 +17,26 @@
 </script>
 
 <!-- ⭐ 폭력성 점수 표시 영역 (1점 ~ 10점: 반개 단위, 원 모양) -->
-<div id="violence-score-rating" style="font-size: 2rem;">
+<div id="violence-score-rating" class="d-flex align-items-center" style="font-size: 2rem;">
     <c:forEach begin="1" end="5" var="i">
-        <span class="circle-wrapper" data-index="${i}">
+        <span class="circle-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
             <span class="half right-half" data-value="${i * 2}"></span>
             <i class="fa-regular fa-circle"></i>
         </span>
     </c:forEach>
+
+    <div class="ms-2" style="font-size: 1rem;">
+        <c:choose>
+            <c:when test="${not empty myReview.violenceScore}">
+                ${myReview.violenceScore} / 10
+            </c:when>
+            <c:otherwise>
+                <span style="color:gray;">아직 폭력성 평가를 하지 않으셨어요.</span>
+            </c:otherwise>
+        </c:choose>
+    </div>
 </div>
-<p>
-  <strong>폭력성 : </strong>
-  <c:choose>
-    <c:when test="${not empty myReview.violenceScore}">
-      ${myReview.violenceScore} / 10
-    </c:when>
-    <c:otherwise>
-      <span style="color:gray;">아직 폭력성 평가를 하지 않으셨어요.</span>
-    </c:otherwise>
-  </c:choose>
-</p>
 
 
 <!-- ⭐ 원 아이콘 관련 CSS -->

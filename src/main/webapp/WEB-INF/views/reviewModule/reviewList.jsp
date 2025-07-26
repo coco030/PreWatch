@@ -8,9 +8,11 @@
 }
 </style>
 
+<c:set var="validReviewCount" value="0" />
 
 <c:forEach var="review" items="${reviewList}">
     <c:if test="${not empty review.reviewContent}">
+        <c:set var="validReviewCount" value="${validReviewCount + 1}" />
         <div class="review-item">
             <p>
                 <strong>${review.memberId}</strong>님     
@@ -21,6 +23,12 @@
         <hr>
     </c:if>
 </c:forEach>
+
+<!-- 출력된 유효 코멘트가 없으면 안내 문구 출력 -->
+<c:if test="${validReviewCount == 0}">
+    <div class="text-muted small mt-2">아직 코멘트가 없어요.</div>
+</c:if>
+
 <script>
     document.querySelectorAll('.created-at').forEach(function(el) {
         const raw = el.dataset.createdAt;

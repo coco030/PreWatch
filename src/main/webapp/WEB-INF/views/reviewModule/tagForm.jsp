@@ -2,7 +2,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <% System.out.println("tagForm 진입"); %>
-<hr>
+
 <!-- 영화 ID -->
 <input type="hidden" id="movieId" value="${movieId}" />
 <c:if test="${not empty loginMember}">
@@ -10,50 +10,84 @@
 </c:if>
 
 <!-- 태그 표시 영역 -->
+<h6 class="mb-2 fw-bold"><i class="fas fa-tags text-info me-1"></i>태그</h5>
 <div id="tag-section" class="my-4">
-    <p style="color: gray; font-size: em; margin-bottom: 6px;">
-        <c:choose>
-            <c:when test="${not empty myReview and not empty myReview.tags}">
-                <span id="tagList">#${fn:replace(myReview.tags, ',', ' #')}</span>
-            </c:when>
-            <c:otherwise>
-                <span id="tagList">아직 태그를 달지 않으셨어요.</span>
-            </c:otherwise>
-        </c:choose>
-    </p>
+    <c:if test="${not empty loginMember}">
+        <p style="color: gray; font-size: 0.95em; margin-bottom: 6px;">
+            <c:choose>
+                <c:when test="${not empty myReview and not empty myReview.tags}">
+                    <span id="tagList">#${fn:replace(myReview.tags, ',', ' #')}</span>
+                </c:when>
+                <c:otherwise>
+                <!--    <span id="tagList">아직 태그를 달지 않으셨어요.</span>-->
+                </c:otherwise>
+            </c:choose>
+        </p>
+    </c:if>
 
-    <!-- 로그인 여부에 따라 태그 입력 or 안내 -->
-    <c:choose>
-        <c:when test="${not empty loginMember}">
-            <input type="text"
-                   id="tagInput"
-                   name="tag"
-                   placeholder="예: 절단장면있음, 잔인함 (쉼표로 구분)"
-                   style="width:100%; padding:8px;" />
-        </c:when>
-        <c:otherwise>
-            <div style="color: gray; font-size: 0.9em; margin-top: 6px;">
-                태그를 추가하려면 로그인해주세요.
-            </div>
-        </c:otherwise>
-    </c:choose>
+
+<!-- 로그인한 경우에만 태그 입력창 노출 -->
+<div class="d-flex flex-wrap align-items-center gap-2">
+    <input type="text"
+           id="tagInput"
+           name="tag"
+           class="form-control border border-secondary-subtle rounded-pill px-3 py-1"
+           placeholder="예: 절단, 잔인함"
+           style="min-width: 150px; max-width: 100%; width: auto;" />
 </div>
+
+
+
+<%-- 로그인 안 한 상태에서 보여지는 건데, 지저분해보여서 주석처리함. 필요하면 살리겠음. 25.07.26 오전 10시 43분
+<c:otherwise>
+    <div style="color: gray; font-size: 0.9em; margin-top: 6px;">
+        태그를 추가하려면 로그인해주세요.
+    </div>
+</c:otherwise>
+--%>
+
 
 
 <!-- JS (입력 Ajax 처리) -->
 <script>
-(function(){
+(function () {
     if (typeof $ === 'undefined') {
         console.error("jQuery 미탑재 - 태그 입력 불가");
         return;
     }
 
-    $('#tagInput').on('keydown', function (e) {
+    const $tagInput = $('#tagInput');
+
+    // 가짜 span으로 글자 길이 측정
+    const $mirror = $('<span></span>').css({
+        position: 'absolute',
+        top: '-9999px',
+        left: '-9999px',
+        visibility: 'hidden',
+        whiteSpace: 'pre',
+        fontSize: $tagInput.css('font-size'),
+        fontFamily: $tagInput.css('font-family'),
+        fontWeight: $tagInput.css('font-weight'),
+        letterSpacing: $tagInput.css('letter-spacing')
+    }).appendTo(document.body);
+
+    function updateInputWidth() {
+        const value = $tagInput.val() || $tagInput.attr('placeholder') || '';
+        $mirror.text(value);
+        const newWidth = $mirror.width() + 30; // 약간의 여유 padding
+        $tagInput.css('width', newWidth + 'px');
+    }
+
+    // 초기 및 이벤트 연결
+    updateInputWidth();
+    $tagInput.on('input', updateInputWidth);
+
+    // 기존 Enter 처리 유지
+    $tagInput.on('keydown', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             const movieId = $('#movieId').val();
-            const tag = $('#tagInput').val().trim();
-
+            const tag = $tagInput.val().trim();
             if (!tag) {
                 alert("태그를 입력하세요.");
                 return;
@@ -66,9 +100,9 @@
                 success: function (response) {
                     if (response.success) {
                         alert("태그 저장됨: " + tag);
-                        $('#tagInput').val("");
+                        $tagInput.val("");
+                        updateInputWidth();
 
-                        // 태그 표시 갱신
                         if (response.updatedTags) {
                             const tags = response.updatedTags.split(',').map(t => '#' + t.trim()).join(' ');
                             $('#tagList').text(tags);

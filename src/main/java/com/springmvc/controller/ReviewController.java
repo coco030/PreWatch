@@ -215,12 +215,12 @@ public class ReviewController {
     }
     
     // 모든 태그를 뷰로 뿌려주기
-    @GetMapping("/tags")
+    @GetMapping("/reviewTagAll")
     public String tagList(@RequestParam Long movieId, Model model) {
-    	System.out.println(">>> tags(모든 태그를 뷰로) 호출됨");
+    	System.out.println(">>> reviewTagAll(모든 태그를 뷰로) 호출됨");
     	List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
         model.addAttribute("reviewList", reviewList); // 태그만 뽑을 거라 리뷰 전체 보내면 됨
-        return "reviewModule/reviewTagAll"; // 파일명 그대로
+        return "reviewModule/reviewTagAll"; 
     }
     
     //폭력성 주의문구 뷰로 뿌려주기

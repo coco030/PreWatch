@@ -18,9 +18,9 @@
 </script>
 
 <!-- ⭐ 별점 표시 영역 (1점 ~ 10점: 반개 단위로 5개의 아이콘 구성) -->
-<div id="star-rating" style="font-size: 2rem;">
+<div id="star-rating" class="d-flex align-items-center" style="font-size: 2rem;">
     <c:forEach begin="1" end="5" var="i">
-        <span class="star-wrapper" data-index="${i}">
+        <span class="star-wrapper me-1" data-index="${i}">
             <!-- 왼쪽 절반: 홀수 점수(1, 3, 5...) -->
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
             <!-- 오른쪽 절반: 짝수 점수(2, 4, 6...) -->
@@ -29,18 +29,18 @@
             <i class="fa-regular fa-star"></i>
         </span>
     </c:forEach>
+    
+    <div class="ms-2" style="font-size: 1rem;">
+        <c:choose>
+            <c:when test="${not empty myReview.userRating}">
+                ${myReview.userRating} / 10
+            </c:when>
+            <c:otherwise>
+                <span style="color:gray;">아직 만족도 평가를 하지 않으셨어요.</span>
+            </c:otherwise>
+        </c:choose>
+    </div>
 </div>
-<p>
-  <strong>영화 만족도 : </strong>
-  <c:choose>
-    <c:when test="${not empty myReview.userRating}">
-      ${myReview.userRating} / 10
-    </c:when>
-    <c:otherwise>
-      <span style="color:gray;">아직 만족도 평가를 하지 않으셨어요.</span>
-    </c:otherwise>
-  </c:choose>
-</p>
 
 <!-- ⭐ 별점 관련 CSS (마우스 반응 및 별색 표현) -->
 <style>
