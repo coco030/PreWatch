@@ -8,6 +8,8 @@
   color: inherit;
 }
 
+
+
  /* 거슬리는 무비 밑 텍스트 밑줄 제거 */
 .movie-card a {
   text-decoration: none;

@@ -1,7 +1,5 @@
 package com.springmvc.service;
 
-
-public class StatService {
-
-
+public interface StatService {
+    void initializeMovieGenres(); // ← movie_genres 테이블 초기화
 }

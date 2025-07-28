@@ -19,7 +19,7 @@ import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.movie;
 import com.springmvc.service.AdminBannerMovieService;
-import com.springmvc.service.StatisticsService;
+import com.springmvc.service.GlobalStatService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
 
@@ -40,7 +40,7 @@ public class HomeController {
     }
     
     @Autowired
-    private StatisticsService statisticsService;
+    private GlobalStatService statisticsService;
 
     @GetMapping("/")
     public String home(Model model, HttpSession session) {
@@ -118,7 +118,7 @@ public class HomeController {
     @ControllerAdvice
     public class GlobalControllerAdvice {
         @Autowired
-        private StatisticsService statisticsService;
+        private GlobalStatService statisticsService;
         // 모든 컨트롤러의 메서드가 실행되기 전에 호출. 반환된 값은 "globalStats"라는 이름으로 모델에 추가.
         @ModelAttribute("globalStats")
         public StatDTO addGlobalStatsToModel() {

@@ -23,7 +23,7 @@ import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
-import com.springmvc.service.StatisticsService;
+import com.springmvc.service.GlobalStatService;
 import com.springmvc.service.UserReviewService;
 
 @Controller
