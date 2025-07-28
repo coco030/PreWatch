@@ -69,7 +69,7 @@ public class movieService {
         return movie;
     }
 
- // 07.28 coco030 genre 문자열 → 배열로 분리해서 movie_genres에 매핑 추가
+   // 07.28 coco030 genre 문자열 → 배열로 분리해서 movie_genres에 매핑 추가
     // save 메서드: 새 영화 정보 저장.
     // 목적: Controller에서 영화 등록 요청 시 호출.
     public void save(movie movie) {

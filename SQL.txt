@@ -7,14 +7,15 @@ COLLATE utf8mb4_unicode_ci;
 USE prewatch_db;
 
 -- 3. 기존 테이블 삭제 (자식 → 부모 순서)
-DROP TABLE IF EXISTS movie_actors;  -- (25.07.28 오후 추가)
-DROP TABLE IF EXISTS actors;           -- (25.07.28 오후 추가)
-DROP TABLE IF EXISTS admin_banner_movies;
-DROP TABLE IF EXISTS user_reviews;
-DROP TABLE IF EXISTS user_carts;
-DROP TABLE IF EXISTS movie_extra_stats;    --   (25.07.28 오후 추가) 영화별 추가 통계 (movie_id → movies) 
-DROP TABLE IF EXISTS movies;
-DROP TABLE IF EXISTS member;
+DROP TABLE IF EXISTS movie_genres;          -- (25.07.28 오후 추가) 영화-장르 매핑
+DROP TABLE IF EXISTS movie_actors;          -- (25.07.28 오후 추가) 영화-배우 연결
+DROP TABLE IF EXISTS actors;                -- (25.07.28 오후 추가) 배우 테이블
+DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
+DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
+DROP TABLE IF EXISTS user_carts;            -- 유저 찜
+DROP TABLE IF EXISTS movie_stats;           -- (25.07.28 오후 추가) 영화별 통계
+DROP TABLE IF EXISTS movies;                -- 영화 테이블
+DROP TABLE IF EXISTS member;                -- 회원 테이블
 
 -- 4. 회원 테이블
 CREATE TABLE member (
@@ -55,6 +56,8 @@ CREATE TABLE user_reviews (
     movie_id BIGINT NOT NULL,
     user_rating INT,
     violence_score INT,
+    horror_score INT,           -- ✅ 유저의 공포성 평가 점수
+    sexual_score INT,           -- ✅ 유저의 선정성 평가 점수
     review_content TEXT,
     tags VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -63,7 +66,7 @@ CREATE TABLE user_reviews (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 7. 새롭게 추가된 찜(User Cart) 테이블
+-- 7. 유저 찜(User Cart) 테이블
 CREATE TABLE user_carts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     member_id VARCHAR(50) NOT NULL,
@@ -85,7 +88,7 @@ CREATE TABLE admin_banner_movies (
 );
 
 -- 9. 영화별 추가 통계 테이블 (25.07.28 coco030 : horror, 선정성 등)
-CREATE TABLE movie_extra_stats (
+CREATE TABLE movie_stats (
     movie_id BIGINT PRIMARY KEY,  -- FK → movies.id
     horror_score_avg DECIMAL(3,1) DEFAULT 0.0,
     sexual_score_avg DECIMAL(3,1) DEFAULT 0.0,
@@ -94,11 +97,7 @@ CREATE TABLE movie_extra_stats (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 확인용 SELECT
-SELECT * FROM movie_extra_stats;
-
-
--- 9. 배우 및 감독 테이블 (25.07.28 오후 추가)
+-- 10. 배우 테이블 (25.07.28 오후 추가)
 CREATE TABLE actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -112,7 +111,7 @@ CREATE TABLE actors (
     known_for_department VARCHAR(50)
 );
 
--- 10. 영화-배우/감독 연결 테이블 (25.07.28 오후 추가)
+-- 11. 영화-배우/감독 연결 테이블 (25.07.28 오후 추가)
 CREATE TABLE movie_actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     movie_id BIGINT NOT NULL,
@@ -124,14 +123,24 @@ CREATE TABLE movie_actors (
     FOREIGN KEY (actor_id) REFERENCES actors(id) ON DELETE CASCADE
 );
 
--- 11. 데이터 확인용 SELECT
+-- 12. 영화-장르 매핑 테이블 (25.07.28 coco030)
+CREATE TABLE movie_genres (
+    movie_id BIGINT NOT NULL,
+    genre VARCHAR(50) NOT NULL,
+    PRIMARY KEY (movie_id, genre), --  중복 조합 방지
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
+);
+
+-- 13. 데이터 확인용 SELECT (생성 순서와 일치)
 SELECT * FROM member;
 SELECT * FROM movies;
 SELECT * FROM user_reviews;
 SELECT * FROM user_carts;
 SELECT * FROM admin_banner_movies;
+SELECT * FROM movie_stats;      -- (25.07.28 오후 추가)
 SELECT * FROM actors;           -- (25.07.28 오후 추가)
-SELECT * FROM movie_actors;   -- (25.07.28 오후 추가)
+SELECT * FROM movie_actors;     -- (25.07.28 오후 추가)
+SELECT * FROM movie_genres;     -- (25.07.28 오후 추가)
 
 -- ### **⭐ `like_count` 자동 업데이트를 위한 트리거 추가 ⭐**
 DELIMITER //
@@ -158,21 +167,3 @@ END;
 //
 
 DELIMITER ;
-
-
-
-
--- 내가 쓰는 영화-장르 매핑 테이블
-CREATE TABLE movie_genres (
-    movie_id BIGINT NOT NULL,
-    genre VARCHAR(50) NOT NULL,
-    PRIMARY KEY (movie_id, genre),
-    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
-);
-
-
-
-SELECT genre, AVG(user_rating)
-FROM user_reviews ur
-JOIN movie_genres mg ON ur.movie_id = mg.movie_id
-GROUP BY genre;

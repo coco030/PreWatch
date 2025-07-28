@@ -82,9 +82,9 @@ public class movieRepository {
     // 목적: 관리자가 새 영화를 직접 등록하거나, API에서 가져온 영화를 등록할 때 사용됩니다.
     public void save(movie movie) {
         logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
-        // is_recommended 컬럼 제거 (7-24 오후12:41 추가 된 코드)
+
         String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // like_count 포함 총 11개 파라미터
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
             movie.getApiId(),
@@ -99,7 +99,12 @@ public class movieRepository {
             movie.getPosterPath(),
             movie.getLikeCount());
 
-        logger.info("DB에 영화 '{}' 저장 완료.", movie.getTitle());
+        // 07.28 coco030 방금 INSERT한 movie의 ID 조회 
+        String selectIdSql = "SELECT id FROM movies WHERE api_id = ?";
+        Long movieId = jdbcTemplate.queryForObject(selectIdSql, Long.class, movie.getApiId());
+        movie.setId(movieId); //  movieService에서 getId()로 쓸 수 있게 설정
+
+        logger.info("DB에 영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movieId);
     }
 
     // update 메서드: 기존 movie 객체의 정보를 데이터베이스 'movies' 테이블에서 업데이트합니다.
