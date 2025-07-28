@@ -68,7 +68,8 @@
             <!-- id="iframeLoginModal"인 모달. -->
             <span class="banner-button" 
                   data-bs-toggle="modal" 
-                  data-bs-target="#iframeLoginModal" 
+                  data-message="이 기능은 로그인 후 이용하실 수 있어요"
+                  data-bs-target="#loginModal"
                   style="cursor: pointer;">
               나의 취향 분석
             </span>
