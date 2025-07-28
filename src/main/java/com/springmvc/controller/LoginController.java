@@ -67,7 +67,7 @@ public class LoginController {
             session.setAttribute("userRole", userRole); // 사용자의 역할(예: "ADMIN", "MEMBER")을 세션에 저장.
             System.out.println("[LoginController] 세션에 userRole: " + userRole + " 저장됨.");
 
-            return "redirect:/";
+            return "redirect:/auth/login-success";
             // 로그인 성공 후 루트 경로("/home"(홈페이지))로 리다이렉트.
 
         } else {
@@ -88,5 +88,11 @@ public class LoginController {
         session.invalidate(); // 현재 세션을 완전히 지움. 세션에 저장된 모든 속성(loginMember, userRole 등)이 제거.
         System.out.println("[LoginController] 세션 무효화 완료.");
         return "redirect:/"; // 로그아웃 후 루트 경로("/home"(홈페이지))로 리다이렉트.
+    }
+    
+    // 모달창에서 빠져나가 로그인하기 위한 컨트롤러
+    @GetMapping("/login-success")
+    public String loginSuccess() {
+        return "login-success"; // JSP 파일명과 일치
     }
 }
