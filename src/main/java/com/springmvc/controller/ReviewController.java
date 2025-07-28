@@ -10,20 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
-import com.springmvc.service.GlobalStatService;
 import com.springmvc.service.UserReviewService;
 
 @Controller
@@ -96,8 +92,8 @@ public class ReviewController {
 
         return ResponseEntity.ok(response);
     }
-
-
+    
+   
 
     
     // 내가 쓴 리뷰 조회
@@ -137,7 +133,9 @@ public class ReviewController {
         // 평균
         response.put("avgRating", userReviewService.getAverageRating(movieId));
         response.put("avgViolence", userReviewService.getAverageViolenceScore(movieId));
-
+        response.put("avgHorror", userReviewService.getAverageHorrorScore(movieId));
+        response.put("avgSexual", userReviewService.getAverageSexualScore(movieId));
+        
         return ResponseEntity.ok(response);
     }
     
@@ -387,7 +385,91 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-   
+    
+    
+ // 공포 점수 저장
+    @PostMapping("/saveHorrorUserScore")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveHorrorScore(@RequestParam Long movieId,
+                                                                @RequestParam Integer horrorScore,
+                                                                HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        System.out.println(">>> saveHorrorScore(공포 점수 저장) 호출됨");
+
+        Object loginMemberObj = session.getAttribute("loginMember");
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveHorrorScore(memberId, movieId, horrorScore);
+        double avgHorrorScore = userReviewService.getAverageHorrorScore(movieId);
+
+        response.put("avgHorrorScore", avgHorrorScore);
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
+
+    // 선정성 점수 저장
+    @PostMapping("/saveSexualUserScore")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveSexualScore(@RequestParam Long movieId,
+                                                                @RequestParam Integer sexualScore,
+                                                                HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        System.out.println(">>> saveSexualScore(선정성 점수 저장) 호출됨");
+
+        Object loginMemberObj = session.getAttribute("loginMember");
+        if (loginMemberObj == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        Member loginMember = (Member) loginMemberObj;
+        String memberId = loginMember.getId();
+
+        userReviewService.saveSexualScore(memberId, movieId, sexualScore);
+        double avgSexualScore = userReviewService.getAverageSexualScore(movieId);
+
+        response.put("avgSexualScore", avgSexualScore);
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
+    
+    // 공포점수 뷰
+    @GetMapping("/HorrorScoreUserView")
+    public String loadHorrorForm(@RequestParam Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/horrorScoreForm";
+    }
+    
+ // 선정성 점수 뷰
+    @GetMapping("/SexualScoreUserView")
+    public String loadSexualForm(@RequestParam Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/sexualScoreForm";
+    }
+
+
 
 }
 

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
@@ -121,8 +122,31 @@ public class UserReviewService {
         String updatedTags = String.join(",", tagList);
         return userReviewRepository.updateTags(memberId, movieId, updatedTags);
     }
-
-
     
+    @Transactional
+    public void saveHorrorScore(String memberId, Long movieId, Integer horrorScore) {
+        userReviewRepository.saveOrUpdateHorrorScore(memberId, movieId, horrorScore);
+        
+        double avg = userReviewRepository.getAverageHorrorScore(movieId);
+        userReviewRepository.updateHorrorScoreAvg(movieId, avg);
+    }
 
+    @Transactional
+    public void saveSexualScore(String memberId, Long movieId, Integer sexualScore) {
+        userReviewRepository.saveOrUpdateSexualScore(memberId, movieId, sexualScore);
+
+        double avg = userReviewRepository.getAverageSexualScore(movieId);
+        userReviewRepository.updateSexualScoreAvg(movieId, avg);
+    }
+
+    public double getAverageHorrorScore(Long movieId) {
+        Double avg = userReviewRepository.getAverageHorrorScore(movieId);
+        return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;
+    }
+
+    public double getAverageSexualScore(Long movieId) {
+        Double avg = userReviewRepository.getAverageSexualScore(movieId);
+        return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;
+    }
+    
 }

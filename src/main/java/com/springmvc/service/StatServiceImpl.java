@@ -6,16 +6,13 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import com.springmvc.repository.StatRepository;
 @Service
 public class StatServiceImpl implements StatService {
-	
-	private static final String INSERT_MOVIE_GENRE_SQL =
-		    "INSERT IGNORE INTO movie_genres (movie_id, genre) VALUES (?, ?)";
 
-		private static final String SELECT_MOVIE_GENRES_SQL =
-		    "SELECT id, genre FROM movies";
-		
-	@Autowired
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private static final List<String> GENRES = List.of(
@@ -48,4 +45,5 @@ public class StatServiceImpl implements StatService {
         }
         System.out.println("✅ movie_genres 초기화 완료");
     }
+
 }

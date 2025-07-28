@@ -13,8 +13,7 @@
 
 <!-- ⭐ 초기 사용자 별점 정보: 문자열로 받지만 JS 숫자로 변환 -->
 <script>
-    // JSTL로 렌더링된 점수 문자열을 JS 숫자로 변환 (예: "7" → 7)
-    const userRating = Number("${myReview.userRating}");
+    const userHorrorScore = Number("${not empty myReview and myReview.sexualScore ne null ? myReview.sexualScore : 0}");
 </script>
 
 <!-- ⭐ 별점 표시 영역 (1점 ~ 10점: 반개 단위로 5개의 아이콘 구성) -->
@@ -32,11 +31,11 @@
     
     <div class="ms-2" style="font-size: 1rem;">
         <c:choose>
-            <c:when test="${not empty myReview.userRating}">
-                ${myReview.userRating} / 10
+            <c:when test="${not empty myReview.sexualScore}">
+                ${myReview.sexualScore} / 10
             </c:when>
             <c:otherwise>
-                <span style="color:gray;">아직 만족도 평가를 하지 않으셨어요.</span>
+                <span style="color:gray;">아직 선정성 평가를 하지 않으셨어요.</span>
             </c:otherwise>
         </c:choose>
     </div>
@@ -110,9 +109,9 @@ document.addEventListener("DOMContentLoaded", function () {
             // 서버로 AJAX POST 전송 (별점 저장)
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);     // 영화 ID
-            formData.append("userRating", rating);   // 클릭된 점수
+            formData.append("sexualScore", rating);   // 클릭된 점수
 
-            fetch(contextPath + "/review/saveRating", {
+            fetch(contextPath + "/review/saveSexualUserScore", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: formData

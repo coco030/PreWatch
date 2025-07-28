@@ -156,6 +156,30 @@
     </div>
 </c:if>
 
+	<!-- 공포지수 작성 -->
+	<c:if test="${not empty sessionScope.loginMember}">
+	    <div class="container mt-3">
+	        <div class="bg-body-bg rounded-3 p-3">
+	                <h6 class="mb-2 fw-bold"><i class="fas fa-bolt text-danger me-1"></i>공포지수 평가</h5>
+	                <c:import url="/review/saveHorrorUserScore">
+	                    <c:param name="movieId" value="${movie.id}" />
+	                </c:import>
+	        </div>
+	    </div>
+	</c:if>
+	
+	<!-- 선정성 지수 작성 -->
+	<c:if test="${not empty sessionScope.loginMember}">
+	    <div class="container mt-3">
+	        <div class="bg-body-bg rounded-3 p-3">
+	                <h6 class="mb-2 fw-bold"><i class="fas fa-bolt text-danger me-1"></i>선정성 평가</h5>
+	                <c:import url="/review/saveSexualUserScore">
+	                    <c:param name="movieId" value="${movie.id}" />
+	                </c:import>
+	        </div>
+	    </div>
+	</c:if>
+
 	<!-- 리뷰 작성 -->
 	<div class="container mt-3">
 	  <div class="bg-body-bg rounded-3 p-3">

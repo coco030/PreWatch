@@ -16,6 +16,7 @@ import com.springmvc.domain.UserReview;
 @Repository
 public class UserReviewRepository {
 	
+	
 	// 장르를 나누기 위한 상수 추가
 	private static final List<String> GENRES = List.of(
 		    "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
@@ -372,5 +373,46 @@ public class UserReviewRepository {
         return (count != null) ? count : 0L;
     }
 
+	
+    
+    
+    // ✅ 1. 호러 점수 저장
+    public void saveOrUpdateHorrorScore(String memberId, Long movieId, Integer horrorScore) {
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, horror_score) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE horror_score = VALUES(horror_score)";
+        jdbcTemplate.update(sql, memberId, movieId, horrorScore);
+    }
 
+    // ✅ 2. 선정성 점수 저장
+    public void saveOrUpdateSexualScore(String memberId, Long movieId, Integer sexualScore) {
+        String sql = "INSERT INTO user_reviews (member_id, movie_id, sexual_score) " +
+                     "VALUES (?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE sexual_score = VALUES(sexual_score)";
+        jdbcTemplate.update(sql, memberId, movieId, sexualScore);
+    }
+
+    // ✅ 3. 호러 평균 조회
+    public Double getAverageHorrorScore(Long movieId) {
+        String sql = "SELECT AVG(horror_score) FROM user_reviews WHERE movie_id = ? AND horror_score IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Double.class, movieId);
+    }
+
+    // ✅ 4. 선정성 평균 조회
+    public Double getAverageSexualScore(Long movieId) {
+        String sql = "SELECT AVG(sexual_score) FROM user_reviews WHERE movie_id = ? AND sexual_score IS NOT NULL";
+        return jdbcTemplate.queryForObject(sql, Double.class, movieId);
+    }
+    
+    public void updateHorrorScoreAvg(Long movieId, double avg) {
+        String sql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
+        jdbcTemplate.update(sql, avg, movieId);
+    }
+
+    public void updateSexualScoreAvg(Long movieId, double avg) {
+        String sql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
+        jdbcTemplate.update(sql, avg, movieId);
+    }
+
+ 
 }
