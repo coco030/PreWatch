@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg">
   <div class="container py-4">
@@ -164,6 +166,65 @@
         </div>
       </c:otherwise>
     </c:choose>
+    
+        <h2 class="section-title">최근 달린 댓글</h2>
+        <div class="row g-3 justify-content-center">
+            <c:choose>
+                <c:when test="${not empty recentComments}">
+                    <c:forEach var="review" items="${recentComments}">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="comment-card p-3 d-flex flex-column h-100">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span class="font-semibold text-gray-900 me-2">${review.memberId}</span>
+                                        <span class="text-sm d-flex align-items-center"> <%-- 이 span에 flex 적용 --%>
+                                            <%-- 10점 만점 평점을 5점 만점 반 별로 변환하여 표시 --%>
+                                            <c:set var="userRating5Point" value="${review.userRating / 2.0}" />
+                                            <c:set var="fullStars" value="${fn:split(userRating5Point, '.')[0]}" />
+                                            <c:set var="hasHalfStar" value="${fn:length(fn:split(userRating5Point, '.')) > 1 and fn:split(userRating5Point, '.')[1] eq '5'}" />
+
+                                            <c:forEach begin="1" end="${fullStars}" varStatus="loop">
+                                                <i class="fas fa-star full-star-icon"></i> <%-- Font Awesome 전체 별 --%>
+                                            </c:forEach>
+                                            <c:if test="${hasHalfStar}">
+                                                <i class="fas fa-star-half-alt half-star-icon"></i> <%-- Font Awesome 반 별 --%>
+                                            </c:if>
+                                            <c:forEach begin="1" end="${5 - fullStars - (hasHalfStar ? 1 : 0)}" varStatus="loop">
+                                                <i class="far fa-star empty-star-icon"></i> <%-- Font Awesome 빈 별 (far: regular style) --%>
+                                            </c:forEach>
+                                            <span class="ms-1 text-gray-600">(<fmt:formatNumber value="${userRating5Point}" pattern="#0.0" /> / 5.0)</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-start mb-3 flex-grow-1">
+                                  <a href="<c:url value='/movies/${movie.id}'/>">
+                                    <img src="${review.posterPath != null && review.posterPath != '' ? review.posterPath : pageContext.request.contextPath.concat('/resources/images/movies/256px-No-Image-Placeholder.png')}"
+                                         onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png';"
+                                         alt="${review.movieName} 포스터"
+                                         class="w-[50px] h-[90px] object-cover rounded-md me-3 flex-shrink-0"></a>
+                                    <div class="flex-grow">
+                                        <h3 class="font-semibold text-lg text-gray-900 mb-1">${review.movieName}</h3>
+                                        <p class="text-gray-700 text-sm line-clamp-3">${review.reviewContent}</p>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mt-auto pt-2 border-top border-gray-200">
+                                    <span class="heart-icon me-1"><i class="fas fa-heart"></i></span>
+                                    <span class="text-gray-600 text-sm">찜 ${review.newLikeCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </c:when>
+                <c:otherwise>
+                    <div class="col-12">
+                        <p class="text-gray-600 text-center">아직 등록된 코멘트가 없습니다.</p>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
 
   </div> 
 

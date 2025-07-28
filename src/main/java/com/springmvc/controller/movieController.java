@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.springmvc.domain.Member;
+import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.movie;
 import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
 import com.springmvc.service.externalMovieApiService;
@@ -47,16 +47,15 @@ public class movieController {
     private final movieService movieService;
     private final externalMovieApiService externalMovieApiService;
     private final userCartService userCartService;
-    private final AdminBannerMovieService adminBannerMovieService; // ⭐ 새로 추가된 서비스 필드 (7-24 오후12:41 추가 된 코드)
+    private final AdminBannerMovieService adminBannerMovieService;
 
 
     @Autowired
-    public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService,
-                           AdminBannerMovieService adminBannerMovieService) { // ⭐ 생성자에도 추가 (7-24 오후12:41 추가 된 코드)
+    public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService) { 
         this.movieService = movieService;
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
-        this.adminBannerMovieService = adminBannerMovieService; // ⭐ 초기화 (7-24 오후12:41 추가 된 코드)
+        this.adminBannerMovieService = adminBannerMovieService; // 
     }
 
     private boolean isAdmin(HttpSession session) {
@@ -222,12 +221,20 @@ public class movieController {
         model.addAttribute("movies", recentMovies); // 'movies'는 main.jsp의 "최근 등록된 영화" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
         // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개) 
-        List<movie> recommendedMovies = movieService.getTop5RecommendedMovies(); //
+        List<movie> recommendedMovies = movieService.getTop6RecommendedMovies(); //
         model.addAttribute("recommendedMovies", recommendedMovies); // 'recommendedMovies'는 main.jsp의 "추천 랭킹" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
         // 07.26 coco030 오후 3시 20분 + 오후 7시 23분
         List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
+        
+     // 3. PreWatch 최근 댓글 목록 가져오기
+        List<RecentCommentDTO> recentComments = movieService.getRecentComments();
+        model.addAttribute("recentComments", recentComments);
+        logger.debug("MovieController: 'recentComments' 모델에 {}개의 코멘트 추가됨.", recentComments.size());
+        if (!recentComments.isEmpty()) {
+            recentComments.forEach(comment -> logger.debug("  - 모델에 추가된 코멘트: {}", comment.getMovieName())); // 간단한 정보만 로깅
+        }
 
         Member loginMember = (Member) session.getAttribute("loginMember"); 
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {

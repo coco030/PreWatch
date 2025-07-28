@@ -178,12 +178,12 @@ public class movieRepository {
      * 찜 개수가 같을 경우, created_at 최신순으로 정렬됩니다. (7-24 오후12:41 추가 된 코드)
      * @return 찜 개수 기준 상위 5개 영화 목록 (7-24 오후12:41 추가 된 코드)
      */
-    public List<movie> findTop5RecommendedMoviesByLikeCount() { // (7-24 오후12:41 추가 된 코드)
-        logger.debug("movieRepository.findTop5RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 5개 영화 조회 시도."); // (7-24 오후12:41 추가 된 코드)
+    public List<movie> findTop6RecommendedMoviesByLikeCount() { // (7-24 오후12:41 추가 된 코드)
+        logger.debug("movieRepository.findTop6RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 6개 영화 조회 시도."); // (7-24 오후12:41 추가 된 코드)
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " + // (7-24 오후12:41 추가 된 코드)
                      "FROM movies " + // (7-24 오후12:41 추가 된 코드)
                      "ORDER BY like_count DESC, created_at DESC " + // 찜 개수 내림차순, 동점 시 생성일 최신순 (7-24 오후12:41 추가 된 코드)
-                     "LIMIT 5"; // 상위 5개만 가져오기 (7-24 오후12:41 추가 된 코드)
+                     "LIMIT 6"; // 상위 5개만 가져오기 (7-24 오후12:41 추가 된 코드)
 
         List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class)); // (7-24 오후12:41 추가 된 코드)
         logger.info("DB에서 찜 개수 기준 상위 5개 영화 레코드 {}개 성공적으로 가져옴.", list.size()); // (7-24 오후12:41 추가 된 코드)
@@ -208,6 +208,7 @@ public class movieRepository {
         logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
+    
     
     // ============ coco030이 추가한 내역 25.07.26 추가 수정 ====
     // 최근 개봉 예정작
@@ -245,7 +246,8 @@ public class movieRepository {
         String sql = "INSERT INTO movie_genres (movie_id, genre) VALUES (?, ?)";
         jdbcTemplate.update(sql, movieId, genre);
     }
-	
+
+
 // ===========coco030이 추가한 내역  끝 ==== ///
 	
 	
