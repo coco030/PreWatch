@@ -53,7 +53,7 @@
 
     <p>
         <i class="bi-star-fill text-warning me-1"></i>
-        <strong>평점:</strong>
+        <strong>평균 만족도 지수:</strong>
         <c:choose>
             <c:when test="${movie.rating == 0.0}">N/A</c:when>
             <c:otherwise><fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></c:otherwise>
@@ -63,7 +63,7 @@
 
     <p>
         <i class="bi-exclamation-triangle-fill text-danger me-1"></i>
-        <strong>평균 폭력성:</strong>
+        <strong>평균 폭력성 지수:</strong>
         <c:choose>
             <c:when test="${movie.violence_score_avg == 0.0}">N/A</c:when>
             <c:otherwise><fmt:formatNumber value="${movie.violence_score_avg}" pattern="#0.0" /></c:otherwise>
@@ -71,10 +71,10 @@
         / 10.0
     </p>
 
-    <!-- 07.28 오후 선정성/공포성 평균 추가
+    <!-- 07.28 오후 선정성/공포성 평균 추가-->
     <p>
         <i class="bi-eye-fill text-warning me-1"></i>
-        <strong>평균 선정성:</strong>
+        <strong>평균 선정성 지수:</strong>
         <c:choose>
             <c:when test="${empty sexualAvg || sexualAvg == 0.0}">N/A</c:when>
             <c:otherwise><fmt:formatNumber value="${sexualAvg}" pattern="#0.0" /></c:otherwise>
@@ -84,13 +84,13 @@
 
     <p>
         <i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
-        <strong>평균 공포성:</strong>
+        <strong>평균 공포 지수:</strong>
         <c:choose>
             <c:when test="${empty horrorAvg || horrorAvg == 0.0}">N/A</c:when>
             <c:otherwise><fmt:formatNumber value="${horrorAvg}" pattern="#0.0" /></c:otherwise>
         </c:choose>
         / 10.0
-    </p> -->
+    </p> 
 
     <p><strong>개요:</strong> ${movie.overview}</p>
 
@@ -156,37 +156,38 @@
     </div>
 </c:if>
 
-<!-- 리뷰 작성 -->
-<div class="container mt-3">
-  <div class="bg-body-bg rounded-3 p-3">
-    <c:import url="/review/content">
-      <c:param name="movieId" value="${movie.id}" />
-    </c:import>
-  </div>
-</div>
-
-<!-- 태그 작성 -->
-<c:if test="${not empty sessionScope.loginMember}">
-<div class="container mt-3">
-  <div class="bg-body-bg rounded-3 p-3">
-            <c:import url="/review/tag">
-                <c:param name="movieId" value="${movie.id}" />
-            </c:import>
- </div>
-</div>
-</c:if>
+	<!-- 리뷰 작성 -->
+	<div class="container mt-3">
+	  <div class="bg-body-bg rounded-3 p-3">
+	    <c:import url="/review/content">
+	      <c:param name="movieId" value="${movie.id}" />
+	    </c:import>
+	  </div>
+	</div>
+	
+	<!-- 태그 작성 -->
+	<c:if test="${not empty sessionScope.loginMember}">
+	<div class="container mt-3">
+	  <div class="bg-body-bg rounded-3 p-3">
+	            <c:import url="/review/tag">
+	                <c:param name="movieId" value="${movie.id}" />
+	            </c:import>
+	 </div>
+	</div>
+	</c:if>
 
 <!-- 다른 유저의 리뷰 리스트 -->
-<div class="container mt-4 mb-5">
-    <div class="p-3">
-        <h5 class="fw-bold mb-3">
-            <i class="fas fa-comments text-primary me-1"></i>코멘트
-        </h5>
-        <c:import url="/review/list">
-            <c:param name="movieId" value="${movie.id}" />
-        </c:import>
-    </div>
- </div>
+	<div class="container mt-4 mb-5">
+	    <div class="p-3">
+	        <h5 class="fw-bold mb-3">
+	            <i class="fas fa-comments text-primary me-1"></i>코멘트
+	        </h5>
+	        <c:import url="/review/list">
+	            <c:param name="movieId" value="${movie.id}" />
+	        </c:import>
+	    </div>
+	 </div>
+	</div>
 </div>
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>

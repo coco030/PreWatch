@@ -238,6 +238,13 @@ public class movieRepository {
 
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
     }
+   
+    
+ // coco030 25.07.28 장르분산 메서드 
+    public void insertGenreMapping(Long movieId, String genre) {
+        String sql = "INSERT INTO movie_genres (movie_id, genre) VALUES (?, ?)";
+        jdbcTemplate.update(sql, movieId, genre);
+    }
 	
 // ===========coco030이 추가한 내역  끝 ==== ///
 	

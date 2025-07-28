@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-import com.springmvc.domain.GlobalStatsDTO;
+import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.Member; // (7-24 오후12:41 추가 된 코드)
 import com.springmvc.domain.movie; // (7-24 오후12:41 추가 된 코드)
 import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
@@ -44,7 +44,7 @@ public class HomeController {
         logger.info("루트 경로 '/' 요청이 감지되었습니다. 메인 홈페이지 데이터를 불러옵니다.");
         
      // 25.07.28 coco030 통계 객체를 메서드 안에서 가져오고 모델에 담기
-        GlobalStatsDTO globalStats = statisticsService.getGlobalStats();
+        StatDTO globalStats = statisticsService.getGlobalStats();
         model.addAttribute("globalStats", globalStats);
         
 
@@ -104,7 +104,7 @@ public class HomeController {
         private StatisticsService statisticsService;
         // 모든 컨트롤러의 메서드가 실행되기 전에 호출. 반환된 값은 "globalStats"라는 이름으로 모델에 추가.
         @ModelAttribute("globalStats")
-        public GlobalStatsDTO addGlobalStatsToModel() {
+        public StatDTO addGlobalStatsToModel() {
             return statisticsService.getGlobalStats();
         }
     }

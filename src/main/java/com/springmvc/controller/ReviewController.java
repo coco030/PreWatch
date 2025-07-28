@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.springmvc.domain.GlobalStatsDTO;
+import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;

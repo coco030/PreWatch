@@ -64,12 +64,37 @@ public class movieService {
         return movie;
     }
 
+    // 07.28 coco030 genre 문자열 → 배열로 분리해서 movie_genres에 매핑 추가
     // save 메서드: 새 영화 정보 저장.
     // 목적: Controller에서 영화 등록 요청 시 호출.
     public void save(movie movie) {
         logger.debug("movieService.save() 호출: 영화 제목 = {}", movie.getTitle());
+
         movieRepository.save(movie);
         logger.info("영화 '{}'가 DB에 저장되었습니다.", movie.getTitle());
+
+        
+        // 저장된 movie의 ID 조회
+        Long movieId = movie.getId();
+        if (movieId == null) {
+            logger.error("❌ 저장된 영화의 ID가 null입니다. genre 매핑 불가.");
+            return;
+        }
+
+        // genre 문자열 → 배열로 분리해서 movie_genres에 매핑
+        String genreString = movie.getGenre();
+        if (genreString != null && !genreString.trim().isEmpty()) {
+            String[] genreArray = genreString.split(",\\s*"); // 쉼표 + 공백 기준
+            for (String genre : genreArray) {
+                if (!genre.isEmpty()) {
+                    logger.debug("→ 장르 '{}'를 movie_genres에 매핑 중...", genre);
+                    movieRepository.insertGenreMapping(movieId, genre);
+                }
+            }
+            logger.info("영화 '{}'의 장르 매핑 완료. (총 {}개)", movie.getTitle(), genreArray.length);
+        } else {
+            logger.warn("영화 '{}'에 장르 정보가 없습니다. movie_genres 매핑 생략됨.", movie.getTitle());
+        }
     }
 
     // update 메서드: 기존 영화 정보 업데이트.
@@ -117,5 +142,7 @@ public class movieService {
         return movieRepository.getUpcomingMoviesWithDday();
     }
 // ===========coco030이 추가한 내역  끝 ==== ///
+    
+   
 	
 }
