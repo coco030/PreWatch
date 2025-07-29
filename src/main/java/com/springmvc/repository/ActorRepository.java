@@ -83,10 +83,13 @@ public class ActorRepository {
     }
 
     
- // 이 배우/감독이 참여한 영화 목록 (출연 or 감독)
+ // 이 배우+감독이 참여한 영화 목록. 가져올 게 있으면 셀렉트에 하나씩 추가하면 됨. 컨트롤러 건드릴 필요 X
     public List<Map<String, Object>> findMoviesByActorId(Long actorId) {
         String sql = """
-            SELECT m.id, m.title, m.poster_path, m.release_date, ma.role_type, ma.role_name
+            SELECT 
+                m.id, m.title, m.poster_path, m.release_date, 
+                ma.role_type, ma.role_name,
+                m.rating
             FROM movie_actors ma
             JOIN movies m ON ma.movie_id = m.id
             WHERE ma.actor_id = ?
@@ -94,6 +97,7 @@ public class ActorRepository {
         """;
         return jdbcTemplate.queryForList(sql, actorId);
     }
+
 
     
  // TMDB API 상세 정보 기반으로 배우 정보 업데이트

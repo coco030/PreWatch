@@ -73,13 +73,13 @@
         </div>
         <!-- 텍스트 정보 -->
         <div style="display:flex; flex-direction:column; flex:1;">
-            <div style="font-weight:bold; font-size:20px;">${movie.title}</div>
-            <div style="color:#888; font-size:15px;">
-                <c:if test="${not empty movie.role_name}">
-                    ${movie.role_name}
-                </c:if>
-                <c:if test="${not empty movie.rating}">
-                    <span style="margin-left:16px;">평균 ★ ${movie.rating}</span>
+	        <div style="font-weight:bold; font-size:20px;">${movie.title}</div>
+	        <div style="color:#888; font-size:15px;">
+	            <c:if test="${not empty movie.role_name}">
+	                ${movie.role_name}
+	            </c:if>
+	            <c:if test="${not empty movie.rating}">
+	                <span style="margin-left:16px;">평균 ★ ${movie.rating}</span>
                 </c:if>
             </div>
         </div>
