@@ -1,8 +1,9 @@
 package com.springmvc.repository;
 
 import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.movie;
@@ -17,47 +20,43 @@ import com.springmvc.domain.movie;
 @Repository
 public class movieRepository {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+	 private final JdbcTemplate jdbcTemplate; // final로 변경하여 불변성 확보
 
-    private static final Logger logger = LoggerFactory.getLogger(movieRepository.class);
+	    private static final Logger logger = LoggerFactory.getLogger(movieRepository.class);
 
-    public movieRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-        logger.info("movieRepository 초기화: JdbcTemplate 주입 완료.");
-    }
+	    @Autowired // 생성자 주입은 @Autowired를 명시적으로 붙이는 것이 좋습니다.
+	    public movieRepository(JdbcTemplate jdbcTemplate) {
+	        this.jdbcTemplate = jdbcTemplate;
+	        logger.info("movieRepository 초기화: JdbcTemplate 주입 완료.");
+	    }
 
-    // findAll 메서드: 데이터베이스 'movies' 테이블의 모든 영화 정보를 조회합니다.
-    // 목적: 영화 목록을 보여줄 때 사용되며, 찜 개수(like_count)를 기준으로 내림차순 정렬됩니다.
-    public List<movie> findAll() {
-        logger.debug("movieRepository.findAll() 호출: DB에서 모든 영화 조회 시도.");
-        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies ORDER BY like_count DESC, created_at DESC";
+	 // findAll 메서드: 데이터베이스 'movies' 테이블의 모든 영화 정보를 조회합니다.
+	    public List<movie> findAll() {
+	        logger.debug("movieRepository.findAll() 호출: DB에서 모든 영화 조회 시도.");
+	        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at FROM movies ORDER BY like_count DESC, created_at DESC";
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+	        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
 
-        logger.info("DB에서 {}개의 영화 레코드 성공적으로 가져옴.", list.size());
-        return list;
-    }
+	        logger.info("DB에서 {}개의 영화 레코드 성공적으로 가져옴.", list.size());
+	        return list;
+	    }
 
-    // findById 메서드: 주어진 ID에 해당하는 영화 정보를 데이터베이스에서 조회합니다.
-    // 목적: 특정 영화의 상세 정보를 보여주거나, 수정/삭제 전에 기존 정보를 가져올 때 사용됩니다.
-    public movie findById(Long id) {
-        logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
-        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies WHERE id = ?";
-        try {
-            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), id);
-            logger.info("DB에서 영화 ID {} 레코드 성공적으로 가져옴.", id);
-            return movie;
-        } catch (EmptyResultDataAccessException e) {
-            logger.warn("DB에서 영화 ID {}를 찾을 수 없습니다.", id);
-            return null;
-        } catch (Exception e) {
-            logger.error("DB 영화 ID {} 조회 중 오류 발생: {}", id, e.getMessage(), e);
-            throw new RuntimeException("영화 조회 실패", e);
-        }
-    }
+	    // findById 메서드: 주어진 ID에 해당하는 영화 정보를 데이터베이스에서 조회합니다.
+	    public movie findById(Long id) {
+	        logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
+	        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at FROM movies WHERE id = ?";
+	        try {
+	            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), id);
+	            logger.info("DB에서 영화 ID {} 레코드 성공적으로 가져옴.", id);
+	            return movie;
+	        } catch (EmptyResultDataAccessException e) {
+	            logger.warn("DB에서 영화 ID {}를 찾을 수 없습니다.", id);
+	            return null; // 결과가 없을 경우 null 반환
+	        } catch (Exception e) {
+	            logger.error("DB 영화 ID {} 조회 중 오류 발생: {}", id, e.getMessage(), e);
+	            throw new RuntimeException("영화 조회 실패", e);
+	        }
+	    }
 
     // findByApiId 메서드: 외부 API ID (imdbID)를 사용하여 데이터베이스에서 영화를 조회합니다.
     // 목적: API 검색 결과에 로컬 평점/잔혹도를 덮어쓸 때 사용됩니다.
@@ -78,183 +77,213 @@ public class movieRepository {
         }
     }
 
-    // save 메서드: 새로운 movie 객체를 데이터베이스 'movies' 테이블에 삽입합니다.
-    // 목적: 관리자가 새 영화를 직접 등록하거나, API에서 가져온 영화를 등록할 때 사용됩니다.
-    public void save(movie movie) {
-        logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
+    // save 메서드: 새로운 movie 객체를 데이터베이스 'movies' 테이블에 삽입하고, 자동 생성된 ID를 반환합니다.
+    // 반환 타입을 void에서 Long으로 변경하여 생성된 ID를 호출자에게 반환합니다.
+ public Long save(movie movie) {
+     logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
 
-        String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+     String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated) " +
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.update(sql,
-            movie.getApiId(),
-            movie.getTitle(),
-            movie.getDirector(),
-            movie.getYear(),
-            movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
-            movie.getGenre(),
-            movie.getRating(),
-            movie.getViolence_score_avg(),
-            movie.getOverview(),
-            movie.getPosterPath(),
-            movie.getLikeCount());
+     KeyHolder keyHolder = new GeneratedKeyHolder(); // 자동 생성 키를 저장할 KeyHolder 생성
 
-        // 07.28 coco030 방금 INSERT한 movie의 ID 조회 
-        String selectIdSql = "SELECT id FROM movies WHERE api_id = ?";
-        Long movieId = jdbcTemplate.queryForObject(selectIdSql, Long.class, movie.getApiId());
-        movie.setId(movieId); //  movieService에서 getId()로 쓸 수 있게 설정
+     // PreparedStatementCreator와 KeyHolder를 사용하여 업데이트 및 자동 생성된 키 검색
+     int rowsAffected = jdbcTemplate.update(connection -> {
+    	// "id"는 자동 증가하는 기본 키 컬럼 이름입니다. 데이터베이스 스키마에 맞게 조정하세요.
+         PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+         ps.setString(1, movie.getApiId());
+         ps.setString(2, movie.getTitle());
+         ps.setString(3, movie.getDirector());
+         ps.setInt(4, movie.getYear());
+         ps.setDate(5, movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null);
+         ps.setString(6, movie.getGenre());
+         ps.setDouble(7, movie.getRating());
+         ps.setDouble(8, movie.getViolence_score_avg());
+         ps.setString(9, movie.getOverview());
+         ps.setString(10, movie.getPosterPath());
+         ps.setInt(11, movie.getLikeCount());
+         ps.setString(12, movie.getRuntime());
+         ps.setString(13, movie.getRated());
+         return ps;
+     }, keyHolder);
 
-        logger.info("DB에 영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movieId);
-    }
+     if (rowsAffected > 0) {
+    	// 자동 생성된 키(ID)를 가져와 movie 객체에 설정
+         Long movieId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+         movie.setId(movieId);
+         logger.info("DB에 영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movieId);
 
-    // update 메서드: 기존 movie 객체의 정보를 데이터베이스 'movies' 테이블에서 업데이트합니다.
-    // 목적: 관리자가 영화 정보를 수정할 때 사용됩니다.
-    public void update(movie movie) {
-        logger.debug("movieRepository.update() 호출: 영화 ID {} 업데이트 시도.", movie.getId());
-        // is_recommended 컬럼 제거 (7-24 오후12:41 추가 된 코드)
-        String sql = "UPDATE movies SET api_id=?, title=?, director=?, year=?, release_date=?, genre=?, rating=?, violence_score_avg=?, overview=?, poster_path=?, like_count=? WHERE id=?"; // like_count 포함
-        jdbcTemplate.update(sql,
-            movie.getApiId(),
-            movie.getTitle(),
-            movie.getDirector(),
-            movie.getYear(),
-            movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
-            movie.getGenre(),
-            movie.getRating(),
-            movie.getViolence_score_avg(),
-            movie.getOverview(),
-            movie.getPosterPath(),
-            movie.getLikeCount(),
-            movie.getId());
+         // coco030 ) 추가로 외부 api_id로 SELECT 조회 및 setId, 디버깅
+         String selectIdSql = "SELECT id FROM movies WHERE api_id = ?";
+         Long movieIdByApi = jdbcTemplate.queryForObject(selectIdSql, Long.class, movie.getApiId());
+         System.out.println("DEBUG:: SELECT로 찾은 movie id = " + movieIdByApi + ", movie.getId() = " + movie.getId());
 
-        logger.info("DB에서 영화 ID {} 업데이트 완료.", movie.getId());
-    }
+         return movieId; // 생성된 ID 반환
+     } else {
+         logger.error("영화 '{}' 저장 실패: 데이터베이스에 삽입되지 않았습니다.", movie.getTitle());
+         throw new RuntimeException("영화 저장 실패: 데이터베이스에 삽입되지 않았습니다.");
+     }
+ }
 
-    // delete 메서드: 주어진 ID에 해당하는 영화 정보를 데이터베이스 'movies' 테이블에서 삭제합니다.
-    public void delete(Long id) {
-        logger.debug("movieRepository.delete({}) 호출: DB에서 영화 삭제 시도.", id);
-        String sql = "DELETE FROM movies WHERE id=?";
-        jdbcTemplate.update(sql, id);
-        logger.info("DB에서 영화 ID {} 삭제 완료.", id);
-    }
+ // update 메서드: 기존 movie 객체의 정보를 데이터베이스 'movies' 테이블에서 업데이트합니다.
+ public void update(movie movie) {
+     logger.debug("movieRepository.update() 호출: 영화 ID {} 업데이트 시도.", movie.getId());
+     String sql = "UPDATE movies SET api_id=?, title=?, director=?, year=?, release_date=?, genre=?, rating=?, violence_score_avg=?, overview=?, poster_path=?, like_count=?, runtime=?, rated=? WHERE id=?";
+     int rowsAffected = jdbcTemplate.update(sql,
+         movie.getApiId(),
+         movie.getTitle(),
+         movie.getDirector(),
+         movie.getYear(),
+         movie.getReleaseDate() != null ? Date.valueOf(movie.getReleaseDate()) : null,
+         movie.getGenre(),
+         movie.getRating(),
+         movie.getViolence_score_avg(),
+         movie.getOverview(),
+         movie.getPosterPath(),
+         movie.getLikeCount(),
+         movie.getRuntime(),
+         movie.getRated(),
+         movie.getId());
 
-    // updateAverageScores 메서드: 특정 영화의 평균 평점과 잔혹도 점수를 업데이트합니다.
-    public void updateAverageScores(Long movieId, double avgRating, double avgViolence) {
-        String sql = "UPDATE movies SET rating = ?, violence_score_avg = ? WHERE id = ?";
-        jdbcTemplate.update(sql, avgRating, avgViolence, movieId);
-        logger.info("영화 ID {}의 평점 및 잔혹도 평균 업데이트 완료.", movieId);
-    }
+     if (rowsAffected > 0) {
+         logger.info("DB에서 영화 ID {} 업데이트 완료.", movie.getId());
+     } else {
+         logger.warn("DB에서 영화 ID {}를 찾을 수 없어 업데이트되지 않음.", movie.getId());
+     }
+ }
 
-    //마이페이지 전용 메서드
-    public movie findTitleAndPosterById(Long id) {
-        String sql = "SELECT id, title, poster_path FROM movies WHERE id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                movie m = new movie();
-                m.setId(rs.getLong("id"));
-                m.setTitle(rs.getString("title"));
-                m.setPosterPath(rs.getString("poster_path"));
-                return m;
-            }, id);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
-    }
+ // delete 메서드: 주어진 ID에 해당하는 영화 정보를 데이터베이스에서 삭제합니다.
+ public void delete(Long id) {
+     logger.debug("movieRepository.delete({}) 호출: DB에서 영화 삭제 시도.", id);
+     String sql = "DELETE FROM movies WHERE id = ?";
+     int deletedRows = jdbcTemplate.update(sql, id);
+     if (deletedRows > 0) {
+         logger.info("DB에서 영화 ID {} 레코드 성공적으로 삭제됨.", id);
+     } else {
+         logger.warn("DB에서 영화 ID {}를 찾을 수 없어 삭제되지 않음.", id);
+     }
+ }
 
-    // ⭐ 추가: 찜 개수 업데이트 메서드 ⭐
-    // 목적: 사용자가 찜을 추가/취소할 때 해당 영화의 like_count를 증감합니다.
-    public void incrementLikeCount(Long movieId) {
-        logger.debug("영화 ID {}의 찜 개수 1 증가 시도.", movieId);
-        String sql = "UPDATE movies SET like_count = like_count + 1 WHERE id = ?";
-        jdbcTemplate.update(sql, movieId);
-        logger.info("영화 ID {}의 찜 개수 1 증가 완료.", movieId);
-    }
+ // 마이페이지 전용 메서드 (영화 ID로 제목과 포스터 경로만 조회)
+ public movie findTitleAndPosterById(Long id) {
+     String sql = "SELECT id, title, poster_path FROM movies WHERE id = ?";
+     try {
+         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+             movie m = new movie();
+             m.setId(rs.getLong("id"));
+             m.setTitle(rs.getString("title"));
+             m.setPosterPath(rs.getString("poster_path"));
+             return m;
+         }, id);
+     } catch (EmptyResultDataAccessException e) {
+         logger.warn("DB에서 영화 ID {}에 해당하는 제목/포스터를 찾을 수 없습니다.", id);
+         return null;
+     } catch (Exception e) {
+         logger.error("DB 영화 ID {} 조회 중 오류 발생: {}", id, e.getMessage(), e);
+         throw new RuntimeException("영화 조회 실패", e);
+     }
+ }
 
-    public void decrementLikeCount(Long movieId) {
-        logger.debug("영화 ID {}의 찜 개수 1 감소 시도.", movieId);
-        String sql = "UPDATE movies SET like_count = GREATEST(0, like_count - 1) WHERE id = ?"; // 0 미만으로 내려가지 않게 방지
-        jdbcTemplate.update(sql, movieId);
-        logger.info("영화 ID {}의 찜 개수 1 감소 완료.", movieId);
-    }
+ // updateAverageScores 메서드: 특정 영화의 평균 평점과 잔혹도 점수를 업데이트합니다.
+ public void updateAverageScores(Long movieId, double avgRating, double avgViolence) {
+     String sql = "UPDATE movies SET rating = ?, violence_score_avg = ? WHERE id = ?";
+     int rowsAffected = jdbcTemplate.update(sql, avgRating, avgViolence, movieId);
+     if (rowsAffected > 0) {
+         logger.info("영화 ID {}의 평점 및 잔혹도 평균 업데이트 완료.", movieId);
+     } else {
+         logger.warn("영화 ID {}의 평점 및 잔혹도 평균 업데이트 실패: 영화를 찾을 수 없음.", movieId);
+     }
+ }
 
-    // --- ⭐ 기존 메서드: 추천 랭킹 (like_count 기준) 영화 조회 ⭐ (7-24 오후12:41 추가 된 코드)
-    /**
-     * 찜 개수(like_count)를 기준으로 내림차순 정렬하여 상위 5개의 영화 목록을 조회합니다. (7-24 오후12:41 추가 된 코드)
-     * 찜 개수가 같을 경우, created_at 최신순으로 정렬됩니다. (7-24 오후12:41 추가 된 코드)
-     * @return 찜 개수 기준 상위 5개 영화 목록 (7-24 오후12:41 추가 된 코드)
-     */
-    public List<movie> findTop6RecommendedMoviesByLikeCount() { // (7-24 오후12:41 추가 된 코드)
-        logger.debug("movieRepository.findTop6RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 6개 영화 조회 시도."); // (7-24 오후12:41 추가 된 코드)
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " + // (7-24 오후12:41 추가 된 코드)
-                     "FROM movies " + // (7-24 오후12:41 추가 된 코드)
-                     "ORDER BY like_count DESC, created_at DESC " + // 찜 개수 내림차순, 동점 시 생성일 최신순 (7-24 오후12:41 추가 된 코드)
-                     "LIMIT 6"; // 상위 5개만 가져오기 (7-24 오후12:41 추가 된 코드)
+ // incrementLikeCount 메서드: 특정 영화의 찜 개수를 1 증가시킵니다.
+ public void incrementLikeCount(Long movieId) {
+     logger.debug("영화 ID {}의 찜 개수 1 증가 시도.", movieId);
+     String sql = "UPDATE movies SET like_count = like_count + 1 WHERE id = ?";
+     int rowsAffected = jdbcTemplate.update(sql, movieId);
+     if (rowsAffected > 0) {
+         logger.info("영화 ID {}의 찜 개수 1 증가 완료.", movieId);
+     } else {
+         logger.warn("영화 ID {}의 찜 개수 1 증가 실패: 영화를 찾을 수 없음.", movieId);
+     }
+ }
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class)); // (7-24 오후12:41 추가 된 코드)
-        logger.info("DB에서 찜 개수 기준 상위 5개 영화 레코드 {}개 성공적으로 가져옴.", list.size()); // (7-24 오후12:41 추가 된 코드)
-        return list; // (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
+ // decrementLikeCount 메서드: 특정 영화의 찜 개수를 1 감소시킵니다.
+ public void decrementLikeCount(Long movieId) {
+     logger.debug("영화 ID {}의 찜 개수 1 감소 시도.", movieId);
+     String sql = "UPDATE movies SET like_count = GREATEST(0, like_count - 1) WHERE id = ?"; // 0 미만으로 내려가지 않도록 방지
+     int rowsAffected = jdbcTemplate.update(sql, movieId);
+     if (rowsAffected > 0) {
+         logger.info("영화 ID {}의 찜 개수 1 감소 완료.", movieId);
+     } else {
+         logger.warn("영화 ID {}의 찜 개수 1 감소 실패: 영화를 찾을 수 없음.", movieId);
+     }
+ }
 
-    // --- 추가: 최근 등록된 영화 조회 메서드 (main.jsp의 "최근 등록된 영화" 섹션을 위함) ---
-    /**
-     * 최근 등록된 영화를 개봉일 기준으로 내림차순 정렬하여 지정된 개수만큼 조회합니다.
-     * @param limit 가져올 영화의 개수
-     * @return 최근 등록된 영화 목록
-     */
-    public List<movie> findRecentMovies(int limit) {
-        logger.debug("movieRepository.findRecentMovies({}) 호출: 최근 등록된 영화 조회 시도.", limit);
-        // is_recommended 컬럼 조회에서 제거 (7-24 오후12:41 추가 된 코드)
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count " +
-                     "FROM movies " +
-                     "ORDER BY created_at DESC " +
-                     "LIMIT ?";
+ public List<movie> findTop6RecommendedMoviesByLikeCount() {
+     logger.debug("movieRepository.findTop6RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 6개 영화 조회 시도.");
+     String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
+                  "FROM movies " +
+                  "ORDER BY like_count DESC, created_at DESC " +
+                  "LIMIT 6";
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), limit);
-        logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
-        return list;
-    }
-    
-    
-    // ============ coco030이 추가한 내역 25.07.26 추가 수정 ====
-    // 최근 개봉 예정작
+     List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+     logger.info("DB에서 찜 개수 기준 상위 {}개 영화 레코드 성공적으로 가져옴.", list.size());
+     return list;
+ }
 
-    public List<movie> getUpcomingMoviesWithDday() {
-        String sql = """
-            SELECT 
-                id,
-                api_id,
-                title,
-                director,
-                year,
-                release_date,
-                genre,
-                rating,
-                violence_score_avg,
-                overview,
-                poster_path,
-                created_at,
-                updated_at,
-                like_count,
-                DATEDIFF(release_date, CURDATE()) AS dday
-            FROM movies
-            WHERE DATEDIFF(release_date, CURDATE()) >= -7
-            ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
-            LIMIT 5
-        """;
+ public List<movie> findRecentMovies(int limit) {
+     logger.debug("movieRepository.findRecentMovies({}) 호출: 최근 등록된 영화 조회 시도.", limit);
+     String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
+                  "FROM movies " +
+                  "ORDER BY created_at DESC " +
+                  "LIMIT ?";
 
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
-    }
-   
-    
- // coco030 25.07.28 장르분산 메서드 
-    public void insertGenreMapping(Long movieId, String genre) {
-        String sql = "INSERT INTO movie_genres (movie_id, genre) VALUES (?, ?)";
-        jdbcTemplate.update(sql, movieId, genre);
-    }
+     List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), limit);
+     logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
+     return list;
+ }
 
+ 
+ // 최근 개봉 예정작
+ public List<movie> getUpcomingMoviesWithDday() {
+     String sql = """
+         SELECT
+             id,
+             api_id,
+             title,
+             director,
+             year,
+             release_date,
+             genre,
+             rating,
+             violence_score_avg,
+             overview,
+             poster_path,
+             created_at,
+             updated_at,
+             like_count,
+             runtime,
+             rated,
+             DATEDIFF(release_date, CURDATE()) AS dday
+         FROM movies
+         WHERE DATEDIFF(release_date, CURDATE()) >= -7
+         ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
+         LIMIT 5
+         """;
 
-// ===========coco030이 추가한 내역  끝 ==== ///
-	
-	
+     return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+ }
+
+ // coco030 25.07.28 장르분산 메서드
+ public void insertGenreMapping(Long movieId, String genre) {
+     String sql = "INSERT INTO movie_genres (movie_id, genre) VALUES (?, ?)";
+     try {
+         jdbcTemplate.update(sql, movieId, genre);
+         logger.info("영화 ID {}에 장르 '{}' 매핑 성공.", movieId, genre);
+     } catch (Exception e) {
+         logger.error("영화 ID {}에 장르 '{}' 매핑 중 오류 발생: {}", movieId, genre, e.getMessage(), e);
+     }
+ }
+
     
 }

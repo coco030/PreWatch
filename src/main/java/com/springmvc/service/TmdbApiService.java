@@ -5,24 +5,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.springmvc.repository.ActorRepository;
 
 @Service
 public class TmdbApiService {
 
+    @Autowired
+    private ActorRepository actorRepository;
+
+    private static final int MAX_CAST_COUNT = 5;
     private static final String TMDB_API_KEY = "6ec1d7b0638f8e641a7b32f82aa333b8";
     private static final String TMDB_FIND_URL = "https://api.themoviedb.org/3/find/";
     private static final String TMDB_MOVIE_CREDITS_URL = "https://api.themoviedb.org/3/movie/";
+    private static final String TMDB_PERSON_DETAIL_URL = "https://api.themoviedb.org/3/person/";
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // 1. IMDb ID로 TMDB의 영화 ID 조회
     public Integer getTmdbMovieId(String imdbId) {
         String url = UriComponentsBuilder.fromHttpUrl(TMDB_FIND_URL + imdbId)
             .queryParam("api_key", TMDB_API_KEY)
@@ -37,12 +43,11 @@ public class TmdbApiService {
                 return movieResults.get(0).get("id").asInt();
             }
         } catch (Exception e) {
-            // 생략: 오류 시 null 반환
+            System.out.println("[ERROR] TMDB 영화 ID 조회 실패: imdbId=" + imdbId);
         }
         return null;
     }
 
-    // 2. TMDB 영화 ID로 감독/배우 정보 가져오기
     public List<Map<String, String>> getCastAndCrew(Integer tmdbMovieId) {
         String url = UriComponentsBuilder
             .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/credits")
@@ -54,19 +59,18 @@ public class TmdbApiService {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(json);
 
-            // 배우 정보 (최대 5명)
             JsonNode cast = root.get("cast");
-            for (int i = 0; i < Math.min(5, cast.size()); i++) {
+            for (int i = 0; i < Math.min(MAX_CAST_COUNT, cast.size()); i++) {
                 JsonNode person = cast.get(i);
                 Map<String, String> info = new HashMap<>();
                 info.put("name", person.get("name").asText());
                 info.put("profile_path", person.get("profile_path").asText(null));
                 info.put("role", person.get("character").asText());
                 info.put("type", "ACTOR");
+                info.put("tmdb_id", person.get("id").asText());
                 result.add(info);
             }
 
-            // 감독 정보 (1명만)
             JsonNode crew = root.get("crew");
             for (JsonNode member : crew) {
                 if ("Director".equalsIgnoreCase(member.get("job").asText())) {
@@ -74,13 +78,71 @@ public class TmdbApiService {
                     info.put("name", member.get("name").asText());
                     info.put("profile_path", member.get("profile_path").asText(null));
                     info.put("type", "DIRECTOR");
+                    info.put("role", member.get("job").asText());
+                    info.put("tmdb_id", member.get("id").asText());
                     result.add(info);
                     break;
                 }
             }
         } catch (Exception e) {
-            // 생략: 오류 시 빈 리스트 반환
+            System.out.println("[ERROR] TMDB 출연진 정보 파싱 실패: movieId=" + tmdbMovieId);
         }
         return result;
+    }
+
+    // ⭐ [추가] TMDB 인물 상세 정보 가져오기
+    public Map<String, Object> getPersonDetailFromTmdb(Integer tmdbId) {
+        String url = UriComponentsBuilder
+            .fromHttpUrl(TMDB_PERSON_DETAIL_URL + tmdbId)
+            .queryParam("api_key", TMDB_API_KEY)
+            .toUriString();
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(json);
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("birthday", root.get("birthday").asText(null));
+            details.put("deathday", root.get("deathday").asText(null));
+            details.put("place_of_birth", root.get("place_of_birth").asText(null));
+            details.put("biography", root.get("biography").asText(null));
+            details.put("gender", root.get("gender").asInt(-1));
+            details.put("known_for_department", root.get("known_for_department").asText(null));
+            return details;
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] TMDB 인물 상세정보 실패: tmdb_id=" + tmdbId);
+            return null;
+        }
+    }
+
+    public void saveCastAndCrew(Long movieId, List<Map<String, String>> castAndCrew) {
+        int displayOrder = 0;
+        System.out.println("saveCastAndCrew: movieId=" + movieId + ", castAndCrew.size=" + castAndCrew.size());
+
+        for (Map<String, String> person : castAndCrew) {
+            String name = person.get("name");
+            String roleType = person.get("type");
+            String profileImageUrl = person.get("profile_path");
+            String roleName = person.get("role");
+            Integer tmdbId = person.containsKey("tmdb_id") ? Integer.parseInt(person.get("tmdb_id")) : null;
+
+            Long actorId = actorRepository.findByNameOrInsert(name, profileImageUrl, tmdbId);
+            if (actorId == null) {
+                System.out.println("[ERROR] 배우 DB 저장 실패, 매핑 생략 name=" + name);
+                continue;
+            }
+
+            // ⭐ [추가] 상세 정보 받아와 업데이트
+            if (tmdbId != null) {
+                Map<String, Object> details = getPersonDetailFromTmdb(tmdbId);
+                if (details != null) {
+                    actorRepository.updateActorDetails(actorId, details);
+                }
+            }
+
+            actorRepository.saveMovieActorMapping(movieId, actorId, roleName, roleType, displayOrder);
+            displayOrder++;
+        }
     }
 }

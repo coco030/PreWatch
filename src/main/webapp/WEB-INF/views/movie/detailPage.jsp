@@ -50,6 +50,30 @@
     <p><strong>감독:</strong> ${movie.director}</p>
     <p><strong>연도:</strong> ${movie.year}</p>
     <p><strong>장르:</strong> ${movie.genre}</p>
+    
+    
+    <%-- ⭐ 여기에 연령 등급과 상영 시간 추가 ⭐ --%>
+    <p><strong>연령 등급:</strong> 
+        <c:choose>
+            <c:when test="${not empty movie.rated and movie.rated ne 'N/A'}">
+                ${movie.rated}
+            </c:when>
+            <c:otherwise>
+                정보 없음
+            </c:otherwise>
+        </c:choose>
+    </p>
+    <p><strong>상영 시간:</strong> 
+        <c:choose>
+            <c:when test="${not empty movie.runtime and movie.runtime ne 'N/A'}">
+                ${movie.runtime}
+            </c:when>
+            <c:otherwise>
+                정보 없음
+            </c:otherwise>
+        </c:choose>
+    </p>
+    <%-- ⭐ 추가 끝 ⭐ --%>
 
     <p>
         <i class="bi-star-fill text-warning me-1"></i>
@@ -129,6 +153,45 @@
         </c:if>
     </div>
 </div>
+
+	<h2> 감독</h2>
+<ul>
+  <c:forEach var="person" items="${dbCastList}">
+    <c:if test="${person.role_type eq 'DIRECTOR'}">
+      <li>
+        <a href="${pageContext.request.contextPath}/directors/${person.id}" style="text-decoration:none; color:inherit;">
+          <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
+          <strong>${person.name}</strong>
+        </a>
+        <c:if test="${not empty person.role_name}">
+          <div style="color:gray;">(${person.role_name} 역)</div>
+        </c:if>
+      </li>
+    </c:if>
+  </c:forEach>
+</ul>
+
+
+
+		
+		<h2>👥 배우</h2>
+
+<ul>
+  <c:forEach var="person" items="${dbCastList}">
+    <c:if test="${person.role_type eq 'ACTOR' and person.name ne directorName}">
+      <li>
+        <a href="${pageContext.request.contextPath}/actors/${person.id}" style="text-decoration:none; color:inherit;">
+          <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
+          <strong>${person.name}</strong>
+        </a>
+        <c:if test="${not empty person.role_name}">
+          (<span style="color:gray;">${person.role_name} 역</span>)
+        </c:if>
+      </li>
+    </c:if>
+  </c:forEach>
+</ul>
+
 	
 	
 	                

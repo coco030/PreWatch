@@ -5,20 +5,17 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="<c:url value='/resources/css/comment-card'/>">
-
-
-    
-      <h2 class="section-title">최근 달린 댓글</h2>
+    <h2 class="section-title">최근 달린 댓글</h2>
 	<div class="row g-3 justify-content-center">
 	  <c:choose>
 	    <c:when test="${not empty recentComments}">
 	      <c:forEach var="review" items="${recentComments}">
-	        <c:set var="movie" value="${movieMap[review.movieId]}" />
 	        <div class="col-12 col-md-6 col-lg-4">
-	          <a href="${pageContext.request.contextPath}/movies/${movie.id}" class="text-decoration-none text-dark">
+	        <!-- 상세 페이지로 걸어주기 -->
+	          <a href="${pageContext.request.contextPath}/movies/${review.movieId}" class="text-decoration-none text-dark">
 	            <div class="card h-100 shadow-sm border-0 p-3 d-flex flex-column comment-card">
 	
-	              <!-- 상단: 사용자명 + 별점 -->
+	              <!-- 사용자명 + 별점 -->
 	              <div class="d-flex align-items-center justify-content-between mb-2">
 	                <div class="d-flex align-items-center">
 	                  <span class="fw-semibold text-dark me-2">${review.memberId}</span>
@@ -40,7 +37,7 @@
 	                </div>
 	              </div>
 	
-	              <!-- 중단: 포스터 + 영화 정보 -->
+	              <!-- 포스터 + 영화 정보 -->
 	              <div class="d-flex mb-3 flex-grow-1">
 	                <img
 	                  src="${review.posterPath != null && review.posterPath != '' ? review.posterPath : pageContext.request.contextPath.concat('/resources/images/movies/256px-No-Image-Placeholder.png')}"
@@ -57,7 +54,7 @@
 	                </div>
 	              </div>
 	
-	              <!-- 하단: 하트 -->
+	              <!-- 하트 -->
 	              <div class="d-flex align-items-center mt-auto pt-2 border-top">
 	                <i class="fas fa-heart text-danger me-2"></i>
 	                <span class="small text-muted">찜 ${review.newLikeCount}</span>

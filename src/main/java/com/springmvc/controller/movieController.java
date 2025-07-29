@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.movie;
+import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
 import com.springmvc.service.TmdbApiService;
@@ -51,12 +53,13 @@ public class movieController {
     private final externalMovieApiService externalMovieApiService;
     private final userCartService userCartService;
     private final AdminBannerMovieService adminBannerMovieService;
-
     private final TmdbApiService tmdbApiService; // coco030 07.28
     
 
     @Autowired // coco030 07.28
     private movieRepository movieRepository; // coco030 07.28
+    @Autowired
+    private ActorRepository actorRepository; ; // coco030 07.28
 
     @Autowired
     public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService, TmdbApiService tmdbApiService) { 
@@ -134,6 +137,7 @@ public class movieController {
         return "redirect:/movies";
     }
 
+    // coco030 추가 
     // 외부 API에서 영화 상세 정보 가져와 등록 처리
     @PostMapping("/movies/import-api-detail")
     public String importApiMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session) {
@@ -146,8 +150,24 @@ public class movieController {
         movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
-            // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
-            movieService.save(movieFromApi);
+            movieService.save(movieFromApi); // ★ DB 저장(여기서 id가 할당됨)
+
+            Long movieId = movieFromApi.getId(); // ★ save 이후 id 할당됨
+
+            // 만약 혹시라도 id가 null이면 selectIdSql로 강제 조회 (거의 필요 없음)
+            if (movieId == null) {
+                movieId = movieService.findByApiId(movieFromApi.getApiId()).getId();
+                movieFromApi.setId(movieId);
+            }
+            System.out.println("DEBUG: 저장된 영화 id = " + movieId);
+
+            // TMDB 배우/감독 정보 저장
+            Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+            if (tmdbId != null) {
+                List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
+                tmdbApiService.saveCastAndCrew(movieId, castAndCrew); // 반드시 null 아님!
+            }
+
             logger.info("API 영화 '{}' (ID: {}) DB에 성공적으로 등록.", movieFromApi.getTitle(), movieFromApi.getApiId());
             return "redirect:/movies?status=registered";
         } else {
@@ -157,38 +177,59 @@ public class movieController {
         }
     }
 
+
     // --- Read (조회) 작업 ---
     // read-one: 특정 영화 상세 정보 조회
-    @GetMapping("/movies/{id}")
-    @Transactional(readOnly = true)
-    public String detail(@PathVariable Long id, Model model, HttpSession session) {
-        logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-        movie movie = movieService.findById(id); // DB에서 영화 정보 조회
+ @GetMapping("/movies/{id}")
+ @Transactional(readOnly = true)
+ public String detail(@PathVariable Long id, Model model, HttpSession session) {
+     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
 
-        if (movie == null) {
-            logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-            return "redirect:/movies?error=notFound";
-        }
+     if (movie == null) {
+         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+         return "redirect:/movies?error=notFound";
+     }
 
-        logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", // isRecommended 로깅 제거 (7-24 오후12:41 추가 된 코드)
-                                 movie.getId(), movie.getTitle(), movie.getLikeCount());
+     // 1. DB 출연진 리스트
+     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
+     model.addAttribute("dbCastList", dbCastList);
 
+     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
+         movie.getId(), movie.getTitle(), movie.getLikeCount());
 
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-            boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-            movie.setIsLiked(isLiked);
-            logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
-        } else {
-            movie.setIsLiked(false);
-        }
+     // 2. TMDB 실시간 출연진 (API)
+     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+     model.addAttribute("tmdbCastList", tmdbCastList);
+     
 
-        model.addAttribute("movie", movie);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
-        logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+     // 3. TMDB 그룹핑
+     Map<String, List<String>> castInfo = new HashMap<>();
+     for (Map<String, String> cast : tmdbCastList) {
+         String type = cast.get("roleType"); // "배우", "감독" 등
+         String name = cast.get("name");
+         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+     }
+     model.addAttribute("castInfo", castInfo);
 
-        return "movie/detailPage";
-    }
+     // 찜 상태
+     Member loginMember = (Member) session.getAttribute("loginMember");
+     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+         movie.setIsLiked(isLiked);
+         logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
+     } else {
+         movie.setIsLiked(false);
+     }
+
+     model.addAttribute("movie", movie);
+     model.addAttribute("userRole", session.getAttribute("userRole"));
+     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+
+     return "movie/detailPage";
+ }
+
 
     // read-all: 모든 영화 목록 조회
     @GetMapping({"/movies", "/movies/"})
@@ -349,7 +390,7 @@ public class movieController {
                     externalMovieDetail.setViolence_score_avg(localMovie.getViolence_score_avg());
                     externalMovieDetail.setId(localMovie.getId());
                     externalMovieDetail.setLikeCount(localMovie.getLikeCount());
-                    // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
+
 
                     Member loginMember = (Member) session.getAttribute("loginMember");
                     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -631,19 +672,6 @@ public class movieController {
     public String commentCard(Model model, HttpSession session) {
         List<RecentCommentDTO> recentComments = movieService.getRecentComments();
         model.addAttribute("recentComments", recentComments);
-
-        // movieId는 내부 PK이므로, findById(Long) 사용
-        Map<Long, movie> movieMap = new HashMap<>();
-        for (RecentCommentDTO comment : recentComments) {
-            Long movieId = comment.getMovieId(); // 내부 ID임
-            movie movie = movieRepository.findById(movieId); // 
-            if (movie != null) {
-                movieMap.put(movieId, movie);
-            }
-        }
-
-        model.addAttribute("movieMap", movieMap);
-
         return "movie/comment-card";
     }
     
