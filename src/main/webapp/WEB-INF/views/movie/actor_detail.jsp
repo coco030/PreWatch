@@ -38,36 +38,45 @@
   <p><strong>활동 분야:</strong> ${actor.known_for_department}</p>
 </c:if>
 
-<!-- 소개 -->
-<c:if test="${not empty actor.biography}">
-  <h4>소개</h4>
-  <p style="white-space: pre-line;">${actor.biography}</p>
-</c:if>
+ <p><strong>영화</strong> 
+<c:set var="currentYear" value="" scope="page" />
 
-<!-- 참여 영화 목록 -->
-<h2>참여한 영화</h2>
-<c:if test="${not empty movieList}">
-  <ul>
-    <c:forEach var="movie" items="${movieList}">
-      <li>
-        <strong>${movie.title}</strong><br/>
-<c:choose>
-  <c:when test="${not empty movie.poster_path and fn:startsWith(movie.poster_path, 'http')}">
-    <img src="${movie.poster_path}" width="80" />
-  </c:when>
-  <c:when test="${not empty movie.poster_path}">
-    <img src="https://image.tmdb.org/t/p/w185/${movie.poster_path}" width="80" />
-  </c:when>
-  <c:otherwise>
-    <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
-  </c:otherwise>
-</c:choose>
+<c:forEach var="movie" items="${movieList}">
+    <c:set var="releaseYear" value="${empty movie.release_date ? '미정' : fn:substring(movie.release_date, 0, 4)}" />
+
+    <!-- 연도 그룹 시작/종료 -->
+    <c:if test="${currentYear ne releaseYear}">
+        <c:if test="${not empty currentYear}">
+            </div> <!-- 이전 movie-row 닫기 -->
+        </c:if>
+        <h3 style="margin-top:30px;">${releaseYear}년</h3>
+        <div class="movie-row" style="display:flex; flex-wrap:wrap; gap:24px 16px;">
+        <c:set var="currentYear" value="${releaseYear}" scope="page" />
+    </c:if>
+
+    <!-- 영화 카드: a태그로 감싸기 -->
+    <a href="${pageContext.request.contextPath}/movies/${movie.id}" style="text-decoration:none; color:inherit;">
+      <div class="movie-card" style="width:180px; border:1px solid #eee; border-radius:10px; padding:12px; box-shadow:0 2px 8px #eee;">
+          <c:choose>
+              <c:when test="${not empty movie.poster_path and fn:startsWith(movie.poster_path, 'http')}">
+                  <img src="${movie.poster_path}" width="100%" style="border-radius:8px;"/>
+              </c:when>
+              <c:when test="${not empty movie.poster_path}">
+                  <img src="https://image.tmdb.org/t/p/w185/${movie.poster_path}" width="100%" style="border-radius:8px;"/>
+              </c:when>
+              <c:otherwise>
+                  <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="100%" style="border-radius:8px;"/>
+              </c:otherwise>
+          </c:choose>
+          <div style="font-weight:bold; margin-top:8px; font-size:15px;">${movie.title}</div>
+          <div style="color:#888; font-size:13px;">
+              <c:if test="${not empty movie.release_date}">${movie.release_date}</c:if>
+              <c:if test="${not empty movie.role_name}"><br/>${movie.role_name}</c:if>
+          </div>
+      </div>
+    </a>
+</c:forEach>
+<!-- 마지막 연도 그룹 닫기 -->
+</div>
 
 
-        <span style="color:gray;">
-          <c:if test="${not empty movie.role_name}"> (${movie.role_name})</c:if>
-        </span>
-      </li>
-    </c:forEach>
-  </ul>
-</c:if>

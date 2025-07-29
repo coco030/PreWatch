@@ -86,15 +86,15 @@ public class ActorRepository {
  // 이 배우/감독이 참여한 영화 목록 (출연 or 감독)
     public List<Map<String, Object>> findMoviesByActorId(Long actorId) {
         String sql = """
-            SELECT m.id, m.title, m.poster_path, ma.role_type, ma.role_name
+            SELECT m.id, m.title, m.poster_path, m.release_date, ma.role_type, ma.role_name
             FROM movie_actors ma
             JOIN movies m ON ma.movie_id = m.id
             WHERE ma.actor_id = ?
-            ORDER BY m.release_date DESC
-            """;
-
+            ORDER BY m.release_date DESC, m.title ASC
+        """;
         return jdbcTemplate.queryForList(sql, actorId);
     }
+
     
  // TMDB API 상세 정보 기반으로 배우 정보 업데이트
     public void updateActorDetails(Long actorId, Map<String, Object> details) {
