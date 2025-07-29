@@ -7,6 +7,9 @@
 
 <img src="https://image.tmdb.org/t/p/w300/${actor.profile_image_url}" width="150" />
 
+<c:if test="${not empty actor.age}">
+  <p><strong>나이:</strong>${actor.age}</p>
+</c:if>
 <c:if test="${not empty actor.birthday}">
   <p><strong>출생일:</strong> ${actor.birthday}</p>
 </c:if>

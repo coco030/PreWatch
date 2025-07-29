@@ -190,28 +190,9 @@ public class movieController {
          logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
          return "redirect:/movies?error=notFound";
      }
-
-     // 1. DB 출연진 리스트
-     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
-     model.addAttribute("dbCastList", dbCastList);
-
-     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
-         movie.getId(), movie.getTitle(), movie.getLikeCount());
-
-     // 2. TMDB 실시간 출연진 (API)
-     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
-     model.addAttribute("tmdbCastList", tmdbCastList);
      
-
-     // 3. TMDB 그룹핑
-     Map<String, List<String>> castInfo = new HashMap<>();
-     for (Map<String, String> cast : tmdbCastList) {
-         String type = cast.get("roleType"); // "배우", "감독" 등
-         String name = cast.get("name");
-         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
-     }
-     model.addAttribute("castInfo", castInfo);
+     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
+     movie.getId(), movie.getTitle(), movie.getLikeCount());
 
      // 찜 상태
      Member loginMember = (Member) session.getAttribute("loginMember");
