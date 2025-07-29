@@ -74,9 +74,10 @@ public class ActorRepository {
     
     // 배우 상세 정보
     public void updateActorDetails(Long actorId, Map<String, Object> details) {
-        String sql = "UPDATE actors SET birthday = ?, age = ?, place_of_birth = ?, biography = ?, gender = ?, known_for_department = ? WHERE id = ?";
+    	String sql = "UPDATE actors SET birthday = ?, deathday = ?, age = ?, place_of_birth = ?, biography = ?, gender = ?, known_for_department = ? WHERE id = ?";
         jdbcTemplate.update(sql,
             details.get("birthday"),
+            details.get("deathday"),
             details.get("age"),
             details.get("place_of_birth"),
             details.get("biography"),

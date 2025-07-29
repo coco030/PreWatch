@@ -23,7 +23,7 @@ public class TmdbApiService {
     @Autowired
     private ActorRepository actorRepository;
 
-    private static final int MAX_CAST_COUNT = 5;
+    private static final int MAX_CAST_COUNT = 8;
     private static final String TMDB_API_KEY = "6ec1d7b0638f8e641a7b32f82aa333b8";
     private static final String TMDB_FIND_URL = "https://api.themoviedb.org/3/find/";
     private static final String TMDB_MOVIE_CREDITS_URL = "https://api.themoviedb.org/3/movie/";
@@ -107,7 +107,9 @@ public class TmdbApiService {
             Map<String, Object> details = new HashMap<>();
             // birthday로부터 age 계산
             String birthdayStr = root.get("birthday").asText(null);
+            String deathdayStr = root.get("deathday").asText(null);
             details.put("birthday", birthdayStr);
+            details.put("deathday", deathdayStr); 
 
             if (birthdayStr != null) {
                 try {

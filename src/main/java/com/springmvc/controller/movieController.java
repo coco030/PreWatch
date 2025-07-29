@@ -178,38 +178,56 @@ public class movieController {
     }
 
 
-    // --- Read (조회) 작업 ---
-    // read-one: 특정 영화 상세 정보 조회
- @GetMapping("/movies/{id}")
- @Transactional(readOnly = true)
- public String detail(@PathVariable Long id, Model model, HttpSession session) {
-     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
-
-     if (movie == null) {
-         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-         return "redirect:/movies?error=notFound";
-     }
-     
-     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
-     movie.getId(), movie.getTitle(), movie.getLikeCount());
-
-     // 찜 상태
-     Member loginMember = (Member) session.getAttribute("loginMember");
-     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-         movie.setIsLiked(isLiked);
-         logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
-     } else {
-         movie.setIsLiked(false);
-     }
-
-     model.addAttribute("movie", movie);
-     model.addAttribute("userRole", session.getAttribute("userRole"));
-     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-
-     return "movie/detailPage";
- }
+	    // --- Read (조회) 작업 ---
+	    // read-one: 특정 영화 상세 정보 조회
+	 @GetMapping("/movies/{id}")
+	 @Transactional(readOnly = true)
+	 public String detail(@PathVariable Long id, Model model, HttpSession session) {
+	     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+	     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
+	
+	     if (movie == null) {
+	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+	         return "redirect:/movies?error=notFound";
+	     }
+	
+	     // 1. DB 출연진 리스트
+	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
+	     model.addAttribute("dbCastList", dbCastList);
+	
+	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
+	         movie.getId(), movie.getTitle(), movie.getLikeCount());
+	
+	     // 2. TMDB 실시간 출연진 (API)
+	     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+	     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+	     model.addAttribute("tmdbCastList", tmdbCastList);
+	
+	     // 3. TMDB 그룹핑
+	     Map<String, List<String>> castInfo = new HashMap<>();
+	     for (Map<String, String> cast : tmdbCastList) {
+	         String type = cast.get("roleType"); // "배우", "감독" 등
+	         String name = cast.get("name");
+	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+	     }
+	     model.addAttribute("castInfo", castInfo);
+	
+	     // 찜 상태
+	     Member loginMember = (Member) session.getAttribute("loginMember");
+	     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+	         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+	         movie.setIsLiked(isLiked);
+	         logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
+	     } else {
+	         movie.setIsLiked(false);
+	     }
+	
+	     model.addAttribute("movie", movie);
+	     model.addAttribute("userRole", session.getAttribute("userRole"));
+	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+	
+	     return "movie/detailPage";
+	 }
 
 
     // read-all: 모든 영화 목록 조회

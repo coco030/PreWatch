@@ -1,18 +1,19 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <h2>${actor.name}</h2>
 
 <img src="https://image.tmdb.org/t/p/w300/${actor.profile_image_url}" width="150" />
 
-<c:if test="${not empty actor.age}">
-  <p><strong>나이:</strong>${actor.age}</p>
-</c:if>
-<c:if test="${not empty actor.birthday}">
-  <p><strong>출생일:</strong> ${actor.birthday}</p>
-</c:if>
+<p>
+  <strong>출생일:</strong> ${actor.birthday}
+  <c:if test="${not empty actor.deathday}">
+    ~ ${actor.deathday} (${actor.age}세 사망)
+  </c:if>
+  <c:if test="${empty actor.deathday}">
+    (${actor.age}세)
+  </c:if>
+</p>
 <c:if test="${not empty actor.place_of_birth}">
   <p><strong>출생지:</strong> ${actor.place_of_birth}</p>
 </c:if>
