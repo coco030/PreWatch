@@ -1,5 +1,8 @@
 package com.springmvc.service;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,8 +105,22 @@ public class TmdbApiService {
             JsonNode root = objectMapper.readTree(json);
 
             Map<String, Object> details = new HashMap<>();
-            details.put("birthday", root.get("birthday").asText(null));
-            details.put("deathday", root.get("deathday").asText(null));
+            // birthday로부터 age 계산
+            String birthdayStr = root.get("birthday").asText(null);
+            details.put("birthday", birthdayStr);
+
+            if (birthdayStr != null) {
+                try {
+                    LocalDate birthday = LocalDate.parse(birthdayStr); // yyyy-MM-dd 형식 전제
+                    int age = Period.between(birthday, LocalDate.now()).getYears();
+                    details.put("age", age);
+                } catch (DateTimeParseException e) {
+                    System.out.println("[WARN] 생일 날짜 파싱 실패: " + birthdayStr);
+                    details.put("age", null);
+                }
+            } else {
+                details.put("age", null);
+            }
             details.put("place_of_birth", root.get("place_of_birth").asText(null));
             details.put("biography", root.get("biography").asText(null));
             details.put("gender", root.get("gender").asInt(-1));

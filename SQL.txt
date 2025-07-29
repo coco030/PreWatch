@@ -31,7 +31,7 @@ INSERT INTO member (id, password, role) VALUES ('guest', '1234', 'MEMBER'); -- �
 INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
 
--- 5. 영화 테이블
+-- 5. 영화 테이블 (수정)
 CREATE TABLE movies (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     api_id VARCHAR(255) UNIQUE,
@@ -45,6 +45,8 @@ CREATE TABLE movies (
     overview TEXT,
     poster_path VARCHAR(255),
     like_count INT DEFAULT 0,
+    runtime VARCHAR(50),   
+    rated VARCHAR(50),     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -101,10 +103,10 @@ CREATE TABLE movie_stats (
 CREATE TABLE actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    tmdb_id INT UNIQUE,
+    tmdb_id INT, -- 유니크 제거 
     profile_image_url VARCHAR(255),
     birthday DATE,
-    deathday DATE,
+    age INT,
     place_of_birth VARCHAR(255),
     biography TEXT,
     gender TINYINT,
@@ -154,6 +156,7 @@ BEGIN
     WHERE id = NEW.movie_id;
 END;
 //
+
 
 -- user_carts에서 찜이 삭제될 때 like_count 감소
 CREATE TRIGGER trg_decrease_like_count
