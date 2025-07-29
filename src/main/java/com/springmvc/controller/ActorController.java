@@ -26,21 +26,18 @@ public class ActorController {
     @Autowired
     private TmdbApiService tmdbApiService;
     
- // ✅ 배우 상세 페이지
-    @GetMapping("/actors/{id}")
-    public String actorDetail(@PathVariable Long id, Model model) {
-        Map<String, Object> actor = actorRepository.findActorDetail(id);
-        model.addAttribute("actor", actor);
-        return "movie/actor_detail"; //
-    }
-
-    // ✅ 감독 상세 페이지 (같은 뷰)
-    @GetMapping("/directors/{id}")
-    public String directorDetail(@PathVariable Long id, Model model) {
-        Map<String, Object> director = actorRepository.findActorDetail(id);
-        model.addAttribute("actor", director);
-        return "movie/actor_detail"; // ✅ 동일한 JSP
-    }
     
+    // 출연진 상세 정보
+    @GetMapping({"/actors/{id}", "/directors/{id}"})
+    public String actorOrDirectorDetail(@PathVariable Long id, Model model) {
+        Map<String, Object> person = actorRepository.findActorDetail(id);
+        model.addAttribute("actor", person);
+
+        // 추가: 출연/제작 참여 영화 목록
+        List<Map<String, Object>> movieList = actorRepository.findMoviesByActorId(id);
+        model.addAttribute("movieList", movieList);
+
+        return "movie/actor_detail"; // 공통 뷰
+    }
 
 }

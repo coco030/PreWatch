@@ -51,6 +51,7 @@ public class TmdbApiService {
         return null;
     }
 
+
     public List<Map<String, String>> getCastAndCrew(Integer tmdbMovieId) {
         String url = UriComponentsBuilder
             .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/credits")
@@ -58,10 +59,12 @@ public class TmdbApiService {
             .toUriString();
 
         List<Map<String, String>> result = new ArrayList<>();
+
         try {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(json);
 
+            // 🎭 cast (배우/성우)
             JsonNode cast = root.get("cast");
             for (int i = 0; i < Math.min(MAX_CAST_COUNT, cast.size()); i++) {
                 JsonNode person = cast.get(i);
@@ -74,24 +77,32 @@ public class TmdbApiService {
                 result.add(info);
             }
 
+            // 🎬 crew (감독 1명만)
             JsonNode crew = root.get("crew");
             for (JsonNode member : crew) {
-                if ("Director".equalsIgnoreCase(member.get("job").asText())) {
+                String job = member.get("job").asText();
+                if ("Director".equalsIgnoreCase(job)) {
                     Map<String, String> info = new HashMap<>();
                     info.put("name", member.get("name").asText());
                     info.put("profile_path", member.get("profile_path").asText(null));
+                    info.put("role", getKoreanJobName(job)); // "감독"
                     info.put("type", "DIRECTOR");
-                    info.put("role", member.get("job").asText());
                     info.put("tmdb_id", member.get("id").asText());
                     result.add(info);
-                    break;
+                    break; // ❗ 한 명만
                 }
             }
+
         } catch (Exception e) {
             System.out.println("[ERROR] TMDB 출연진 정보 파싱 실패: movieId=" + tmdbMovieId);
         }
+
         return result;
     }
+
+
+
+   
 
     // ⭐ [추가] TMDB 인물 상세 정보 가져오기
     public Map<String, Object> getPersonDetailFromTmdb(Integer tmdbId) {
@@ -144,6 +155,7 @@ public class TmdbApiService {
             String roleType = person.get("type");
             String profileImageUrl = person.get("profile_path");
             String roleName = person.get("role");
+        
             Integer tmdbId = person.containsKey("tmdb_id") ? Integer.parseInt(person.get("tmdb_id")) : null;
 
             Long actorId = actorRepository.findByNameOrInsert(name, profileImageUrl, tmdbId);
@@ -152,16 +164,47 @@ public class TmdbApiService {
                 continue;
             }
 
-            // ⭐ [추가] 상세 정보 받아와 업데이트
+            // 중복 선언 제거 + 내부 메서드 직접 호출
             if (tmdbId != null) {
                 Map<String, Object> details = getPersonDetailFromTmdb(tmdbId);
                 if (details != null) {
                     actorRepository.updateActorDetails(actorId, details);
                 }
             }
-
             actorRepository.saveMovieActorMapping(movieId, actorId, roleName, roleType, displayOrder);
             displayOrder++;
         }
     }
+    
+    private String getKoreanJobName(String job) {
+        Map<String, String> jobMap = Map.ofEntries(
+            Map.entry("Director", "감독"),
+            Map.entry("Producer", "프로듀서"),
+            Map.entry("Executive Producer", "총괄 프로듀서"),
+            Map.entry("Writer", "작가"),
+            Map.entry("Screenplay", "각본"),
+            Map.entry("Story", "원작"),
+            Map.entry("Original Music Composer", "음악"),
+            Map.entry("Sound Re-Recording Mixer", "음향 믹싱"),
+            Map.entry("Sound Editor", "음향 편집"),
+            Map.entry("Editor", "편집"),
+            Map.entry("Director of Photography", "촬영 감독"),
+            Map.entry("Cinematography", "촬영"),
+            Map.entry("Costume Designer", "의상 디자이너"),
+            Map.entry("Makeup Artist", "메이크업"),
+            Map.entry("Production Design", "미술"),
+            Map.entry("Art Direction", "아트 디렉션"),
+            Map.entry("Set Decoration", "세트 장식"),
+            Map.entry("Visual Effects Supervisor", "VFX 감독"),
+            Map.entry("Animation", "애니메이션"),
+            Map.entry("Casting", "캐스팅"),
+            Map.entry("Stunt Coordinator", "스턴트 조정"),
+            Map.entry("Lighting Technician", "조명"),
+            Map.entry("Sound Designer", "사운드 디자인")
+            // 필요 시 더 추가 가능
+        );
+
+        return jobMap.getOrDefault(job, job); // 모르는 건 원문 그대로
+    }
+
 }

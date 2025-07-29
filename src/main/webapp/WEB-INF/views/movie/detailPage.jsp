@@ -39,7 +39,7 @@
                     <img src="${posterSrc}" alt="${movie.title} 포스터" class="img-fluid rounded shadow-sm" />
                 </c:when>
                 <c:otherwise>
-                    <p>(이미지 없음)</p>
+                    <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
                 </c:otherwise>
             </c:choose>
         </div>
@@ -154,41 +154,120 @@
     </div>
 </div>
 
-    <!-- 배우와 감독 리스트 -->
-    	<h2> 감독</h2>
-	<ul>
-	  <c:forEach var="person" items="${dbCastList}">
-	    <c:if test="${person.role_type eq 'DIRECTOR'}">
-	      <li>
-	        <a href="${pageContext.request.contextPath}/directors/${person.id}" style="text-decoration:none; color:inherit;">
-	          <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
-	          <strong>${person.name}</strong>
-	        </a>
-	        <c:if test="${not empty person.role_name}">
-	          <div style="color:gray;">(${person.role_name} 역)</div>
-	        </c:if>
-	      </li>
-	    </c:if>
-	  </c:forEach>
-	</ul>
+<!-- 감독 표시 -->
+<h2>🎬 감독</h2>
+<ul>
+  <c:choose>
+    <c:when test="${not empty dbCastList}">
+      <c:forEach var="person" items="${dbCastList}">
+        <c:if test="${person.role_type eq 'DIRECTOR'}">
+          <li style="margin-bottom: 12px;">
+            <a href="${pageContext.request.contextPath}/directors/${person.id}" style="text-decoration:none; color:inherit;">
+              <c:choose>
+                <c:when test="${not empty person.profile_image_url}">
+                  <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
+                </c:when>
+                <c:otherwise>
+                  <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
+                </c:otherwise>
+              </c:choose>
+              <div><strong>${person.name}</strong></div>
+            </a>
+            <c:if test="${not empty person.role_name}">
+              <div style="color:gray;">(${person.role_name})</div>
+            </c:if>
+          </li>
+        </c:if>
+      </c:forEach>
+    </c:when>
+    <c:when test="${not empty castAndCrew}">
+      <c:forEach var="person" items="${castAndCrew}">
+        <c:if test="${person.type eq 'DIRECTOR'}">
+          <li style="margin-bottom: 12px;">
+            <c:choose>
+              <c:when test="${not empty person.profile_path}">
+                <img src="https://image.tmdb.org/t/p/w185/${person.profile_path}" width="80" />
+              </c:when>
+              <c:otherwise>
+                <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
+              </c:otherwise>
+            </c:choose>
+            <div><strong>${person.name}</strong></div>
+            <c:if test="${not empty person.role}">
+              <div style="color:gray;">(${person.role})</div>
+            </c:if>
+          </li>
+        </c:if>
+      </c:forEach>
+    </c:when>
+    <c:otherwise>
+      <li>감독 정보 없음</li>
+    </c:otherwise>
+  </c:choose>
+</ul>
 
-	<h2>👥 배우</h2>
+<!-- 주요 참여진 표시 -->
+<h2>👥 주요 참여진</h2>
+<ul>
+  <c:choose>
+    <c:when test="${not empty dbCastList}">
+      <c:forEach var="person" items="${dbCastList}">
+        <c:if test="${person.role_type ne 'DIRECTOR'}">
+          <li style="margin-bottom: 12px;">
+            <a href="${pageContext.request.contextPath}/actors/${person.id}" style="text-decoration:none; color:inherit;">
+              <c:choose>
+                <c:when test="${not empty person.profile_image_url}">
+                  <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
+                </c:when>
+                <c:otherwise>
+                  <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
+                </c:otherwise>
+              </c:choose>
+              <div><strong>${person.name}</strong></div>
+            </a>
+            <span style="color:gray;">
+              <c:choose>
+                <c:when test="${person.role_type eq 'ACTOR'}">배우</c:when>
+                <c:when test="${person.role_type eq 'VOICE'}">성우</c:when>
+                <c:otherwise>${person.role_type}</c:otherwise>
+              </c:choose>
+              <c:if test="${not empty person.role_name}"> (${person.role_name} 역)</c:if>
+            </span>
+          </li>
+        </c:if>
+      </c:forEach>
+    </c:when>
+    <c:when test="${not empty castAndCrew}">
+      <c:forEach var="person" items="${castAndCrew}">
+        <c:if test="${person.type ne 'DIRECTOR'}">
+          <li style="margin-bottom: 12px;">
+            <c:choose>
+              <c:when test="${not empty person.profile_path}">
+                <img src="https://image.tmdb.org/t/p/w185/${person.profile_path}" width="80" />
+              </c:when>
+              <c:otherwise>
+                <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="80" />
+              </c:otherwise>
+            </c:choose>
+            <div><strong>${person.name}</strong></div>
+            <span style="color:gray;">
+              <c:choose>
+                <c:when test="${person.type eq 'ACTOR'}">배우</c:when>
+                <c:when test="${person.type eq 'VOICE'}">성우</c:when>
+                <c:otherwise>${person.type}</c:otherwise>
+              </c:choose>
+              <c:if test="${not empty person.role}"> (${person.role} 역)</c:if>
+            </span>
+          </li>
+        </c:if>
+      </c:forEach>
+    </c:when>
+    <c:otherwise>
+      <li>출연진 정보 없음</li>
+    </c:otherwise>
+  </c:choose>
+</ul>
 
-		<ul>
-		  <c:forEach var="person" items="${dbCastList}">
-		    <c:if test="${person.role_type eq 'ACTOR' and person.name ne directorName}">
-		      <li>
-		        <a href="${pageContext.request.contextPath}/actors/${person.id}" style="text-decoration:none; color:inherit;">
-		          <img src="https://image.tmdb.org/t/p/w185/${person.profile_image_url}" width="80" />
-		          <strong>${person.name}</strong>
-		        </a>
-		        <c:if test="${not empty person.role_name}">
-		          (<span style="color:gray;">${person.role_name} 역</span>)
-		        </c:if>
-		      </li>
-		    </c:if>
-		  </c:forEach>
-		</ul>
 
 	
 	                

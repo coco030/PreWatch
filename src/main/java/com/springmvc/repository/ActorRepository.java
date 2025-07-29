@@ -17,14 +17,23 @@ public class ActorRepository {
 
     // 배우 이름(혹은 tmdb_id)로 이미 존재하는지 확인
     public Long findByNameOrInsert(String name, String profileImageUrl, Integer tmdbId) {
-        // 1. 먼저 동일 이름 배우가 있는지 확인
-        String selectSql = "SELECT id FROM actors WHERE name = ? LIMIT 1";
-        List<Long> ids = jdbcTemplate.query(selectSql, (rs, rowNum) -> rs.getLong("id"), name);
-        if (!ids.isEmpty()) {
-            return ids.get(0);
+        // 1. tmdb_id가 있으면 그걸로 먼저 중복 확인 (가장 정확)
+        if (tmdbId != null) {
+            String tmdbSql = "SELECT id FROM actors WHERE tmdb_id = ? LIMIT 1";
+            List<Long> tmdbMatches = jdbcTemplate.query(tmdbSql, (rs, rowNum) -> rs.getLong("id"), tmdbId);
+            if (!tmdbMatches.isEmpty()) {
+                return tmdbMatches.get(0);
+            }
         }
 
-        // 2. 없으면 새로 추가 (안정적 방식)
+        // 2. tmdb_id 없거나 조회 안됐으면 이름 기반으로 검사 (보조 수단)
+        String nameSql = "SELECT id FROM actors WHERE name = ? LIMIT 1";
+        List<Long> nameMatches = jdbcTemplate.query(nameSql, (rs, rowNum) -> rs.getLong("id"), name);
+        if (!nameMatches.isEmpty()) {
+            return nameMatches.get(0);
+        }
+
+        // 3. 둘 다 없으면 새로 INSERT
         String insertSql = "INSERT INTO actors (name, profile_image_url, tmdb_id) VALUES (?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -38,12 +47,13 @@ public class ActorRepository {
         }, keyHolder);
 
         if (rowsAffected <= 0 || keyHolder.getKey() == null) {
-            System.out.println("[ERROR] 배우 INSERT 실패 또는 키 회수 실패: name=" + name);
+            System.out.println("[ERROR] 배우 INSERT 실패 또는 키 회수 실패: name=" + name + ", tmdb_id=" + tmdbId);
             return null;
         }
 
         return keyHolder.getKey().longValue();
     }
+
 
 
 
@@ -66,15 +76,41 @@ public class ActorRepository {
         return jdbcTemplate.queryForList(sql, movieId);
     }
 
-    // 배우/감독 id로 상세 정보
+    // 출연진 id로 상세 정보
     public Map<String, Object> findActorDetail(Long actorId) {
         String sql = "SELECT * FROM actors WHERE id = ?";
         return jdbcTemplate.queryForMap(sql, actorId);
     }
+
     
-    // 배우 상세 정보
+ // 이 배우/감독이 참여한 영화 목록 (출연 or 감독)
+    public List<Map<String, Object>> findMoviesByActorId(Long actorId) {
+        String sql = """
+            SELECT m.id, m.title, m.poster_path, ma.role_type, ma.role_name
+            FROM movie_actors ma
+            JOIN movies m ON ma.movie_id = m.id
+            WHERE ma.actor_id = ?
+            ORDER BY m.release_date DESC
+            """;
+
+        return jdbcTemplate.queryForList(sql, actorId);
+    }
+    
+ // TMDB API 상세 정보 기반으로 배우 정보 업데이트
     public void updateActorDetails(Long actorId, Map<String, Object> details) {
-    	String sql = "UPDATE actors SET birthday = ?, deathday = ?, age = ?, place_of_birth = ?, biography = ?, gender = ?, known_for_department = ? WHERE id = ?";
+        String sql = """
+            UPDATE actors
+            SET
+                birthday = ?,
+                deathday = ?,
+                age = ?,
+                place_of_birth = ?,
+                biography = ?,
+                gender = ?,
+                known_for_department = ?
+            WHERE id = ?
+            """;
+
         jdbcTemplate.update(sql,
             details.get("birthday"),
             details.get("deathday"),
@@ -86,8 +122,5 @@ public class ActorRepository {
             actorId
         );
     }
-
-
-
 
 }

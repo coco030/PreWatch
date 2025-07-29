@@ -194,6 +194,7 @@ public class movieController {
 	     // 1. DB 출연진 리스트
 	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
 	     model.addAttribute("dbCastList", dbCastList);
+	     System.out.println("dbCastList :" + dbCastList);
 	
 	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
 	         movie.getId(), movie.getTitle(), movie.getLikeCount());
@@ -202,6 +203,7 @@ public class movieController {
 	     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
 	     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
 	     model.addAttribute("tmdbCastList", tmdbCastList);
+	     System.out.println("tmdbCastList :" + tmdbCastList);
 	
 	     // 3. TMDB 그룹핑
 	     Map<String, List<String>> castInfo = new HashMap<>();
@@ -211,6 +213,7 @@ public class movieController {
 	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
 	     }
 	     model.addAttribute("castInfo", castInfo);
+	     System.out.println("castInfo :" + castInfo);
 	
 	     // 찜 상태
 	     Member loginMember = (Member) session.getAttribute("loginMember");
