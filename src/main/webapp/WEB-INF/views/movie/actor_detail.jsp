@@ -38,7 +38,7 @@
   <p><strong>활동 분야:</strong> ${actor.known_for_department}</p>
 </c:if>
 
- <p><strong>영화</strong> 
+ <p><strong>영화</strong></p>
 <c:set var="currentYear" value="" scope="page" />
 
 <c:forEach var="movie" items="${movieList}">
@@ -50,33 +50,40 @@
             </div> <!-- 이전 movie-row 닫기 -->
         </c:if>
         <h3 style="margin-top:30px;">${releaseYear}년</h3>
-        <div class="movie-row" style="display:flex; flex-wrap:wrap; gap:24px 16px;">
+        <div class="movie-row" style="display:flex; flex-direction:column; gap:18px;">
         <c:set var="currentYear" value="${releaseYear}" scope="page" />
     </c:if>
 
-    <!-- 영화 카드: a태그로 감싸기 -->
-    <a href="${pageContext.request.contextPath}/movies/${movie.id}" style="text-decoration:none; color:inherit;">
-      <div class="movie-card" style="width:180px; border:1px solid #eee; border-radius:10px; padding:12px; box-shadow:0 2px 8px #eee;">
-          <c:choose>
-              <c:when test="${not empty movie.poster_path and fn:startsWith(movie.poster_path, 'http')}">
-                  <img src="${movie.poster_path}" width="100%" style="border-radius:8px;"/>
-              </c:when>
-              <c:when test="${not empty movie.poster_path}">
-                  <img src="https://image.tmdb.org/t/p/w185/${movie.poster_path}" width="100%" style="border-radius:8px;"/>
-              </c:when>
-              <c:otherwise>
-                  <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" alt="기본 이미지" width="100%" style="border-radius:8px;"/>
-              </c:otherwise>
-          </c:choose>
-          <div style="font-weight:bold; margin-top:8px; font-size:15px;">${movie.title}</div>
-          <div style="color:#888; font-size:13px;">
-              <c:if test="${not empty movie.release_date}">${movie.release_date}</c:if>
-              <c:if test="${not empty movie.role_name}"><br/>${movie.role_name}</c:if>
-          </div>
-      </div>
+    <!-- 영화 카드: a태그로 감싸기 (가로 배치) -->
+    <a href="${pageContext.request.contextPath}/movies/${movie.id}" 
+       style="display:flex; align-items:center; border:1px solid #eee; border-radius:12px; padding:16px 22px; margin-bottom:0; text-decoration:none; color:inherit; box-shadow:0 2px 8px #f0f0f0; gap:24px;">
+        <!-- 포스터 -->
+        <div style="flex-shrink:0;">
+            <c:choose>
+                <c:when test="${not empty movie.poster_path and fn:startsWith(movie.poster_path, 'http')}">
+                    <img src="${movie.poster_path}" width="90" style="border-radius:8px;"/>
+                </c:when>
+                <c:when test="${not empty movie.poster_path}">
+                    <img src="https://image.tmdb.org/t/p/w185/${movie.poster_path}" width="90" style="border-radius:8px;"/>
+                </c:when>
+                <c:otherwise>
+                    <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" width="90" style="border-radius:8px;"/>
+                </c:otherwise>
+            </c:choose>
+        </div>
+        <!-- 텍스트 정보 -->
+        <div style="display:flex; flex-direction:column; flex:1;">
+            <div style="font-weight:bold; font-size:20px;">${movie.title}</div>
+            <div style="color:#888; font-size:15px;">
+                <c:if test="${not empty movie.role_name}">
+                    ${movie.role_name}
+                </c:if>
+                <c:if test="${not empty movie.rating}">
+                    <span style="margin-left:16px;">평균 ★ ${movie.rating}</span>
+                </c:if>
+            </div>
+        </div>
     </a>
 </c:forEach>
 <!-- 마지막 연도 그룹 닫기 -->
 </div>
-
-
