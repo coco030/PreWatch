@@ -39,7 +39,9 @@ public class ReviewRepositoryImpl implements ReviewRepository {
                      "    mov.title AS movieName, " +     // movies 테이블의 'title' 컬럼 사용
                      "    ur.review_content AS reviewContent, " +
                      "    mov.poster_path AS posterPath, " +
+                     "	mov.id AS movieId,"+                                                               // 24.07.29 coco030 
                      "    mov.like_count AS newLikeCount " + // movies 테이블의 'like_count' 컬럼 사용
+                     
                      "FROM " +
                      "    user_reviews ur " +             // user_reviews 테이블 사용
                      "JOIN " +
@@ -69,6 +71,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
             dto.setReviewContent(rs.getString("reviewContent"));
             dto.setPosterPath(rs.getString("posterPath"));
             dto.setNewLikeCount(rs.getInt("newLikeCount"));
+            dto.setMovieId(rs.getLong("movieId")); // + coco030 25.07.29 추가. 영화페이지로 클릭해서 가져가게 하기 위해
             return dto;
         }
     }

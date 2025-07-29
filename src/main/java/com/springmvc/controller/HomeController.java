@@ -62,13 +62,7 @@ public class HomeController {
         List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
 
-        // ⭐⭐⭐ 7. 최근 등록된 평가된 평가와 댓글 섹션 데이터 추가 ⭐⭐⭐
-        List<RecentCommentDTO> recentComments = movieService.getRecentComments();
-        model.addAttribute("recentComments", recentComments);
-        logger.debug("HomeController: 'recentComments' 모델에 {}개의 코멘트 추가됨.", recentComments.size());
-        if (!recentComments.isEmpty()) {
-            recentComments.forEach(comment -> logger.debug("  - 모델에 추가된 코멘트 (HomeController): {}", comment.getMovieName()));
-        }
+       
         // ⭐⭐⭐ 여기까지 추가 ⭐⭐⭐
         
      // 25.07.28 coco030 통계 객체를 메서드 안에서 가져오고 모델에 담기

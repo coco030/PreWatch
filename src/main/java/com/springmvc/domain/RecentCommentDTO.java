@@ -7,18 +7,32 @@ public class RecentCommentDTO {
     private String reviewContent; // 코멘트 내용
     private String posterPath; // 영화 포스터 경로
     private int newLikeCount; // 찜 개수 (좋아요 수)
+    private Long movieId; // + 25.07.29 coco030 추가
 
     public RecentCommentDTO() {
     }
 
-    public RecentCommentDTO(String memberId, int userRating, String movieName, String reviewContent, String posterPath, int newLikeCount) {
+    
+    // movieId; + 25.07.29 coco030 추가
+    public RecentCommentDTO(String memberId, int userRating, String movieName, String reviewContent, String posterPath, int newLikeCount, Long movieId) {
         this.memberId = memberId;
         this.userRating = userRating;
         this.movieName = movieName;
         this.reviewContent = reviewContent;
         this.posterPath = posterPath;
         this.newLikeCount = newLikeCount;
+        this.movieId = movieId;
     }
+
+    public Long getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(Long movieId) {
+        this.movieId = movieId;
+    }
+    
+    //  // movieId; + 25.07.29 coco030 추가 끝
 
     // Getter 및 Setter 메서드
     public String getMemberId() {

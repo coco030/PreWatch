@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +33,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.movie;
+import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
+import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
@@ -49,13 +52,19 @@ public class movieController {
     private final userCartService userCartService;
     private final AdminBannerMovieService adminBannerMovieService;
 
+    private final TmdbApiService tmdbApiService; // coco030 07.28
+    
+
+    @Autowired // coco030 07.28
+    private movieRepository movieRepository; // coco030 07.28
 
     @Autowired
-    public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService) { 
+    public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService, TmdbApiService tmdbApiService) { 
         this.movieService = movieService;
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
         this.adminBannerMovieService = adminBannerMovieService; // 
+		this.tmdbApiService = tmdbApiService;  // coco030 07.28
     }
 
     private boolean isAdmin(HttpSession session) {
@@ -228,13 +237,6 @@ public class movieController {
         List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         
-     // 3. PreWatch 최근 댓글 목록 가져오기
-        List<RecentCommentDTO> recentComments = movieService.getRecentComments();
-        model.addAttribute("recentComments", recentComments);
-        logger.debug("MovieController: 'recentComments' 모델에 {}개의 코멘트 추가됨.", recentComments.size());
-        if (!recentComments.isEmpty()) {
-            recentComments.forEach(comment -> logger.debug("  - 모델에 추가된 코멘트: {}", comment.getMovieName())); // 간단한 정보만 로깅
-        }
 
         Member loginMember = (Member) session.getAttribute("loginMember"); 
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -364,7 +366,18 @@ public class movieController {
                     externalMovieDetail.setLikeCount(0);
                     // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
                 }
-
+                
+                
+             
+              // TMDB 배우·감독 정보 조회  (25.07.28 coco030)
+                String imdbIdForTmdb = externalMovieDetail.getApiId();
+                Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbIdForTmdb);
+                if (tmdbId != null) {
+                    List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
+                    model.addAttribute("castAndCrew", castAndCrew);
+                } //
+                
+          
                 model.addAttribute("movie", externalMovieDetail);
                 model.addAttribute("userRole", session.getAttribute("userRole"));
                 return "movie/detailPage";
@@ -610,6 +623,28 @@ public class movieController {
     }
 	
 // ===========coco030이 추가한 내역  끝 ==== ///
-	
+
+    
+ // coco030 07.28
+    
+    @GetMapping("/movies/commentCard")
+    public String commentCard(Model model, HttpSession session) {
+        List<RecentCommentDTO> recentComments = movieService.getRecentComments();
+        model.addAttribute("recentComments", recentComments);
+
+        // movieId는 내부 PK이므로, findById(Long) 사용
+        Map<Long, movie> movieMap = new HashMap<>();
+        for (RecentCommentDTO comment : recentComments) {
+            Long movieId = comment.getMovieId(); // 내부 ID임
+            movie movie = movieRepository.findById(movieId); // 
+            if (movie != null) {
+                movieMap.put(movieId, movie);
+            }
+        }
+
+        model.addAttribute("movieMap", movieMap);
+
+        return "movie/comment-card";
+    }
     
 }
