@@ -37,7 +37,7 @@
   <p><strong>활동 분야:</strong> ${actor.known_for_department}</p>
 </c:if>
 
-<p class="fw-bold mt-5 mb-3">영화</p>
+<p class="fw-bold mt-5 mb-3">출연작 필모그래피</p>
 
 <%-- 연도 그룹 분리 로직 --%>
 <c:set var="currentYear" value="" scope="page" />

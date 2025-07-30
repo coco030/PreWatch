@@ -2,10 +2,12 @@ package com.springmvc.service;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -216,5 +218,86 @@ public class TmdbApiService {
 
         return jobMap.getOrDefault(job, job); // 모르는 건 원문 그대로
     }
+    
+    
+
+    private static final String OMDB_API_KEY = "1456190a";
+    private static final String OMDB_URL = "http://www.omdbapi.com/";
+
+    // 수동 영화 등록폼에서 영화코드만 입력하면 다 OMDB_API_KEY로 대부분의 정보를 받고, TMDB 키로 배우 정보를 받게 함.
+    // OMDB_API_KEY키 팀원과 다르게 새로 발급받은 거라 시범 조회에서는 문제 없을 듯
+    public Map<String, Object> getMovieDetailByImdbId(String apiId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String url = UriComponentsBuilder
+                .fromHttpUrl(OMDB_URL)
+                .queryParam("apikey", OMDB_API_KEY)
+                .queryParam("i", apiId)
+                .toUriString();
+
+            // OMDb 호출 URL 출력
+            System.out.println("[DEBUG] OMDb 호출 URL: " + url);
+
+            String json = restTemplate.getForObject(url, String.class);
+
+            // OMDb 원본 응답 출력
+            System.out.println("[DEBUG] OMDb 원본 응답: " + json);
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(json);
+
+            // OMDb 실패 케이스도 로그로 확인
+            if (root.has("Response") && "False".equalsIgnoreCase(root.get("Response").asText())) {
+                System.out.println("[ERROR] OMDb API 에러: " + root.path("Error").asText());
+                return result; // 빈 map 반환
+            }
+
+            // 파싱된 Title 바로 출력
+            String title = root.path("Title").asText(null);
+            System.out.println("[DEBUG] 파싱된 Title: " + title);
+
+            result.put("title", title);
+            result.put("director", root.path("Director").asText(null));
+            result.put("year", parseIntOrZero(root.path("Year").asText(null)));
+            result.put("genre", root.path("Genre").asText(null));
+            result.put("rated", root.path("Rated").asText(null));
+            result.put("overview", root.path("Plot").asText(null));
+            result.put("runtime", root.path("Runtime").asText(null));
+            result.put("poster_path", root.path("Poster").asText(null));
+            result.put("poster_path", root.path("Poster").asText(null));
+            
+	         // 개봉일(LocalDate) 파싱 추가
+	         String releasedStr = root.path("Released").asText(null);
+	         LocalDate releaseDate = null;
+	         if (releasedStr != null && !releasedStr.equalsIgnoreCase("N/A")) {
+	             try {
+	                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
+	                 releaseDate = LocalDate.parse(releasedStr, formatter);
+	             } catch (Exception e) {
+	                 System.out.println("[WARN] 개봉일 날짜 파싱 실패: " + releasedStr);
+	             }
+	         }
+	         result.put("release_date", releaseDate);
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] OMDb 영화 정보 파싱 실패: apiId=" + apiId + ", msg=" + e.getMessage());
+            // 실패 시 빈 맵 리턴
+        }
+        return result;
+    }
+    
+    
+ // 문자열(String)을 정수(int)로 바꿔주는 "보조 함수
+    private int parseIntOrZero(String value) {
+        try {
+            return value == null ? 0 : Integer.parseInt(value.replaceAll("[^\\d]", ""));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+
+
+
 
 }

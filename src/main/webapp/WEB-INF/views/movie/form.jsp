@@ -37,8 +37,18 @@
     </c:choose>
 </c:set>
 <form action="${formActionUrl}" method="post" enctype="multipart/form-data">
- 
-    제목: <input type="text" name="title" value="${movie.title}" /><br/>
+ 	<%-- 25.07.30 coco030 추가 : 기능 이걸 넣으면  TMDB api를 써서 배우 매핑하고 출연진도 동시 저장 --%>
+    <label for="apiId">IMDb 코드:</label>
+	<input type="text" name="apiId" value="${movie.apiId}" placeholder="예: tt1234567" style="width: 160px;" />
+	<span style="color: #666; font-size: 0.97em;">
+	    (※ 코드만 입력하면 영화 정보 자동완성 및 출연진까지 동시 등록)
+	    <a href="https://www.imdb.com/" target="_blank" style="color:#0066cc; text-decoration:underline; margin-left:7px;">
+	        IMDb에서 코드 찾기
+	    </a>
+	</span>
+	<br/>
+	<%-- 25.07.30 coco030 추가 끝 --%>
+	제목: <input type="text" name="title" value="${movie.title}" /><br/>
     감독: <input type="text" name="director" value="${movie.director}" /><br/>
     연도: <input type="number" name="year" value="${movie.year}" /><br/>
     장르: <input type="text" name="genre" value="${movie.genre}" /><br/>

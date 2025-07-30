@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,47 +95,91 @@ public class movieController {
         return "movie/form";
     }
 
-    // 새 영화 등록 처리
     @PostMapping("/movies")
-    public String create(@ModelAttribute movie movie,
-                         @RequestParam("posterImage") MultipartFile posterImage,
-                         HttpServletRequest request, HttpSession session) {
+    public String create(
+            @ModelAttribute movie movie,
+            @RequestParam("posterImage") MultipartFile posterImage,
+            HttpServletRequest request,
+            HttpSession session,
+            Model model) {
+
         if (!isAdmin(session)) {
             logger.warn("[POST /movies] 권한 없음: 비관리자 영화 등록 시도.");
             return "redirect:/accessDenied";
         }
-        logger.info("[POST /movies] 새 영화 등록 요청: 제목 = {}", movie.getTitle());
 
-        if (posterImage != null && !posterImage.isEmpty()) {
+        logger.info("[POST /movies] 영화 등록 요청: 제목 = {}, IMDb ID = {}", movie.getTitle(), movie.getApiId());
+
+        // 1. api_id가 입력된 경우: TMDB/OMDb에서 정보 자동 불러오기
+        Integer tmdbId = null;
+        if (movie.getApiId() != null && !movie.getApiId().isBlank()) {
+            try {
+                // TMDB ID를 찾는다 (없으면 null)
+                tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+
+                // TMDB ID 유무와 상관없이, 영화 기본정보(타이틀, 장르 등)는 OMDb/IMDb 기반으로 매핑 (출연진 제외)
+                Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId());
+                if (isBlank(movie.getTitle())) movie.setTitle((String) movieInfo.get("title"));
+                if (isBlank(movie.getDirector())) movie.setDirector((String) movieInfo.get("director"));
+                if (movie.getYear() == 0) movie.setYear((Integer) movieInfo.get("year"));
+                if (movie.getReleaseDate() == null) movie.setReleaseDate((LocalDate) movieInfo.get("release_date"));
+                if (isBlank(movie.getGenre())) movie.setGenre((String) movieInfo.get("genre"));
+                if (isBlank(movie.getRated()) && movieInfo.get("rated") != null) {
+                    movie.setRated((String) movieInfo.get("rated"));
+                }
+                if (isBlank(movie.getOverview())) movie.setOverview((String) movieInfo.get("overview"));
+                if (isBlank(movie.getRuntime())) movie.setRuntime((String) movieInfo.get("runtime"));
+                if (isBlank(movie.getPosterPath())) movie.setPosterPath((String) movieInfo.get("poster_path"));
+                logger.info("영화 정보 자동 매핑 완료: {}", movie.getTitle());
+
+            } catch (Exception e) {
+                logger.warn("영화 정보 자동 채우기 실패: {}", e.getMessage());
+            }
+        }
+
+        // 2. 포스터 수동 업로드 (자동 포스터 없을 때만 적용)
+        if ((movie.getPosterPath() == null || movie.getPosterPath().isBlank()) && posterImage != null && !posterImage.isEmpty()) {
             try {
                 String realUploadPath = request.getSession().getServletContext().getRealPath(UPLOAD_DIRECTORY_RELATIVE);
                 File uploadDir = new File(realUploadPath);
-                if (!uploadDir.exists()) { uploadDir.mkdirs(); }
+                if (!uploadDir.exists()) uploadDir.mkdirs();
 
                 String originalFileName = posterImage.getOriginalFilename();
-                String fileExtension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
+                String fileExtension = originalFileName != null && originalFileName.contains(".") ?
+                        originalFileName.substring(originalFileName.lastIndexOf(".")) : "";
                 String savedFileName = UUID.randomUUID().toString() + fileExtension;
                 Path filePath = Paths.get(realUploadPath, savedFileName);
 
                 Files.copy(posterImage.getInputStream(), filePath);
-                logger.info("포스터 이미지 저장 성공: {}", filePath.toString());
                 movie.setPosterPath(UPLOAD_DIRECTORY_RELATIVE + savedFileName);
+                logger.info("포스터 이미지 저장 성공: {}", filePath);
             } catch (IOException e) {
-                logger.error("포스터 이미지 업로드 실패: {}", e.getMessage(), e);
-                movie.setPosterPath(null);
+                logger.error("포스터 업로드 실패: {}", e.getMessage());
             }
-        } else {
-            logger.info("[POST /movies] 업로드된 포스터 이미지 없음.");
-            movie.setPosterPath(null);
         }
 
-        // isRecommended 로직 제거: 수동 등록 영화는 이제 별도의 배너 관리 프로세스를 따릅니다. (7-24 오후12:41 추가 된 코드)
+        // 3. 영화 DB 저장
         movieService.save(movie);
-        logger.info("영화 '{}' DB에 저장 완료.", movie.getTitle());
+        logger.info("영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movie.getId());
+
+        // 4. 출연진 자동 저장 (TMDB ID가 있을 경우에만)
+        if (tmdbId != null) {
+            try {
+                List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
+                tmdbApiService.saveCastAndCrew(movie.getId(), castAndCrew);
+                logger.info("출연진 자동 등록 완료: {}명", castAndCrew.size());
+            } catch (Exception e) {
+                logger.warn("출연진 자동 등록 실패: {}", e.getMessage());
+            }
+        } else {
+            logger.info("TMDB ID가 없어 출연진 자동 등록을 건너뜀.");
+        }
+
         return "redirect:/movies";
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     // coco030 추가 
