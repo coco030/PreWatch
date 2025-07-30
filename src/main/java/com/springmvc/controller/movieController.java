@@ -39,6 +39,7 @@ import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
 import com.springmvc.service.TmdbApiService;
+import com.springmvc.service.UserReviewService;
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
@@ -60,7 +61,9 @@ public class movieController {
     @Autowired // coco030 07.28
     private movieRepository movieRepository; // coco030 07.28
     @Autowired
-    private ActorRepository actorRepository; ; // coco030 07.28
+    private ActorRepository actorRepository;  // coco030 07.28
+    @Autowired
+    private UserReviewService userReviewService;
 
     @Autowired
     public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService, TmdbApiService tmdbApiService) { 
@@ -235,6 +238,15 @@ public class movieController {
 	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
 	         return "redirect:/movies?error=notFound";
 	     }
+	     
+	     // 25.07.31 coco030
+	     
+	     double avgHorror = userReviewService.getAverageHorrorScore(id);
+	     double avgSexual = userReviewService.getAverageSexualScore(id);
+	     
+	     model.addAttribute("avgHorrorScore", avgHorror);
+	     model.addAttribute("avgSexualScore", avgSexual);
+	     
 	
 	     // 1. DB 출연진 리스트
 	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);

@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.UserReview;
+import com.springmvc.service.UserReviewService;
 
 @Repository
 public class UserReviewRepository {
@@ -26,6 +27,9 @@ public class UserReviewRepository {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    
+    @Autowired
+    private UserReviewService userReviewService;
 
     private RowMapper<UserReview> rowMapper = new RowMapper<UserReview>() {
         @Override
@@ -366,13 +370,74 @@ public class UserReviewRepository {
         Long count = jdbcTemplate.queryForObject(sql, Long.class);
         return (count != null) ? count : 0L;
     }
+    
+    ///
 
+ // ✅ 유저가 평가한 호러 점수 평균 계산 (user_reviews 기준)
+    public Double getAverageHorrorScore(Long movieId) {
+        System.out.println("▶ [user_reviews] 공포 점수 평균 계산 중... movieId: " + movieId);
+        String sql = "SELECT AVG(horror_score) FROM user_reviews WHERE movie_id = ? AND horror_score IS NOT NULL";
+        Double result = jdbcTemplate.queryForObject(sql, Double.class, movieId);
+        System.out.println("▶ [user_reviews] 계산된 공포 점수 평균: " + result);
+        return result;
+    }
+
+    // ✅ 유저가 평가한 선정성 점수 평균 계산 (user_reviews 기준)
+    public Double getAverageSexualScore(Long movieId) {
+        System.out.println("▶ [user_reviews] 선정성 점수 평균 계산 중... movieId: " + movieId);
+        String sql = "SELECT AVG(sexual_score) FROM user_reviews WHERE movie_id = ? AND sexual_score IS NOT NULL";
+        Double result = jdbcTemplate.queryForObject(sql, Double.class, movieId);
+        System.out.println("▶ [user_reviews] 계산된 선정성 점수 평균: " + result);
+        return result;
+    }
+
+    // ✅ 계산된 평균을 movie_stats 테이블에 반영 (없으면 INSERT)
+    public void updateHorrorScoreAvg(Long movieId, double avg) {
+        System.out.println("▶ [movie_stats] 공포 점수 평균 업데이트 시도... movieId: " + movieId + ", avg: " + avg);
+        String updateSql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
+        int updated = jdbcTemplate.update(updateSql, avg, movieId);
+
+        if (updated == 0) {
+            System.out.println("▶ [movie_stats] 기존 데이터 없음 → 새 행 INSERT 진행");
+            String insertSql = "INSERT INTO movie_stats (movie_id, horror_score_avg) VALUES (?, ?)";
+            jdbcTemplate.update(insertSql, movieId, avg);
+        } else {
+            System.out.println("▶ [movie_stats] 공포 점수 평균 UPDATE 완료");
+        }
+    }
+
+    public void updateSexualScoreAvg(Long movieId, double avg) {
+        System.out.println("▶ [movie_stats] 선정성 점수 평균 업데이트 시도... movieId: " + movieId + ", avg: " + avg);
+        String updateSql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
+        int updated = jdbcTemplate.update(updateSql, avg, movieId);
+
+        if (updated == 0) {
+            System.out.println("▶ [movie_stats] 기존 데이터 없음 → 새 행 INSERT 진행");
+            String insertSql = "INSERT INTO movie_stats (movie_id, sexual_score_avg) VALUES (?, ?)";
+            jdbcTemplate.update(insertSql, movieId, avg);
+        } else {
+            System.out.println("▶ [movie_stats] 선정성 점수 평균 UPDATE 완료");
+        }
+    }
     
-    // 새로 추가한 평가지수 2개
-	
-    
-    
-    // ✅ 1. 호러 점수 저장
+    // ✅ 공포 평균값 조회
+    public Double getSavedAverageHorrorScore(Long movieId) {
+        String sql = "SELECT horror_score_avg FROM movie_stats WHERE movie_id = ?";
+        List<Double> result = jdbcTemplate.query(sql,
+            (rs, rowNum) -> rs.getDouble("horror_score_avg"), movieId);
+
+        return result.isEmpty() ? null : result.get(0); // ❗ 값 없으면 null 리턴
+    }
+
+    // ✅ 선정성 평균값 조회
+    public Double getSavedAverageSexualScore(Long movieId) {
+        String sql = "SELECT sexual_score_avg FROM movie_stats WHERE movie_id = ?";
+        List<Double> result = jdbcTemplate.query(sql,
+            (rs, rowNum) -> rs.getDouble("sexual_score_avg"), movieId);
+
+        return result.isEmpty() ? null : result.get(0);
+    }
+  
     public void saveOrUpdateHorrorScore(String memberId, Long movieId, Integer horrorScore) {
         String sql = "INSERT INTO user_reviews (member_id, movie_id, horror_score) " +
                      "VALUES (?, ?, ?) " +
@@ -380,7 +445,6 @@ public class UserReviewRepository {
         jdbcTemplate.update(sql, memberId, movieId, horrorScore);
     }
 
-    // ✅ 2. 선정성 점수 저장
     public void saveOrUpdateSexualScore(String memberId, Long movieId, Integer sexualScore) {
         String sql = "INSERT INTO user_reviews (member_id, movie_id, sexual_score) " +
                      "VALUES (?, ?, ?) " +
@@ -388,37 +452,6 @@ public class UserReviewRepository {
         jdbcTemplate.update(sql, memberId, movieId, sexualScore);
     }
 
-    // ✅ 3. 호러 평균 조회
-    public Double getAverageHorrorScore(Long movieId) {
-        String sql = "SELECT AVG(horror_score) FROM user_reviews WHERE movie_id = ? AND horror_score IS NOT NULL";
-        return jdbcTemplate.queryForObject(sql, Double.class, movieId);
-    }
 
-    // ✅ 4. 선정성 평균 조회
-    public Double getAverageSexualScore(Long movieId) {
-        String sql = "SELECT AVG(sexual_score) FROM user_reviews WHERE movie_id = ? AND sexual_score IS NOT NULL";
-        return jdbcTemplate.queryForObject(sql, Double.class, movieId);
-    }
-    // 호러 평균 업데이트 
-    public void updateHorrorScoreAvg(Long movieId, double avg) {
-        String updateSql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
-        int updated = jdbcTemplate.update(updateSql, avg, movieId);
 
-        if (updated == 0) {
-            String insertSql = "INSERT INTO movie_stats (movie_id, horror_score_avg) VALUES (?, ?)";
-            jdbcTemplate.update(insertSql, movieId, avg);
-        }
-    }
-    // 선정성 평균 업데이트
-    public void updateSexualScoreAvg(Long movieId, double avg) {
-        String updateSql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
-        int updated = jdbcTemplate.update(updateSql, avg, movieId);
-
-        if (updated == 0) {
-            String insertSql = "INSERT INTO movie_stats (movie_id, sexual_score_avg) VALUES (?, ?)";
-            jdbcTemplate.update(insertSql, movieId, avg);
-        }
-    }
-
- 
 }

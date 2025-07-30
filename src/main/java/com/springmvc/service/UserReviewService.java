@@ -124,33 +124,44 @@ public class UserReviewService {
         return userReviewRepository.updateTags(memberId, movieId, updatedTags);
     }
     
-    // 호러 점수 저장
+ // ✅ 호러 점수 저장 + 평균 계산 + movie_stats 반영
     @Transactional
     public void saveHorrorScore(String memberId, Long movieId, Integer horrorScore) {
+    	System.out.println("▶ [Service] 공포 점수 저장 호출 - memberId: " + memberId + ", movieId: " + movieId + ", 점수: " + horrorScore);
         userReviewRepository.saveOrUpdateHorrorScore(memberId, movieId, horrorScore);
-        
-        double avg = userReviewRepository.getAverageHorrorScore(movieId);
-        userReviewRepository.updateHorrorScoreAvg(movieId, avg);
+
+        Double avg = userReviewRepository.getAverageHorrorScore(movieId);
+        System.out.println("▶ [Service] 공포 점수 평균 계산 완료 - 평균: " + avg);
+        if (avg != null) {
+            double roundedAvg = Math.round(avg * 10) / 10.0;
+            userReviewRepository.updateHorrorScoreAvg(movieId, roundedAvg);
+        }
     }
-    
-    // 선정성 점수 저장
+
+    // ✅ 선정성 점수 저장 + 평균 계산 + movie_stats 반영
     @Transactional
     public void saveSexualScore(String memberId, Long movieId, Integer sexualScore) {
+    	System.out.println("▶ [Service] 선정성 점수 저장 호출 - memberId: " + memberId + ", movieId: " + movieId + ", 점수: " + sexualScore);
         userReviewRepository.saveOrUpdateSexualScore(memberId, movieId, sexualScore);
 
-        double avg = userReviewRepository.getAverageSexualScore(movieId);
-        userReviewRepository.updateSexualScoreAvg(movieId, avg);
-    }
-    
-    // 호러 평균 점수 저장
-    public double getAverageHorrorScore(Long movieId) {
-        Double avg = userReviewRepository.getAverageHorrorScore(movieId);
-        return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;
-    }
-    // 선정성 평균 점수저장
-    public double getAverageSexualScore(Long movieId) {
         Double avg = userReviewRepository.getAverageSexualScore(movieId);
-        return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;
+        System.out.println("▶ [Service] 선정성 점수 평균 계산 완료 - 평균: " + avg);
+        if (avg != null) {
+            double roundedAvg = Math.round(avg * 10) / 10.0;
+            userReviewRepository.updateSexualScoreAvg(movieId, roundedAvg);
+        }
     }
-    
+
+    // ✅ JSP나 컨트롤러 등 외부 출력용: movie_stats에서 조회
+  
+    public double getAverageHorrorScore(Long movieId) {
+        Double avg = userReviewRepository.getSavedAverageHorrorScore(movieId);
+        return avg != null ? avg : 0.0;
+    }
+
+    public double getAverageSexualScore(Long movieId) {
+        Double avg = userReviewRepository.getSavedAverageSexualScore(movieId);
+        return avg != null ? avg : 0.0;
+    }
+
 }

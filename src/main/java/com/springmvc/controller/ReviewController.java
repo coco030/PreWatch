@@ -9,7 +9,6 @@ import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
+import com.springmvc.domain.movie;
 import com.springmvc.repository.UserReviewRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.UserReviewService;
@@ -407,6 +407,7 @@ public class ReviewController {
         double avgHorror = userReviewService.getAverageHorrorScore(movieId);
         model.addAttribute("avgHorrorScore", avgHorror); // 
 
+
         return "reviewModule/horrorScoreForm";
     }
     
@@ -448,7 +449,8 @@ public class ReviewController {
 
         userReviewService.saveHorrorScore(memberId, movieId, horrorScore);
         double avgHorrorScore = userReviewService.getAverageHorrorScore(movieId);
-
+        System.out.printf("리뷰 컨트롤러 응답 avgHorrorScore=%.1f (movieId=%d)%n", avgHorrorScore, movieId);
+        
         response.put("avgHorrorScore", avgHorrorScore);
         response.put("success", true);
         return ResponseEntity.ok(response);
@@ -475,24 +477,17 @@ public class ReviewController {
 
         userReviewService.saveSexualScore(memberId, movieId, sexualScore);
         double avgSexualScore = userReviewService.getAverageSexualScore(movieId);
-
+        System.out.printf("리뷰 컨트롤러 응답 getAverageSexualScore=%.1f (movieId=%d)%n", avgSexualScore, movieId);
         response.put("avgSexualScore", avgSexualScore);
         response.put("success", true);
         return ResponseEntity.ok(response);
     }
     
-    @Transactional
-    public void recalculateAndSaveAllAverages(Long movieId) {
-     
-        double avgHorror = userReviewRepository.getAverageHorrorScore(movieId);
-        double avgSexual = userReviewRepository.getAverageSexualScore(movieId);
 
-      
-        UserReviewRepository.getAverageHorrorScore(movieId, avgHorror);
-        UserReviewRepository.getAverageSexualScore(movieId, avgSexual);
-    }
     
 
+
+    
 
 
 }

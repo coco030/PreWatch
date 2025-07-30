@@ -106,35 +106,34 @@
         / 10.0
     </p>
 
-  <p>
-    <i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
-    <strong>평균 공포 지수:</strong>
-    <c:choose>
-        <c:when test="${movie_stats.avgHorrorScore == null || avgHorrorScore == 0}">
-            N/A
-        </c:when>
-        <c:otherwise>
-            <fmt:formatNumber value="${avgHorrorScore}" pattern="#0.0" />
-        </c:otherwise>
-    </c:choose>
-     / 10.0
-</p>
-<p>
+	 <p>
+	  <i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
+	  <strong>평균 공포 지수:</strong>
+	  <c:choose>
+	    <c:when test="${avgHorrorScore == 0}">
+	      N/A
+	    </c:when>
+	    <c:otherwise>
+	      <fmt:formatNumber value="${avgHorrorScore}" pattern="#0.0"/>
+	    </c:otherwise>
+	  </c:choose>
+	  / 10.0
+	</p>
+	
+	<p>
+	  <i class="bi-eye-fill text-warning me-1"></i>
+	  <strong>평균 선정성 지수:</strong>
+	  <c:choose>
+	    <c:when test="${avgSexualScore == 0}">
+	      N/A
+	    </c:when>
+	    <c:otherwise>
+	      <fmt:formatNumber value="${avgSexualScore}" pattern="#0.0"/>
+	    </c:otherwise>
+	  </c:choose>
+	  / 10.0
+	</p>
 
-  <p>
-    <i class="bi-eye-fill text-warning me-1"></i>
-    <strong>평균 선정성 지수:</strong>
-    <c:choose>
-        <c:when test="${movie_stats.avgSexualScore == null || avgSexualScore == 0}">
-            N/A
-        </c:when>
-        <c:otherwise>
-            <fmt:formatNumber value="${avgSexualScore}" pattern="#0.0" />
-        </c:otherwise>
-    </c:choose>
-     / 10.0
-</p>
-<p>
 
     <p><strong>개요:</strong> ${movie.overview}</p>
 
