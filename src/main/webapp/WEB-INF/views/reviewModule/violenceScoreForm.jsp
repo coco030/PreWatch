@@ -10,6 +10,9 @@
 
 <!-- ⭐ 서버에서 전달된 영화 ID -->
 <input type="hidden" id="movieId" value="${movieId}" />
+<c:if test="${not empty loginMember}">
+    <input type="hidden" id="isLoggedIn" value="true" />
+</c:if>
 
 <!-- ⭐ 초기 사용자 폭력성 점수 정보 -->
 <script>
@@ -95,9 +98,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ⭐ 클릭: 점수 저장
+ // ⭐ 클릭: 점수 저장
     halves.forEach(half => {
         half.addEventListener("click", function () {
+            // ⭐ 로그인 여부 확인
+            const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
+            if (!isLoggedIn) {
+                alert("로그인 후 이용 가능합니다.");
+                return;
+            }
+
             const score = parseInt(this.dataset.value);
             currentScore = score;
 
@@ -122,6 +132,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
 
     // ⭐ 원 아이콘 렌더링 함수
     function updateCircles(score) {

@@ -10,6 +10,9 @@
 
 <!-- ⭐ 영화 ID 및 초기 점수 -->
 <input type="hidden" id="movieId" value="${movieId}" />
+<c:if test="${not empty loginMember}">
+    <input type="hidden" id="isLoggedIn" value="true" />
+</c:if>
 <script>
     const sexualScore = Number("${myReview.sexualScore}");
 </script>
@@ -97,32 +100,40 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ⭐ 클릭 저장
-    halves.forEach(half => {
-        half.addEventListener("click", function () {
-            const score = parseInt(this.dataset.value);
-            currentScore = score;
+halves.forEach(half => {
+    half.addEventListener("click", function () {
+        // ⭐ 로그인 여부 확인
+        const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
+        if (!isLoggedIn) {
+            alert("로그인 후 이용 가능합니다.");
+            return;
+        }
 
-            updateCircles(score);
-            label.textContent = score + " / 10";
+        const score = parseInt(this.dataset.value);
+        currentScore = score;
 
-            const formData = new URLSearchParams();
-            formData.append("movieId", movieId);
-            formData.append("sexualScore", score);
+        updateCircles(score);
+        label.textContent = score + " / 10";
 
-            fetch(contextPath + "/review/saveSexualUserScore", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log("선정성 점수 저장 성공:", data);
-            })
-            .catch(err => {
-                console.error("선정성 점수 저장 실패:", err);
-            });
+        const formData = new URLSearchParams();
+        formData.append("movieId", movieId);
+        formData.append("sexualScore", score);
+
+        fetch(contextPath + "/review/saveSexualUserScore", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("선정성 점수 저장 성공:", data);
+        })
+        .catch(err => {
+            console.error("선정성 점수 저장 실패:", err);
         });
     });
+});
+
 
     // ⭐ 원 아이콘 렌더링
     function updateCircles(score) {

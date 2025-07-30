@@ -10,6 +10,10 @@
 
 <!-- ⭐ 서버에서 전달된 영화 ID, 공포 점수 -->
 <input type="hidden" id="movieId" value="${movieId}" />
+<c:if test="${not empty loginMember}">
+    <input type="hidden" id="isLoggedIn" value="true" />
+</c:if>
+
 <script>
 const horrorScore = Number("${myReview.horrorScore}");
 </script>
@@ -95,9 +99,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ⭐ 클릭 시: 저장 및 UI 반영
+ // ⭐ 클릭 시: 저장 및 UI 반영
     stars.forEach(star => {
         star.addEventListener("click", function () {
+            // ⭐ 로그인 여부 확인
+            const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
+            if (!isLoggedIn) {
+                alert("로그인 후 이용 가능합니다.");
+                return;
+            }
+
             const score = parseInt(this.dataset.value);
             currentScore = score;
 
@@ -127,6 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
 
     // ⭐ 별 아이콘 렌더링 함수
     function updateStars(score) {

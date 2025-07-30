@@ -10,6 +10,10 @@
 
 <!-- ⭐ 서버에서 전달된 영화 ID를 숨겨서 전달 (후속 AJAX 요청에 필요) -->
 <input type="hidden" id="movieId" value="${movieId}" />
+<!-- 비로그인 상태일 때랑 구분해서 -->
+<c:if test="${not empty loginMember}">
+    <input type="hidden" id="isLoggedIn" value="true" />
+</c:if>
 
 <!-- ⭐ 초기 사용자 별점 정보: 문자열로 받지만 JS 숫자로 변환 -->
 <script>
@@ -95,33 +99,42 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+
     // ⭐ 클릭 시: 평가 저장 및 UI 반영
-    stars.forEach(star => {
-        star.addEventListener("click", function () {
-            const rating = parseInt(this.dataset.value);
-            currentRating = rating;
+stars.forEach(star => {
+    star.addEventListener("click", function () {
+        // ⭐ 로그인 여부 확인
+        const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
+        if (!isLoggedIn) {
+            alert("로그인 후 이용 가능합니다.");
+            return;
+        }
 
-            updateStars(rating);
-            label.textContent = rating + " / 10";
+        const rating = parseInt(this.dataset.value);
+        currentRating = rating;
 
-            const formData = new URLSearchParams();
-            formData.append("movieId", movieId);
-            formData.append("userRating", rating);
+        updateStars(rating);
+        label.textContent = rating + " / 10";
 
-            fetch(contextPath + "/review/saveRating", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log("저장 성공:", data);
-            })
-            .catch(err => {
-                console.error("저장 실패:", err);
-            });
+        const formData = new URLSearchParams();
+        formData.append("movieId", movieId);
+        formData.append("userRating", rating);
+
+        fetch(contextPath + "/review/saveRating", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("저장 성공:", data);
+        })
+        .catch(err => {
+            console.error("저장 실패:", err);
         });
     });
+});
+
 
     // ⭐ 별 아이콘 갱신 함수
     function updateStars(rating) {

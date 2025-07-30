@@ -358,7 +358,7 @@
 </c:if>
 	                
 	<!-- 별점 작성 -->
-	<c:if test="${not empty sessionScope.loginMember}">
+	
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
 	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 평가</h6>
@@ -367,10 +367,10 @@
 	                </c:import>
 	        </div>
 	    </div>
-	</c:if>
+
 	
 	<!-- 폭력성 작성 -->
-	<c:if test="${not empty sessionScope.loginMember}">
+
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
 	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 평가</h6>
@@ -379,10 +379,10 @@
 	                </c:import>
 	        </div>
 	    </div>
-	</c:if>
+
 	
 		<!-- 공포지수 작성 -->
-		<c:if test="${not empty sessionScope.loginMember}">
+
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
@@ -392,10 +392,10 @@
 		                </c:import>
 		        </div>
 		    </div>
-		</c:if>
+
 		
 		<!-- 선정성 지수 작성 -->
-		<c:if test="${not empty sessionScope.loginMember}">
+
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-eye-fill text-warning me-1"></i>
@@ -405,7 +405,7 @@
 		                </c:import>
 		        </div>
 		    </div>
-		</c:if>
+
 
 	<!-- 리뷰 작성 -->
 	<div class="container mt-3">
