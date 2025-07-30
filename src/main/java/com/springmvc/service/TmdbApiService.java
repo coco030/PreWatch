@@ -23,7 +23,7 @@ public class TmdbApiService {
     @Autowired
     private ActorRepository actorRepository;
 
-    private static final int MAX_CAST_COUNT = 8;
+    private static final int MAX_CAST_COUNT = 11;
     private static final String TMDB_API_KEY = "6ec1d7b0638f8e641a7b32f82aa333b8";
     private static final String TMDB_FIND_URL = "https://api.themoviedb.org/3/find/";
     private static final String TMDB_MOVIE_CREDITS_URL = "https://api.themoviedb.org/3/movie/";
@@ -64,7 +64,7 @@ public class TmdbApiService {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(json);
 
-            // 🎭 cast (배우/성우)
+            //  cast (배우/성우)
             JsonNode cast = root.get("cast");
             for (int i = 0; i < Math.min(MAX_CAST_COUNT, cast.size()); i++) {
                 JsonNode person = cast.get(i);
@@ -77,7 +77,7 @@ public class TmdbApiService {
                 result.add(info);
             }
 
-            // 🎬 crew (감독 1명만)
+            //  crew (감독 1명만)
             JsonNode crew = root.get("crew");
             for (JsonNode member : crew) {
                 String job = member.get("job").asText();
@@ -89,7 +89,7 @@ public class TmdbApiService {
                     info.put("type", "DIRECTOR");
                     info.put("tmdb_id", member.get("id").asText());
                     result.add(info);
-                    break; // ❗ 한 명만
+                    break; // 한 명만
                 }
             }
 
@@ -99,12 +99,8 @@ public class TmdbApiService {
 
         return result;
     }
-
-
-
-   
-
-    // ⭐ [추가] TMDB 인물 상세 정보 가져오기
+    
+    // [수정됨] TMDB 인물 상세 정보 가져오기 (사망자 나이 계산 보정 포함)
     public Map<String, Object> getPersonDetailFromTmdb(Integer tmdbId) {
         String url = UriComponentsBuilder
             .fromHttpUrl(TMDB_PERSON_DETAIL_URL + tmdbId)
@@ -116,28 +112,41 @@ public class TmdbApiService {
             JsonNode root = objectMapper.readTree(json);
 
             Map<String, Object> details = new HashMap<>();
-            // birthday로부터 age 계산
+
+            // 생일 및 사망일 정보
             String birthdayStr = root.get("birthday").asText(null);
             String deathdayStr = root.get("deathday").asText(null);
             details.put("birthday", birthdayStr);
-            details.put("deathday", deathdayStr); 
+            details.put("deathday", deathdayStr);
 
+            // 나이 계산: 사망일 기준 또는 현재 날짜 기준
             if (birthdayStr != null) {
                 try {
                     LocalDate birthday = LocalDate.parse(birthdayStr); // yyyy-MM-dd 형식 전제
-                    int age = Period.between(birthday, LocalDate.now()).getYears();
+                    LocalDate endDate;
+
+                    if (deathdayStr != null) {
+                        endDate = LocalDate.parse(deathdayStr);
+                    } else {
+                        endDate = LocalDate.now();
+                    }
+
+                    int age = Period.between(birthday, endDate).getYears();
                     details.put("age", age);
                 } catch (DateTimeParseException e) {
-                    System.out.println("[WARN] 생일 날짜 파싱 실패: " + birthdayStr);
+                    System.out.println("[WARN] 생일 또는 사망일 날짜 파싱 실패: " + birthdayStr + ", " + deathdayStr);
                     details.put("age", null);
                 }
             } else {
                 details.put("age", null);
             }
+
+            // 기타 정보
             details.put("place_of_birth", root.get("place_of_birth").asText(null));
             details.put("biography", root.get("biography").asText(null));
             details.put("gender", root.get("gender").asInt(-1));
             details.put("known_for_department", root.get("known_for_department").asText(null));
+
             return details;
 
         } catch (Exception e) {
@@ -145,6 +154,7 @@ public class TmdbApiService {
             return null;
         }
     }
+
 
     public void saveCastAndCrew(Long movieId, List<Map<String, String>> castAndCrew) {
         int displayOrder = 0;
@@ -201,7 +211,7 @@ public class TmdbApiService {
             Map.entry("Stunt Coordinator", "스턴트 조정"),
             Map.entry("Lighting Technician", "조명"),
             Map.entry("Sound Designer", "사운드 디자인")
-            // 필요 시 더 추가 가능
+           
         );
 
         return jobMap.getOrDefault(job, job); // 모르는 건 원문 그대로

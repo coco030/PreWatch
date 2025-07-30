@@ -17,11 +17,14 @@ public class ActorRepository {
 
     // 배우 이름(혹은 tmdb_id)로 이미 존재하는지 확인
     public Long findByNameOrInsert(String name, String profileImageUrl, Integer tmdbId) {
+        System.out.println("[LOG] findByNameOrInsert 호출: name=" + name + ", tmdb_id=" + tmdbId);
+
         // 1. tmdb_id가 있으면 그걸로 먼저 중복 확인 (가장 정확)
         if (tmdbId != null) {
             String tmdbSql = "SELECT id FROM actors WHERE tmdb_id = ? LIMIT 1";
             List<Long> tmdbMatches = jdbcTemplate.query(tmdbSql, (rs, rowNum) -> rs.getLong("id"), tmdbId);
             if (!tmdbMatches.isEmpty()) {
+                System.out.println("[LOG] TMDB ID 중복 배우 존재: id=" + tmdbMatches.get(0));
                 return tmdbMatches.get(0);
             }
         }
@@ -30,10 +33,12 @@ public class ActorRepository {
         String nameSql = "SELECT id FROM actors WHERE name = ? LIMIT 1";
         List<Long> nameMatches = jdbcTemplate.query(nameSql, (rs, rowNum) -> rs.getLong("id"), name);
         if (!nameMatches.isEmpty()) {
+            System.out.println("[LOG] 이름 중복 배우 존재: id=" + nameMatches.get(0));
             return nameMatches.get(0);
         }
 
         // 3. 둘 다 없으면 새로 INSERT
+        System.out.println("[LOG] 신규 배우 INSERT 시도: name=" + name + ", tmdb_id=" + tmdbId);
         String insertSql = "INSERT INTO actors (name, profile_image_url, tmdb_id) VALUES (?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -51,11 +56,10 @@ public class ActorRepository {
             return null;
         }
 
-        return keyHolder.getKey().longValue();
+        Long newId = keyHolder.getKey().longValue();
+        System.out.println("[SUCCESS] 배우 INSERT 성공: id=" + newId);
+        return newId;
     }
-
-
-
 
     // 영화-배우(감독) 연결 저장
     public void saveMovieActorMapping(Long movieId, Long actorId, String roleName, String roleType, int displayOrder) {
@@ -63,13 +67,14 @@ public class ActorRepository {
             System.out.println("[WARN] movieId 또는 actorId null: movieId=" + movieId + ", actorId=" + actorId);
             return;
         }
+        System.out.println("[LOG] 영화-배우 매핑 저장: movieId=" + movieId + ", actorId=" + actorId + ", roleType=" + roleType + ", order=" + displayOrder);
         String sql = "INSERT INTO movie_actors (movie_id, actor_id, role_name, role_type, display_order) VALUES (?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, movieId, actorId, roleName, roleType, displayOrder);
-
     }
 
     // 영화 id로 출연진 조회
     public List<Map<String, Object>> findCastAndCrewByMovieId(Long movieId) {
+        System.out.println("[LOG] 영화 출연진 조회: movieId=" + movieId);
         String sql =
             "SELECT a.id, a.name, a.profile_image_url, m.role_name, m.role_type, m.display_order " +
             "FROM movie_actors m JOIN actors a ON m.actor_id = a.id WHERE m.movie_id = ? ORDER BY m.display_order ASC";
@@ -78,13 +83,14 @@ public class ActorRepository {
 
     // 출연진 id로 상세 정보
     public Map<String, Object> findActorDetail(Long actorId) {
+        System.out.println("[LOG] 배우 상세정보 조회: actorId=" + actorId);
         String sql = "SELECT * FROM actors WHERE id = ?";
         return jdbcTemplate.queryForMap(sql, actorId);
     }
 
-    
- // 이 배우+감독이 참여한 영화 목록. 가져올 게 있으면 셀렉트에 하나씩 추가하면 됨. 컨트롤러 건드릴 필요 X
+    // 이 배우+감독이 참여한 영화 목록
     public List<Map<String, Object>> findMoviesByActorId(Long actorId) {
+        System.out.println("[LOG] 배우 참여 영화 목록 조회: actorId=" + actorId);
         String sql = """
             SELECT 
                 m.id, m.title, m.poster_path, m.release_date, 
@@ -98,10 +104,9 @@ public class ActorRepository {
         return jdbcTemplate.queryForList(sql, actorId);
     }
 
-
-    
- // TMDB API 상세 정보 기반으로 배우 정보 업데이트
+    // TMDB API 상세 정보 기반으로 배우 정보 업데이트
     public void updateActorDetails(Long actorId, Map<String, Object> details) {
+        System.out.println("[LOG] 배우 정보 업데이트 시도: actorId=" + actorId);
         String sql = """
             UPDATE actors
             SET
@@ -125,6 +130,7 @@ public class ActorRepository {
             details.get("known_for_department"),
             actorId
         );
-    }
 
+        System.out.println("[SUCCESS] 배우 정보 업데이트 완료: actorId=" + actorId);
+    }
 }
