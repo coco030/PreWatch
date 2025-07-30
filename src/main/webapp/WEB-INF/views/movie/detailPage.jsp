@@ -73,7 +73,18 @@
             </c:otherwise>
         </c:choose>
     </p>
-    <%-- ⭐ 추가 끝 ⭐ --%>
+        <%-- 07.30 coco030 개봉일 추가 --%>    
+       <p><strong>개봉일:</strong> 
+        <c:choose>
+            <c:when test="${not empty movie.runtime and movie.runtime ne 'N/A'}">
+                ${movie.releaseDate}
+            </c:when>
+            <c:otherwise>
+                정보 없음
+            </c:otherwise>
+        </c:choose>
+    </p>
+
 
     <p>
         <i class="bi-star-fill text-warning me-1"></i>
@@ -154,6 +165,8 @@
     </div>
 </div>
 
+ <!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
+<c:if test="${not empty dbCastList or not empty castAndCrew}">
 <!-- 주요 참여진 박스 전체를 카드로 감싸기 -->
 <div class="card bg mb-4" style="border:none;">
   <div class="card-body">
@@ -334,7 +347,7 @@
   </ul>
 </c:if>
 </div>
-
+</c:if>
 	                
 	<!-- 별점 작성 -->
 	<c:if test="${not empty sessionScope.loginMember}">

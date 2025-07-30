@@ -82,7 +82,7 @@ public class movieController {
     }
 
     // --- Create (생성) 작업 ---
-    // 새 영화 등록 폼 페이지 요청
+    // 새 영화 등록 폼 페이지 요청  + coco030 7월 30일 수정
     @GetMapping("/movies/new")
     public String createForm(Model model, HttpSession session) {
         if (!isAdmin(session)) {
@@ -195,11 +195,11 @@ public class movieController {
         movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
-            movieService.save(movieFromApi); // ★ DB 저장(여기서 id가 할당됨)
+            movieService.save(movieFromApi); // DB 저장(여기서 id가 할당됨)
 
-            Long movieId = movieFromApi.getId(); // ★ save 이후 id 할당됨
+            Long movieId = movieFromApi.getId(); // save 이후 id 할당됨
 
-            // 만약 혹시라도 id가 null이면 selectIdSql로 강제 조회 (거의 필요 없음)
+            // id가 null이면 selectIdSql로 강제 조회
             if (movieId == null) {
                 movieId = movieService.findByApiId(movieFromApi.getApiId()).getId();
                 movieFromApi.setId(movieId);
