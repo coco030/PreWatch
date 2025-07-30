@@ -36,6 +36,8 @@ public class UserReviewRepository {
             review.setMovieId(rs.getLong("movie_id"));
             review.setUserRating(rs.getInt("user_rating"));
             review.setViolenceScore(rs.getInt("violence_score"));
+            review.setHorrorScore(rs.getInt("horror_score"));       // ✅ 공포성 점수
+            review.setSexualScore(rs.getInt("sexual_score"));       // ✅ 선정성 점수
             review.setReviewContent(rs.getString("review_content"));
             review.setTags(rs.getString("tags"));
             review.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
@@ -399,13 +401,23 @@ public class UserReviewRepository {
     }
     // 호러 평균 업데이트 
     public void updateHorrorScoreAvg(Long movieId, double avg) {
-        String sql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
-        jdbcTemplate.update(sql, avg, movieId);
+        String updateSql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
+        int updated = jdbcTemplate.update(updateSql, avg, movieId);
+
+        if (updated == 0) {
+            String insertSql = "INSERT INTO movie_stats (movie_id, horror_score_avg) VALUES (?, ?)";
+            jdbcTemplate.update(insertSql, movieId, avg);
+        }
     }
     // 선정성 평균 업데이트
     public void updateSexualScoreAvg(Long movieId, double avg) {
-        String sql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
-        jdbcTemplate.update(sql, avg, movieId);
+        String updateSql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
+        int updated = jdbcTemplate.update(updateSql, avg, movieId);
+
+        if (updated == 0) {
+            String insertSql = "INSERT INTO movie_stats (movie_id, sexual_score_avg) VALUES (?, ?)";
+            jdbcTemplate.update(insertSql, movieId, avg);
+        }
     }
 
  

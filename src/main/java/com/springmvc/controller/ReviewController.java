@@ -9,6 +9,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
+import com.springmvc.repository.movieRepository;
 import com.springmvc.service.UserReviewService;
 
 @Controller
@@ -27,8 +29,11 @@ import com.springmvc.service.UserReviewService;
 public class ReviewController {
 	
 	@Autowired
+	private movieRepository movieRepository;
+	
+	@Autowired
 	private UserReviewRepository userReviewRepository;
-    
+	
     @Autowired
     private UserReviewService userReviewService;
     
@@ -399,6 +404,9 @@ public class ReviewController {
             model.addAttribute("myReview", myReview);
         }
 
+        double avgHorror = userReviewService.getAverageHorrorScore(movieId);
+        model.addAttribute("avgHorrorScore", avgHorror); // 
+
         return "reviewModule/horrorScoreForm";
     }
     
@@ -412,7 +420,10 @@ public class ReviewController {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
             model.addAttribute("myReview", myReview);
         }
-
+        
+        double avgSexual = userReviewService.getAverageSexualScore(movieId);
+        model.addAttribute("avgSexualScore", avgSexual); // 평균값
+        System.out.println("컨트롤러 avgSexualScore = " + avgSexual);
         return "reviewModule/sexualScoreForm";
     }
 
@@ -468,6 +479,17 @@ public class ReviewController {
         response.put("avgSexualScore", avgSexualScore);
         response.put("success", true);
         return ResponseEntity.ok(response);
+    }
+    
+    @Transactional
+    public void recalculateAndSaveAllAverages(Long movieId) {
+     
+        double avgHorror = userReviewRepository.getAverageHorrorScore(movieId);
+        double avgSexual = userReviewRepository.getAverageSexualScore(movieId);
+
+      
+        UserReviewRepository.getAverageHorrorScore(movieId, avgHorror);
+        UserReviewRepository.getAverageSexualScore(movieId, avgSexual);
     }
     
 

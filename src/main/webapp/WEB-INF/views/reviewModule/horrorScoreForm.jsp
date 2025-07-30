@@ -16,7 +16,7 @@ const horrorScore = Number("${myReview.horrorScore}");
 
 
 <!-- ⭐ 별점 표시 영역 -->
-<div id="star-rating" class="d-flex align-items-center" style="font-size: 2rem;">
+<div id="horrorScore-rating" class="d-flex align-items-center" style="font-size: 2rem;">
     <c:forEach begin="1" end="5" var="i">
         <span class="star-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
@@ -66,8 +66,8 @@ const horrorScore = Number("${myReview.horrorScore}");
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
     const contextPath = '${pageContext.request.contextPath}';
-    const stars = document.querySelectorAll("#star-rating .half");
-    const icons = document.querySelectorAll("#star-rating i");
+    const stars = document.querySelectorAll("#horrorScore-rating .half");
+    const icons = document.querySelectorAll("#horrorScore-rating i");
     const scoreLabel = document.getElementById("score-label");
 
     // ⭐ 초기 별 렌더링
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const value = (idx + 1) * 2;
             if (horrorScore >= value) {
                 icon.className = "fa-solid fa-star";
-            } else if (userHorrorScore === value - 1) {
+            } else if (horrorScore === value - 1) {
                 icon.className = "fa-solid fa-star-half-stroke";
             } else {
                 icon.className = "fa-regular fa-star";
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.success) {
                     console.log("저장 성공:", data);
                 } else {
-                    alert("별점 저장에 실패했습니다: " + data.message);
+                    alert("공포평가 저장에 실패했습니다: " + data.message);
                 }
             })
             .catch(err => {
