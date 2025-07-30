@@ -3,6 +3,7 @@ package com.springmvc.domain;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -28,6 +29,15 @@ public class movie implements Serializable {
     private String runtime; // 상영 시간 (예: "142 min")
     private String rated;   // 연령 등급 (예: "PG-13", "R")
     private Integer dday; // 25.07.26 coco030
+    
+    // ⭐ 추가: JSP 출력용 포맷된 날짜 문자열 반환
+    public String getFormattedReleaseDate() {
+        if (releaseDate != null) {
+            return releaseDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+        } else {
+            return "";
+        }
+    }
     
     public movie() {
         this.rating = 0.0;
@@ -62,8 +72,8 @@ public class movie implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.likeCount = likeCount;
-        this.runtime = runtime; // ⭐ 추가
-        this.rated = rated;     // ⭐ 추가
+        this.runtime = runtime;
+        this.rated = rated;    
     }
 
  // API에서 가져온 필수 정보를 초기화하는 생성자 (runtime, rated 포함하도록 수정)
@@ -139,7 +149,6 @@ public class movie implements Serializable {
     }
 
     
-    // 25.07.26 coco030 오후 7시 9분
     public Integer getDday() {
         return dday;
     }
@@ -148,7 +157,6 @@ public class movie implements Serializable {
         this.dday = dday;
     }
     
-    // ⭐⭐ 새로 추가된 필드의 Getter/Setter ⭐⭐
     public String getRuntime() {
         return runtime;
     }
@@ -164,7 +172,6 @@ public class movie implements Serializable {
     public void setRated(String rated) {
         this.rated = rated;
     }
-    // ⭐⭐ 새로 추가된 필드의 Getter/Setter 끝 ⭐⭐
 
     
 }

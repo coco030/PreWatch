@@ -11,47 +11,52 @@
   <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg">
   <div class="container py-4">
 
-    <!-- 최근 등록된 영화 -->
-    <h2 class="section-title">최근 등록된 영화</h2>
-    <div class="row g-4 justify-content-center">
-      <c:forEach var="movie" items="${movies}" begin="0" end="2">
-        <div class="col-6 col-md-4 col-lg-4">
-          <div class="movie-card">
-            <div class="rank-badge">NEW</div>
-            <a href="<c:url value='/movies/${movie.id}'/>">
-              <c:set var="posterSrc">
-                <c:choose>
-                  <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                    <c:choose>
-                      <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                        ${movie.posterPath}
-                      </c:when>
-                      <c:otherwise>
-                        ${pageContext.request.contextPath}${movie.posterPath}
-                      </c:otherwise>
-                    </c:choose>
-                  </c:when>
-                  <c:otherwise>
-                    ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                  </c:otherwise>
-                </c:choose>
-              </c:set>
-              <img src="${posterSrc}" alt="${movie.title} 포스터" />
-              <div class="p-3">
-                <h5 class="fw-bold">${movie.title}</h5>
-                <p class="text-muted mb-1">${movie.year} | ${movie.genre}</p>
-                <p class="text-muted mb-0">평점: <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>
-              </div>
-            </a>
-          </div>
-        </div>
-      </c:forEach>
-    </div>
+   <!-- 최근 등록된 영화 -->
+	<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="section-title mb-0">최근 등록된 영화</h2>
+    <a href="<c:url value='/movies/all-recent'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+	</div>
+	
+	<div class="row g-4 justify-content-center">
+	  <c:forEach var="movie" items="${movies}" begin="0" end="2">
+	    <div class="col-6 col-md-4 col-lg-4">
+	      <div class="movie-card">
+	        <div class="rank-badge">NEW</div>
+	        <a href="<c:url value='/movies/${movie.id}'/>">
+	          <c:set var="posterSrc">
+	            <c:choose>
+	              <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+	                <c:choose>
+	                  <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+	                    ${movie.posterPath}
+	                  </c:when>
+	                  <c:otherwise>
+	                    ${pageContext.request.contextPath}${movie.posterPath}
+	                  </c:otherwise>
+	                </c:choose>
+	              </c:when>
+	              <c:otherwise>
+	                ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+	              </c:otherwise>
+	            </c:choose>
+	          </c:set>
+	          <img src="${posterSrc}" alt="${movie.title} 포스터" />
+	          <div class="p-3">
+	            <h5 class="fw-bold">${movie.title}</h5>
+	            <p class="text-muted mb-1">${movie.year} | ${movie.genre}</p>
+	            <p class="text-muted mb-0">평점: <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>
+	          </div>
+	        </a>
+	      </div>
+	    </div>
+	  </c:forEach>
+	</div> <!-- // row div 닫힘 -->
+
 
     <!-- 배너 버튼 -->
     <div class="banner-section">
@@ -76,102 +81,109 @@
         </c:choose>
       </div>
     </div>
-
-    <!-- 개봉 예정작 -->
-    <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
-
-    <!-- 추천 랭킹 -->
-    <h2 class="section-title">PreWatch 추천 랭킹</h2>
-    <div class="row g-3 justify-content-center">
-      <c:set var="rank" value="0" />
-      <c:forEach var="movie" items="${recommendedMovies}">
-        <c:set var="rank" value="${rank + 1}" />
-        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-          <div class="movie-card">
-            <div class="rank-badge">${rank}</div>
-            <a href="<c:url value='/movies/${movie.id}'/>">
-              <c:set var="posterSrc">
-                <c:choose>
-                  <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                    <c:choose>
-                      <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                        ${movie.posterPath}
-                      </c:when>
-                      <c:otherwise>
-                        ${pageContext.request.contextPath}${movie.posterPath}
-                      </c:otherwise>
-                    </c:choose>
-                  </c:when>
-                  <c:otherwise>
-                    ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                  </c:otherwise>
-                </c:choose>
-              </c:set>
-              <img src="${posterSrc}" alt="${movie.title} 포스터" />
-              <div class="p-2">
-                <h5 class="fw-semibold small">${movie.title}</h5>
-                <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
-                <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
-              </div>
-            </a>
-          </div>
-        </div>
-      </c:forEach>
+	 <!-- 개봉 예정작 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="section-title mb-0">개봉 예정작</h2>
+        <a href="<c:url value='/movies/all-upcoming'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
     </div>
-
-    <!-- 관리자 추천 영화 -->
-    <h2 class="section-title">PreWatch 추천 영화</h2>
-    <c:choose>
-      <c:when test="${not empty adminRecommendedMovies}">
-        <div class="row g-3 justify-content-center">
-          <c:set var="rank" value="0" />
-          <c:forEach var="movie" items="${adminRecommendedMovies}">
+    <div class="section-divider"></div> <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
+	
+	 <!-- 보고 싶어요 랭킹 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="section-title mb-0">PreWatch 추천 랭킹</h2>
+        <a href="<c:url value='/movies/all-recommended'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+    </div>
+    <div class="section-divider"></div> <div class="row g-3 justify-content-center">
+        <c:set var="rank" value="0" />
+        <c:forEach var="movie" items="${recommendedMovies}">
             <c:set var="rank" value="${rank + 1}" />
             <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-              <div class="movie-card">
-                <div class="rank-badge">${rank}</div>
-                <a href="<c:url value='/movies/${movie.id}'/>">
-                  <c:set var="posterSrc">
-                    <c:choose>
-                      <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                        <c:choose>
-                          <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                            ${movie.posterPath}
-                          </c:when>
-                          <c:otherwise>
-                            ${pageContext.request.contextPath}${movie.posterPath}
-                          </c:otherwise>
-                        </c:choose>
-                      </c:when>
-                      <c:otherwise>
-                        ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                      </c:otherwise>
-                    </c:choose>
-                  </c:set>
-                  <img src="${posterSrc}" alt="${movie.title} 포스터" />
-                  <div class="p-2">
-                    <h5 class="fw-semibold small">${movie.title}</h5>
-                    <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
-                    <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
-                  </div>
-                </a>
-              </div>
+                <div class="movie-card">
+                    <div class="rank-badge">${rank}</div>
+                    <a href="<c:url value='/movies/${movie.id}'/>">
+                        <c:set var="posterSrc">
+                            <c:choose>
+                                <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                                    <c:choose>
+                                        <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                                            ${movie.posterPath}
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${pageContext.request.contextPath}${movie.posterPath}
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:when>
+                                <c:otherwise>
+                                    ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                                </c:otherwise>
+                            </c:choose>
+                        </c:set>
+                        <img src="${posterSrc}" alt="${movie.title} 포스터" />
+                        <div class="p-2">
+                            <h5 class="fw-semibold small">${movie.title}</h5>
+                            <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
+                            <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
+                        </div>
+                    </a>
+                </div>
             </div>
-          </c:forEach>
-        </div>
-      </c:when>
-      <c:otherwise>
-        <div class="no-movie-box">
-          아직 추천 영화가 없습니다.
-        </div>
-      </c:otherwise>
+        </c:forEach>
+    </div>
+
+	 <!-- 관리자 추천 영화 -->
+    <h2 class="section-title">PreWatch 추천 영화</h2>
+    <div class="section-divider"></div> <c:choose>
+        <c:when test="${not empty adminRecommendedMovies}">
+            <div class="row g-3 justify-content-center">
+                <c:set var="rank" value="0" />
+                <c:forEach var="movie" items="${adminRecommendedMovies}">
+                    <c:set var="rank" value="${rank + 1}" />
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <div class="movie-card">
+                            <div class="rank-badge">${rank}</div>
+                            <a href="<c:url value='/movies/${movie.id}'/>">
+                                <c:set var="posterSrc">
+                                    <c:choose>
+                                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                                            <c:choose>
+                                                <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                                                    ${movie.posterPath}
+                                                </c:when>
+                                                <c:otherwise>
+                                                    ${pageContext.request.contextPath}${movie.posterPath}
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:set>
+                                <img src="${posterSrc}" alt="${movie.title} 포스터" />
+                                <div class="p-2">
+                                    <h5 class="fw-semibold small">${movie.title}</h5>
+                                    <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
+                                    <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <div class="no-movie-box">
+                아직 추천 영화가 없습니다.
+            </div>
+        </c:otherwise>
     </c:choose>
     
     <!-- 최근 코멘트-->
 
     <c:import url="/movies/commentCard" />
 
-  </div> 
+    </div>
+</div>
   <!--  ==========로그인 모달===========   -->
 <jsp:include page="/WEB-INF/views/loginModal.jsp" />
   <!-- ==========로그인 모달 끝=========== -->

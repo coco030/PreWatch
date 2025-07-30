@@ -305,7 +305,88 @@ public class movieController {
         logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
         return "movie/list";
     }
+    
+    
+    @GetMapping("/movies/all-recent") // 모든 최근 영화를 위한 새로운 URL입니다.
+    @Transactional(readOnly = true)
+    public String allRecentMovies(Model model, HttpSession session) {
+        logger.info("[GET /movies/all-recent] 모든 최근 등록 영화 목록 요청.");
 
+        List<movie> allRecentMovies = movieService.getAllRecentMovies(); // movieService에 이 메서드를 구현해야 합니다.
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            logger.debug("로그인된 일반 회원 ({})의 전체 최근 영화 목록 찜 상태 반영 시작.", loginMember.getId());
+            for (movie movie : allRecentMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isMovieLikedByCurrentUser);
+                logger.debug("  - 영화 ID: {}, 제목: '{}', 찜 상태: {}", movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser);
+            }
+            logger.debug("로그인된 일반 회원 ({})의 전체 최근 영화 목록 찜 상태 반영 완료.", loginMember.getId());
+        } else {
+            logger.debug("비로그인 또는 관리자 계정으로 전체 최근 영화 목록 요청. 찜 상태 미반영.");
+        }
+
+        model.addAttribute("recentMovies", allRecentMovies);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("[GET /movies/all-recent] movieService.getAllRecentMovies() 호출 완료.");
+        return "movie/recentMoviesList"; // 이 JSP 파일이 새로 생성될 페이지입니다.
+
+
+    }
+
+ // ⭐ 새로 추가: 모든 개봉 예정작 목록 페이지
+    @GetMapping("/movies/all-upcoming")
+    @Transactional(readOnly = true)
+    public String allUpcomingMovies(Model model, HttpSession session) {
+        logger.info("[GET /movies/all-upcoming] 모든 개봉 예정 영화 목록 요청.");
+
+        List<movie> allUpcomingMovies = movieService.getAllUpcomingMovies();
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            logger.debug("모든 개봉 예정작 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
+            for (movie movie : allUpcomingMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isMovieLikedByCurrentUser);
+                logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+            }
+            logger.debug("모든 개봉 예정작 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
+        } else {
+            logger.debug("모든 개봉 예정작 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+        }
+
+        model.addAttribute("upcomingMovies", allUpcomingMovies);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("[GET /movies/all-upcoming] 모든 개봉 예정작 데이터 로딩 완료.");
+        return "movie/upcomingMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+    }
+
+    @GetMapping("/movies/all-recommended")
+    @Transactional(readOnly = true)
+    public String allRecommendedMovies(Model model, HttpSession session) {
+        logger.info("[GET /movies/all-recommended] 모든 찜 랭킹 영화 목록 요청.");
+
+        List<movie> allRecommendedMovies = movieService.getAllRecommendedMovies();
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            logger.debug("모든 찜 랭킹 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
+            for (movie movie : allRecommendedMovies) {
+                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isMovieLikedByCurrentUser);
+                logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+            }
+            logger.debug("모든 찜 랭킹 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
+        } else {
+            logger.debug("모든 찜 랭킹 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+        }
+
+        model.addAttribute("recommendedMovies", allRecommendedMovies);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("[GET /movies/all-recommended] 모든 찜 랭킹 영화 데이터 로딩 완료.");
+        return "movie/recommendedMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+    }
     // read-some: 메인 페이지 데이터 (최근 등록, 추천 랭킹)
     // ⭐ 메인 페이지 (main.jsp) 요청 처리 메서드: 이제 HomeController가 '/'를 담당하므로 이 메서드는 /main 경로만 처리합니다. ⭐ (7-24 오후12:41 추가 된 코드)
     @GetMapping("/main") // (7-24 오후12:41 추가 된 코드)
@@ -699,7 +780,7 @@ public class movieController {
     } // (7-24 오후12:41 추가 된 코드)
     
     
-    // ============ coco030이 추가한 내역 ====
+   
     // 최근 개봉 예정작
 
     @GetMapping("/movies/upcoming")
@@ -710,11 +791,8 @@ public class movieController {
         return "movie/upcomingMovies";
     }
 	
-// ===========coco030이 추가한 내역  끝 ==== ///
 
-    
- // coco030 07.28
-    
+    // 메인에 최근 코멘트 모듈 
     @GetMapping("/movies/commentCard")
     public String commentCard(Model model, HttpSession session) {
         List<RecentCommentDTO> recentComments = movieService.getRecentComments();

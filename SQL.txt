@@ -106,6 +106,7 @@ CREATE TABLE actors (
     tmdb_id INT, -- 유니크 제거 
     profile_image_url VARCHAR(255),
     birthday DATE,
+    deathday DATE,
     age INT,
     place_of_birth VARCHAR(255),
     biography TEXT,
@@ -119,7 +120,7 @@ CREATE TABLE movie_actors (
     movie_id BIGINT NOT NULL,
     actor_id BIGINT NOT NULL,
     role_name VARCHAR(100),
-    role_type VARCHAR(20) DEFAULT 'ACTOR', -- '배우', '감독'
+    role_type VARCHAR(50) DEFAULT 'ACTOR', -- '배우', '감독'
     display_order INT DEFAULT 0,
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES actors(id) ON DELETE CASCADE
@@ -133,6 +134,7 @@ CREATE TABLE movie_genres (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
+
 -- 13. 데이터 확인용 SELECT (생성 순서와 일치)
 SELECT * FROM member;
 SELECT * FROM movies;
@@ -143,6 +145,13 @@ SELECT * FROM movie_stats;      -- (25.07.28 오후 추가)
 SELECT * FROM actors;           -- (25.07.28 오후 추가)
 SELECT * FROM movie_actors;     -- (25.07.28 오후 추가)
 SELECT * FROM movie_genres;     -- (25.07.28 오후 추가)
+
+
+
+-- 배우들 정보 삭제 (순서대로.)
+TRUNCATE TABLE movie_actors;
+DELETE FROM actors;
+
 
 -- ### **⭐ `like_count` 자동 업데이트를 위한 트리거 추가 ⭐**
 DELIMITER //

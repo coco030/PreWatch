@@ -139,7 +139,7 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    // 영화 만족도 평점 
+    // 영화 만족도 평점 입력폼
     @GetMapping("/rating")
     public String loadRatingForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
     	System.out.println(">>>rating(영화 만족도 평점  입력) 호출됨");
@@ -154,7 +154,7 @@ public class ReviewController {
         return "reviewModule/userRatingForm";
     }
     
- // 영화 폭력성 점수 입력
+ // 영화 폭력성 점수 입력폼
     @GetMapping("/violence")
     public String loadViolenceForm(@RequestParam("movieId") Long movieId, Model model, HttpSession session) {
     	System.out.println(">>>violence(영화 폭력성 점수 입력) 호출됨");
@@ -361,6 +361,8 @@ public class ReviewController {
 
         return "reviewModule/myreviewSummary";
     }
+    
+    // 태그 삭제
 
     @PostMapping("/deleteAllTags")
     @ResponseBody
@@ -386,7 +388,34 @@ public class ReviewController {
     }
     
     
+    // 공포점수 뷰
+    @GetMapping("/HorrorScoreUserView")
+    public String loadHorrorForm(@RequestParam Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/horrorScoreForm";
+    }
     
+ // 선정성 점수 뷰
+    @GetMapping("/SexualScoreUserView")
+    public String loadSexualForm(@RequestParam Long movieId, Model model, HttpSession session) {
+        model.addAttribute("movieId", movieId);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null) {
+            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
+            model.addAttribute("myReview", myReview);
+        }
+
+        return "reviewModule/sexualScoreForm";
+    }
+
  // 공포 점수 저장
     @PostMapping("/saveHorrorUserScore")
     @ResponseBody
@@ -441,33 +470,6 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    // 공포점수 뷰
-    @GetMapping("/HorrorScoreUserView")
-    public String loadHorrorForm(@RequestParam Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
-
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember != null) {
-            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
-            model.addAttribute("myReview", myReview);
-        }
-
-        return "reviewModule/horrorScoreForm";
-    }
-    
- // 선정성 점수 뷰
-    @GetMapping("/SexualScoreUserView")
-    public String loadSexualForm(@RequestParam Long movieId, Model model, HttpSession session) {
-        model.addAttribute("movieId", movieId);
-
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember != null) {
-            UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
-            model.addAttribute("myReview", myReview);
-        }
-
-        return "reviewModule/sexualScoreForm";
-    }
 
 
 

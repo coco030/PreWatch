@@ -17,7 +17,7 @@ import com.springmvc.domain.UserReview;
 public class UserReviewRepository {
 	
 	
-	// 장르를 나누기 위한 상수 추가
+	// 장르를 나누기 위한 상수 추가 (개인 마이페이지에서 사용. 그 외에는 필요 X)
 	private static final List<String> GENRES = List.of(
 		    "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
 		    "Drama", "Family", "Fantasy", "Film-Noir", "History", "Horror", "Music", "Musical",
@@ -340,12 +340,10 @@ public class UserReviewRepository {
         return result > 0;
     }
     
- // UserReviewRepository.java 파일 하단에 추가
 
-    /**
-     * 사이트 전체에 작성된 리뷰 '내용'의 총 개수를 반환합니다.
-     * @return 리뷰 내용 총 개수
-     */
+    
+
+    //사이트 전체 리뷰 총 계수
     public long getTotalReviewContentCount() {
         // 내용이 비어있지 않은 리뷰만 카운트합니다.
         String sql = "SELECT COUNT(*) FROM user_reviews WHERE review_content IS NOT NULL AND review_content != ''";
@@ -353,26 +351,22 @@ public class UserReviewRepository {
         return (count != null) ? count : 0L;
     }
 
-    /**
-     * 사이트 전체에 작성된 '만족도 별점'의 총 개수를 반환합니다.
-     * @return 만족도 별점 총 개수
-     */
+    // 만족도 점수 총 계수
     public long getTotalUserRatingCount() {
         String sql = "SELECT COUNT(*) FROM user_reviews WHERE user_rating IS NOT NULL";
         Long count = jdbcTemplate.queryForObject(sql, Long.class);
         return (count != null) ? count : 0L;
     }
 
-    /**
-     * 사이트 전체에 작성된 '폭력성 점수'의 총 개수를 반환합니다.
-     * @return 폭력성 점수 총 개수
-     */
+    // 폭력성 점수 총 계수
     public long getTotalViolenceScoreCount() {
         String sql = "SELECT COUNT(*) FROM user_reviews WHERE violence_score IS NOT NULL";
         Long count = jdbcTemplate.queryForObject(sql, Long.class);
         return (count != null) ? count : 0L;
     }
 
+    
+    // 새로 추가한 평가지수 2개
 	
     
     
@@ -403,12 +397,12 @@ public class UserReviewRepository {
         String sql = "SELECT AVG(sexual_score) FROM user_reviews WHERE movie_id = ? AND sexual_score IS NOT NULL";
         return jdbcTemplate.queryForObject(sql, Double.class, movieId);
     }
-    
+    // 호러 평균 업데이트 
     public void updateHorrorScoreAvg(Long movieId, double avg) {
         String sql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
         jdbcTemplate.update(sql, avg, movieId);
     }
-
+    // 선정성 평균 업데이트
     public void updateSexualScoreAvg(Long movieId, double avg) {
         String sql = "UPDATE movie_stats SET sexual_score_avg = ? WHERE movie_id = ?";
         jdbcTemplate.update(sql, avg, movieId);

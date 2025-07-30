@@ -107,6 +107,7 @@ public class UserReviewService {
         return userReviewRepository.getPositiveRatingGenreCounts(memberId);
     }
 
+    // 태그 삭제하기
     public boolean deleteTag(String memberId, Long movieId, String tagToDelete) {
         UserReview review = userReviewRepository.findByMemberIdAndMovieId(memberId, movieId);
         if (review == null || review.getTags() == null) return false;
@@ -123,6 +124,7 @@ public class UserReviewService {
         return userReviewRepository.updateTags(memberId, movieId, updatedTags);
     }
     
+    // 호러 점수 저장
     @Transactional
     public void saveHorrorScore(String memberId, Long movieId, Integer horrorScore) {
         userReviewRepository.saveOrUpdateHorrorScore(memberId, movieId, horrorScore);
@@ -130,7 +132,8 @@ public class UserReviewService {
         double avg = userReviewRepository.getAverageHorrorScore(movieId);
         userReviewRepository.updateHorrorScoreAvg(movieId, avg);
     }
-
+    
+    // 선정성 점수 저장
     @Transactional
     public void saveSexualScore(String memberId, Long movieId, Integer sexualScore) {
         userReviewRepository.saveOrUpdateSexualScore(memberId, movieId, sexualScore);
@@ -138,12 +141,13 @@ public class UserReviewService {
         double avg = userReviewRepository.getAverageSexualScore(movieId);
         userReviewRepository.updateSexualScoreAvg(movieId, avg);
     }
-
+    
+    // 호러 평균 점수 저장
     public double getAverageHorrorScore(Long movieId) {
         Double avg = userReviewRepository.getAverageHorrorScore(movieId);
         return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;
     }
-
+    // 선정성 평균 점수저장
     public double getAverageSexualScore(Long movieId) {
         Double avg = userReviewRepository.getAverageSexualScore(movieId);
         return avg != null ? Math.round(avg * 10) / 10.0 : 0.0;

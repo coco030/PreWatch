@@ -123,7 +123,8 @@ public class externalMovieApiService {
                 movie.setGenre(rootNode.has("Genre") ? rootNode.get("Genre").asText() : "N/A");
                 movie.setOverview(rootNode.has("Plot") ? rootNode.get("Plot").asText() : "N/A");
                 movie.setPosterPath(rootNode.has("Poster") ? rootNode.get("Poster").asText() : "N/A");
-
+                movie.setRuntime(rootNode.has("Runtime") ? rootNode.get("Runtime").asText() : "N/A");
+                movie.setRated(rootNode.has("Rated") ? rootNode.get("Rated").asText() : "N/A");
                 movie.setRating(0.0);             // OMDb 평점 무시, 0.0으로 고정
                 movie.setViolence_score_avg(0.0); // OMDb 폭력성지수 무시, 0.0으로 고정
 

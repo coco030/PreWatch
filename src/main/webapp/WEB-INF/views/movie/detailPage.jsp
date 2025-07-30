@@ -353,7 +353,7 @@
 	<c:if test="${not empty sessionScope.loginMember}">
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 평가</h5>
+	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 평가</h6>
 	                <c:import url="/review/rating">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -365,7 +365,7 @@
 	<c:if test="${not empty sessionScope.loginMember}">
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="fas fa-bolt text-danger me-1"></i>폭력성 평가</h5>
+	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 평가</h6>
 	                <c:import url="/review/violence">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -377,8 +377,9 @@
 		<c:if test="${not empty sessionScope.loginMember}">
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
-		                <h6 class="mb-2 fw-bold"><i class="fas fa-bolt text-danger me-1"></i>공포지수 평가</h5>
-		                <c:import url="/review/saveHorrorUserScore">
+		                <h6 class="mb-2 fw-bold"><i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
+							공포지수 평가</h6>
+		                <c:import url="/review/HorrorScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>
 		        </div>
@@ -389,8 +390,9 @@
 		<c:if test="${not empty sessionScope.loginMember}">
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
-		                <h6 class="mb-2 fw-bold"><i class="fas fa-bolt text-danger me-1"></i>선정성 평가</h5>
-		                <c:import url="/review/saveSexualUserScore">
+		                <h6 class="mb-2 fw-bold"><i class="bi-eye-fill text-warning me-1"></i>
+							선정성 평가</h6>
+		                <c:import url="/review/SexualScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>
 		        </div>
@@ -418,6 +420,7 @@
 	</c:if>
 
 <!-- 다른 유저의 리뷰 리스트 -->
+<c:if test="${not empty reviewList}">
 	<div class="container mt-4 mb-5">
 	    <div class="p-3">
 	        <h5 class="fw-bold mb-3">
@@ -430,6 +433,9 @@
 	 </div>
 	</div>
 </div>
+</c:if>
+
+
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>
 

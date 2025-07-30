@@ -11,8 +11,9 @@
 <!-- ⭐ 서버에서 전달된 영화 ID, 공포 점수 -->
 <input type="hidden" id="movieId" value="${movieId}" />
 <script>
-    const userHorrorScore = Number("${not empty myReview and myReview.horrorScore ne null ? myReview.horrorScore : 0}");
+const horrorScore = Number("${myReview.horrorScore}");
 </script>
+
 
 <!-- ⭐ 별점 표시 영역 -->
 <div id="star-rating" class="d-flex align-items-center" style="font-size: 2rem;">
@@ -70,10 +71,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const scoreLabel = document.getElementById("score-label");
 
     // ⭐ 초기 별 렌더링
-    if (userHorrorScore > 0) {
+    if (horrorScore > 0) {
         icons.forEach((icon, idx) => {
             const value = (idx + 1) * 2;
-            if (userHorrorScore >= value) {
+            if (horrorScore >= value) {
                 icon.className = "fa-solid fa-star";
             } else if (userHorrorScore === value - 1) {
                 icon.className = "fa-solid fa-star-half-stroke";

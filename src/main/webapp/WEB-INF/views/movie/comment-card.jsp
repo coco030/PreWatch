@@ -4,7 +4,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="<c:url value='/resources/css/comment-card'/>">
+ <link rel="stylesheet" href="<c:url value='/resources/css/comment-card.css'/>">
     <h2 class="section-title">최근 달린 댓글</h2>
 	<div class="row g-3 justify-content-center">
 	  <c:choose>

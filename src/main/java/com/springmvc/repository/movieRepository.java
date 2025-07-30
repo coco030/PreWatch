@@ -76,7 +76,23 @@ public class movieRepository {
             throw new RuntimeException("영화 조회 실패", e);
         }
     }
-
+    
+    public List<movie> findAllUpcomingMovies() {
+        logger.debug("movieRepository.findAllUpcomingMovies() 호출: 모든 개봉 예정작 조회 시도.");
+        String sql = """
+            SELECT
+                id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count, runtime, rated,
+                DATEDIFF(release_date, CURDATE()) AS dday
+            FROM movies
+            WHERE release_date > CURDATE()
+            ORDER BY release_date ASC
+            """; // LIMIT 절 제거
+        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        logger.info("DB에서 모든 개봉 예정작 레코드 {}개 성공적으로 가져옴.", list.size());
+        return list;
+    }
+    // ⭐ findAllRecommendedMovies() 메서드는 아래 '추천 랭킹' 섹션에 추가합니다.
+    
     // save 메서드: 새로운 movie 객체를 데이터베이스 'movies' 테이블에 삽입하고, 자동 생성된 ID를 반환합니다.
     // 반환 타입을 void에서 Long으로 변경하여 생성된 ID를 호출자에게 반환합니다.
  public Long save(movie movie) {
@@ -242,7 +258,26 @@ public class movieRepository {
      logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
      return list;
  }
+ 
+ public List<movie> findAllRecentMovies() { // ⭐ limit 파라미터 제거
+     logger.debug("JdbcMovieRepository.findAllRecentMovies() 호출: 모든 최근 등록된 영화 조회 시도.");
+     String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
+                  "FROM movies " +
+                  "ORDER BY created_at DESC"; // LIMIT 절 제거
+     List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+     logger.info("DB에서 모든 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
+     return list;
+ }
 
+ public List<movie> findAllRecommendedMovies() {
+     logger.debug("movieRepository.findAllRecommendedMovies() 호출: 모든 추천 랭킹 영화 조회 시도.");
+     String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
+                  "FROM movies " +
+                  "ORDER BY like_count DESC, created_at DESC"; // LIMIT 절 제거
+     List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+     logger.info("DB에서 모든 추천 랭킹 영화 레코드 {}개 성공적으로 가져옴.", list.size());
+     return list;
+ }
  
  // 최근 개봉 예정작
  public List<movie> getUpcomingMoviesWithDday() {
@@ -274,7 +309,7 @@ public class movieRepository {
      return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
  }
 
- // coco030 25.07.28 장르분산 메서드
+ // 장르분산 메서드
  public void insertGenreMapping(Long movieId, String genre) {
      String sql = "INSERT INTO movie_genres (movie_id, genre) VALUES (?, ?)";
      try {

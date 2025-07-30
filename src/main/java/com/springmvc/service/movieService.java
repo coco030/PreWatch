@@ -38,6 +38,12 @@ public class movieService {
         logger.debug("DB에서 {}개의 영화 목록을 가져왔습니다.", movies.size());
         return movies;
     }
+    
+    // ⭐ 새로 추가: 모든 추천 랭킹 영화 조회 서비스 메서드
+    public List<movie> getAllRecommendedMovies() {
+        logger.debug("movieService.getAllRecommendedMovies() 호출: 모든 추천 랭킹 영화 조회.");
+        return movieRepository.findAllRecommendedMovies();
+    }
 
     // findById 메서드: 특정 ID 영화 정보 조회.
     // 목적: Controller에서 영화 상세 페이지 요청 시 호출.
@@ -118,26 +124,52 @@ public class movieService {
         logger.info("영화 ID {}가 삭제되었습니다.", id);
     }
 
-    // --- ⭐ 기존 메서드: 추천 랭킹 영화 조회 (like_count 기준) ⭐ (7-24 오후12:41 추가 된 코드)
+    // --- ⭐ 기존 메서드: 추천 랭킹 영화 조회 (like_count 기준) ⭐
     /**
-     * 찜 개수(like_count)를 기준으로 정렬된 상위 5개 추천 영화 목록을 조회합니다. (7-24 오후12:41 추가 된 코드)
-     * @return 찜 개수 기준 상위 5개 추천 영화 목록 (7-24 오후12:41 추가 된 코드)
+     * 찜 개수(like_count)를 기준으로 정렬된 상위 5개 추천 영화 목록을 조회합니다.
+     * @return 찜 개수 기준 상위 5개 추천 영화 목록
      */
-    public List<movie> getTop6RecommendedMovies() { // (7-24 오후12:41 추가 된 코드)
-        logger.debug("movieService.getTop6RecommendedMovies() 호출."); // (7-24 오후12:41 추가 된 코드)
-        return movieRepository.findTop6RecommendedMoviesByLikeCount(); // (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
+    public List<movie> getTop6RecommendedMovies() {
+        logger.debug("movieService.getTop6RecommendedMovies() 호출.");
+        return movieRepository.findTop6RecommendedMoviesByLikeCount();
+    }
+    
     // --- 새로운 메서드: 최근 등록된 평가된 평가와 댓글 조회 ---
     /**
      * 최근 등록된 평가 목록 중 실제 댓글 내용이 있는 항목만 가져옵니다.
+     * 각 댓글에 해당하는 영화의 제목과 포스터 경로를 추가로 조회하여 채워 넣습니다.
      * @return reviewContent가 비어있지 않은 RecentCommentDTO 리스트
      */
     public List<RecentCommentDTO> getRecentComments() {
         logger.debug("movieService.getRecentComments() 호출: ReviewRepository로부터 모든 최근 상호작용 데이터 요청.");
+
         // ReviewRepository에서 모든 최근 댓글/평가/찜 기록을 가져옵니다.
         // 이 메서드 (findTop3RecentComments)가 현재 댓글 내용이 없는 DTO도 포함하여 반환한다고 가정합니다.
         List<RecentCommentDTO> allRecentInteractions = reviewRepository.findTop3RecentComments();
         logger.debug("movieService.getRecentComments() 결과: {}개의 상호작용 수신.", allRecentInteractions.size());
+
+        // ⭐⭐⭐ 핵심 수정 부분: 각 댓글에 해당하는 영화 정보를 조회하여 DTO에 추가 ⭐⭐⭐
+        for (RecentCommentDTO comment : allRecentInteractions) {
+            if (comment.getMovieId() != null) {
+                // movieRepository의 findTitleAndPosterById 메서드 호출
+                movie movieInfo = movieRepository.findTitleAndPosterById(comment.getMovieId());
+                if (movieInfo != null) {
+                    comment.setMovieName(movieInfo.getTitle());
+                    comment.setPosterPath(movieInfo.getPosterPath());
+                    logger.debug("  - 코멘트 ID: {}, 영화 정보 채움: '{}' (ID: {})", comment.getReviewId(), movieInfo.getTitle(), movieInfo.getId());
+                } else {
+                    // 영화 정보를 찾을 수 없는 경우 기본값 설정
+                    comment.setMovieName("알 수 없는 영화");
+                    comment.setPosterPath("/resources/images/movies/256px-No-Image-Placeholder.png");
+                    logger.warn("  - 코멘트 ID: {}, 영화 ID {}에 해당하는 영화 정보를 찾을 수 없어 기본값 설정.", comment.getReviewId(), comment.getMovieId());
+                }
+            } else {
+                comment.setMovieName("알 수 없는 영화");
+                comment.setPosterPath("/resources/images/movies/256px-No-Image-Placeholder.png");
+                logger.warn("  - 코멘트 ID: {}, 영화 ID가 null이어서 기본값 설정.", comment.getReviewId());
+            }
+        }
+        // ⭐⭐⭐ 핵심 수정 부분 끝 ⭐⭐⭐
 
         // Stream API를 사용하여 reviewContent가 비어있지 않은 항목만 필터링합니다.
         List<RecentCommentDTO> filteredComments = allRecentInteractions.stream()
@@ -148,17 +180,25 @@ public class movieService {
         return filteredComments;
     }
 
+    public List<movie> getAllRecentMovies() {
+        // 모든 최근 영화를 가져오는 로직을 구현합니다. 예를 들어, 등록 날짜(registrationDate)를 기준으로 내림차순 정렬합니다.
+        return movieRepository.findAllRecentMovies(); 
+    }
+
     // --- 새로운 메서드: 최근 등록된 영화 조회 (개봉일 기준) ---
     public List<movie> getRecentMovies(int limit) {
         logger.debug("movieService.getRecentMovies({}) 호출.", limit);
         return movieRepository.findRecentMovies(limit);
     }
 
-    // ============ coco030이 추가한 내역 25.07.24 오후 3시쯤====
+    public List<movie> getAllUpcomingMovies() {
+        logger.debug("movieService.getAllUpcomingMovies() 호출: 모든 개봉 예정 영화 조회.");
+        return movieRepository.findAllUpcomingMovies();
+    }
+    
     // 최근 개봉 예정작
     public List<movie> getUpcomingMoviesWithDday() {
-        logger.debug("movieService.getUpcomingMoviesWithDday({}) 호출.");
+        logger.debug("movieService.getUpcomingMoviesWithDday() 호출.");
         return movieRepository.getUpcomingMoviesWithDday();
     }
-// ===========coco030이 추가한 내역 끝 ==== ///
 }

@@ -10,12 +10,19 @@
 
 
 
+
  /* 거슬리는 무비 밑 텍스트 밑줄 제거 */
 .movie-card a {
   text-decoration: none;
   color: inherit; /* 파란색 제거하고 상위 텍스트 색 상속 */
 }
 
+/* 새로운 섹션 구분선 스타일 */
+.section-divider {
+  border-bottom: 2px solid #eee; /* 회색 선 스타일 */
+  margin: 0 auto 30px; /* 선 위아래 여백을 설정합니다. (margin-top 0, margin-bottom 30px) */
+  width: 100%;
+}
 
 .movie-card {
   background: #fff;
