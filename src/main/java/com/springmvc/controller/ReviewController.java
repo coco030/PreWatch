@@ -403,15 +403,10 @@ public class ReviewController {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
             model.addAttribute("myReview", myReview);
         }
-
-        double avgHorror = userReviewService.getAverageHorrorScore(movieId);
-        model.addAttribute("avgHorrorScore", avgHorror); // 
-
-
         return "reviewModule/horrorScoreForm";
     }
     
- // 선정성 점수 뷰
+    // 선정성 점수 뷰
     @GetMapping("/SexualScoreUserView")
     public String loadSexualForm(@RequestParam Long movieId, Model model, HttpSession session) {
         model.addAttribute("movieId", movieId);
@@ -421,21 +416,18 @@ public class ReviewController {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
             model.addAttribute("myReview", myReview);
         }
-        
-        double avgSexual = userReviewService.getAverageSexualScore(movieId);
-        model.addAttribute("avgSexualScore", avgSexual); // 평균값
-        System.out.println("컨트롤러 avgSexualScore = " + avgSexual);
+
         return "reviewModule/sexualScoreForm";
     }
 
- // 공포 점수 저장
+    // 공포 점수 저장
     @PostMapping("/saveHorrorUserScore")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveHorrorScore(@RequestParam Long movieId,
                                                                 @RequestParam Integer horrorScore,
                                                                 HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        System.out.println(">>> saveHorrorScore(공포 점수 저장) 호출됨");
+        System.out.printf("▶ [POST] 공포 점수 저장 요청: movieId=%d, score=%d%n", movieId, horrorScore);
 
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
@@ -449,8 +441,8 @@ public class ReviewController {
 
         userReviewService.saveHorrorScore(memberId, movieId, horrorScore);
         double avgHorrorScore = userReviewService.getAverageHorrorScore(movieId);
-        System.out.printf("리뷰 컨트롤러 응답 avgHorrorScore=%.1f (movieId=%d)%n", avgHorrorScore, movieId);
-        
+        System.out.printf("✅ [응답] 공포 평균점수=%.1f (movieId=%d)%n", avgHorrorScore, movieId);
+
         response.put("avgHorrorScore", avgHorrorScore);
         response.put("success", true);
         return ResponseEntity.ok(response);
@@ -463,7 +455,7 @@ public class ReviewController {
                                                                 @RequestParam Integer sexualScore,
                                                                 HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        System.out.println(">>> saveSexualScore(선정성 점수 저장) 호출됨");
+        System.out.printf("▶ [POST] 선정성 점수 저장 요청: movieId=%d, score=%d%n", movieId, sexualScore);
 
         Object loginMemberObj = session.getAttribute("loginMember");
         if (loginMemberObj == null) {
@@ -477,12 +469,13 @@ public class ReviewController {
 
         userReviewService.saveSexualScore(memberId, movieId, sexualScore);
         double avgSexualScore = userReviewService.getAverageSexualScore(movieId);
-        System.out.printf("리뷰 컨트롤러 응답 getAverageSexualScore=%.1f (movieId=%d)%n", avgSexualScore, movieId);
+        System.out.printf("✅ [응답] 선정성 평균점수=%.1f (movieId=%d)%n", avgSexualScore, movieId);
+
         response.put("avgSexualScore", avgSexualScore);
         response.put("success", true);
         return ResponseEntity.ok(response);
     }
-    
+
 
     
 

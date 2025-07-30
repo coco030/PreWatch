@@ -120,11 +120,12 @@ public class UserReviewService {
             }
         }
 
-        String updatedTags = String.join(",", tagList);
-        return userReviewRepository.updateTags(memberId, movieId, updatedTags);
+        // 태그 사이 , 인식
+     String updatedTags = String.join(",", tagList);
+     return userReviewRepository.updateTags(memberId, movieId, updatedTags);
     }
     
- // ✅ 호러 점수 저장 + 평균 계산 + movie_stats 반영
+    // 호러 점수 저장 + 평균 계산 + movie_stats 반영
     @Transactional
     public void saveHorrorScore(String memberId, Long movieId, Integer horrorScore) {
     	System.out.println("▶ [Service] 공포 점수 저장 호출 - memberId: " + memberId + ", movieId: " + movieId + ", 점수: " + horrorScore);
@@ -138,7 +139,7 @@ public class UserReviewService {
         }
     }
 
-    // ✅ 선정성 점수 저장 + 평균 계산 + movie_stats 반영
+    // 선정성 점수 저장 + 평균 계산 + movie_stats 반영
     @Transactional
     public void saveSexualScore(String memberId, Long movieId, Integer sexualScore) {
     	System.out.println("▶ [Service] 선정성 점수 저장 호출 - memberId: " + memberId + ", movieId: " + movieId + ", 점수: " + sexualScore);
@@ -152,13 +153,12 @@ public class UserReviewService {
         }
     }
 
-    // ✅ JSP나 컨트롤러 등 외부 출력용: movie_stats에서 조회
-  
+    // JSP나 컨트롤러 등 외부 출력용: movie_stats에서 공포 평균 조회 : 얘가 movieController로 건너감.
     public double getAverageHorrorScore(Long movieId) {
         Double avg = userReviewRepository.getSavedAverageHorrorScore(movieId);
         return avg != null ? avg : 0.0;
     }
-
+    // JSP나 컨트롤러 등 외부 출력용: movie_stats에서 선정성 평균 조회  : 얘가 movieController로 건너감.
     public double getAverageSexualScore(Long movieId) {
         Double avg = userReviewRepository.getSavedAverageSexualScore(movieId);
         return avg != null ? avg : 0.0;

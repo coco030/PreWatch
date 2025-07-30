@@ -4,8 +4,8 @@
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
- <%--  <h2 class="section-title">개봉 예정작</h2> --%>
-<div class="row g-4 justify-content-center">
+ <%--  <h2 class="section-title">개봉 예정작</h2>--%>
+<div class="row g-4 justify-content-center"> 
   <c:choose>
     <c:when test="${not empty upcomingMovies}">
       <c:forEach var="movie" items="${upcomingMovies}">

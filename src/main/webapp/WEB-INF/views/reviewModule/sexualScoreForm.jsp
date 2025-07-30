@@ -1,23 +1,21 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!-- jQuery CDN (AJAX 및 이벤트 핸들용) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Font Awesome 아이콘 (원 모양 표시용) -->
+<!-- Font Awesome 아이콘 (원형 아이콘 표시용) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<!-- ⭐ 서버에서 전달된 영화 ID -->
+<!-- ⭐ 영화 ID 및 초기 점수 -->
 <input type="hidden" id="movieId" value="${movieId}" />
-
-<!-- ⭐ 초기 사용자 선정성 점수 정보 -->
 <script>
     const sexualScore = Number("${myReview.sexualScore}");
 </script>
 
-<!-- ⭐ 폭력성 점수 표시 영역 (1점 ~ 10점: 반개 단위, 원 모양) -->
-<div id="sexualScore" class="d-flex align-items-center" style="font-size: 2rem;">
+<!-- ⭐ 선정성 점수 표시 영역 -->
+<div id="sexualScore-rating" class="d-flex align-items-center" style="font-size: 2rem;">
     <c:forEach begin="1" end="5" var="i">
         <span class="circle-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
@@ -26,20 +24,15 @@
         </span>
     </c:forEach>
 
-    <div class="ms-2" style="font-size: 1rem;">
-        <c:choose>
-            <c:when test="${not empty myReview.sexualScore}">
-                ${myReview.sexualScore} / 10
-            </c:when>
-            <c:otherwise>
-                <span style="color:gray;">아직 - 평가를 하지 않으셨어요.</span>
-            </c:otherwise>
-        </c:choose>
+    <!-- 점수 라벨 -->
+    <div class="ms-2" id="sexualScore-label" style="font-size: 1rem;">
+        <c:if test="${not empty myReview.sexualScore}">
+            ${myReview.sexualScore} / 10
+        </c:if>
     </div>
 </div>
 
-
-<!-- ⭐ 원 아이콘 관련 CSS -->
+<!-- ⭐ CSS (보라색 원 스타일) -->
 <style>
     .circle-wrapper {
         position: relative;
@@ -57,47 +50,60 @@
     .left-half { left: 0; }
     .right-half { right: 0; }
 
-    .fa-regular.fa-circle { color: #ccc; }
+    #sexualScore-rating .fa-regular.fa-circle { color: #ccc; }
 
-    .fa-solid.fa-circle,
-    .fa-solid.fa-circle-half-stroke { color: #e54b4b; } /* 빨간색 원 */
+    #sexualScore-rating .fa-solid.fa-circle,
+    #sexualScore-rating .fa-solid.fa-circle-half-stroke {
+        color: #9B59B6; /* 선정성 점수: 보라색 */
+    }
 </style>
 
-<!-- ⭐ 폭력성 점수 클릭 및 AJAX 저장 -->
+<!-- ⭐ 선정성 점수 스크립트 (hover, click, 저장) -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
     const contextPath = '${pageContext.request.contextPath}';
-    const halves = document.querySelectorAll("#sexualScore .half");
-    const icons = document.querySelectorAll("#sexualScore i");
+    const halves = document.querySelectorAll("#sexualScore-rating .half");
+    const icons = document.querySelectorAll("#sexualScore-rating i");
+    const label = document.getElementById("sexualScore-label");
 
-    if (sexualScore > 0) {
-        icons.forEach((icon, idx) => {
-            const value = (idx + 1) * 2;
-            if (sexualScore >= value) {
-                icon.className = "fa-solid fa-circle";
-            } else if (sexualScore === value - 1) {
-                icon.className = "fa-solid fa-circle-half-stroke";
-            } else {
-                icon.className = "fa-regular fa-circle";
-            }
-        });
+    let currentScore = sexualScore;
+
+    // ⭐ 초기 렌더링
+    if (currentScore > 0) {
+        updateCircles(currentScore);
+        label.textContent = currentScore + " / 10";
+    } else {
+        label.textContent = "";
     }
 
+    // ⭐ hover 프리뷰
+    halves.forEach(half => {
+        half.addEventListener("mouseover", function () {
+            const previewScore = parseInt(this.dataset.value);
+            updateCircles(previewScore);
+            label.textContent = previewScore + " / 10";
+        });
+    });
+
+    // ⭐ mouseleave 복원
+    document.getElementById("sexualScore-rating").addEventListener("mouseleave", function () {
+        updateCircles(currentScore);
+        if (currentScore > 0) {
+            label.textContent = currentScore + " / 10";
+        } else {
+            label.textContent = "";
+        }
+    });
+
+    // ⭐ 클릭 저장
     halves.forEach(half => {
         half.addEventListener("click", function () {
             const score = parseInt(this.dataset.value);
+            currentScore = score;
 
-            icons.forEach((icon, idx) => {
-                const value = (idx + 1) * 2;
-                if (score >= value) {
-                    icon.className = "fa-solid fa-circle";
-                } else if (score === value - 1) {
-                    icon.className = "fa-solid fa-circle-half-stroke";
-                } else {
-                    icon.className = "fa-regular fa-circle";
-                }
-            });
+            updateCircles(score);
+            label.textContent = score + " / 10";
 
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
@@ -110,12 +116,29 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(res => res.json())
             .then(data => {
-                console.log("-- 점수 저장 성공:", data);
+                console.log("선정성 점수 저장 성공:", data);
             })
             .catch(err => {
-                console.error("-- 점수 저장 실패:", err);
+                console.error("선정성 점수 저장 실패:", err);
             });
         });
     });
+
+    // ⭐ 원 아이콘 렌더링
+    function updateCircles(score) {
+        icons.forEach((icon, idx) => {
+            const value = (idx + 1) * 2;
+
+            icon.classList.remove("fa-solid", "fa-regular", "fa-circle", "fa-circle-half-stroke");
+
+            if (score >= value) {
+                icon.classList.add("fa-solid", "fa-circle");
+            } else if (score === value - 1) {
+                icon.classList.add("fa-solid", "fa-circle-half-stroke");
+            } else {
+                icon.classList.add("fa-regular", "fa-circle");
+            }
+        });
+    }
 });
 </script>

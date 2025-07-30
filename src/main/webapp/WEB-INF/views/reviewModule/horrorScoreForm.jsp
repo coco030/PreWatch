@@ -14,7 +14,6 @@
 const horrorScore = Number("${myReview.horrorScore}");
 </script>
 
-
 <!-- ⭐ 별점 표시 영역 -->
 <div id="horrorScore-rating" class="d-flex align-items-center" style="font-size: 2rem;">
     <c:forEach begin="1" end="5" var="i">
@@ -25,20 +24,15 @@ const horrorScore = Number("${myReview.horrorScore}");
         </span>
     </c:forEach>
 
-    <!-- 공포 점수 텍스트 -->
+    <!-- ⭐ 점수 라벨 -->
     <div class="ms-2" id="score-label" style="font-size: 1rem;">
-        <c:choose>
-            <c:when test="${not empty myReview.horrorScore}">
-                ${myReview.horrorScore} / 10
-            </c:when>
-            <c:otherwise>
-                <span style="color:gray;">아직 공포지수 평가를 하지 않으셨어요.</span>
-            </c:otherwise>
-        </c:choose>
+        <c:if test="${not empty myReview.horrorScore}">
+            ${myReview.horrorScore} / 10
+        </c:if>
     </div>
 </div>
 
-<!-- ⭐ 별점 관련 CSS -->
+<!-- ⭐ 별 아이콘 관련 CSS -->
 <style>
     .star-wrapper {
         position: relative;
@@ -56,58 +50,63 @@ const horrorScore = Number("${myReview.horrorScore}");
     .left-half { left: 0; }
     .right-half { right: 0; }
 
-    .fa-regular.fa-star { color: #ccc; }
-    .fa-solid.fa-star,
-    .fa-solid.fa-star-half-stroke { color: #f5b301; }
+	/* 공포 점수 (파란색) */
+	#horrorScore-rating .fa-solid.fa-star,
+	#horrorScore-rating .fa-solid.fa-star-half-stroke {
+	    color: #4682B4;
+	}
 </style>
 
-<!-- ⭐ 별점 클릭 및 AJAX 전송 -->
+<!-- ⭐ 공포 점수 별점 로직 -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
     const contextPath = '${pageContext.request.contextPath}';
     const stars = document.querySelectorAll("#horrorScore-rating .half");
     const icons = document.querySelectorAll("#horrorScore-rating i");
-    const scoreLabel = document.getElementById("score-label");
+    const label = document.getElementById("score-label");
 
-    // ⭐ 초기 별 렌더링
-    if (horrorScore > 0) {
-        icons.forEach((icon, idx) => {
-            const value = (idx + 1) * 2;
-            if (horrorScore >= value) {
-                icon.className = "fa-solid fa-star";
-            } else if (horrorScore === value - 1) {
-                icon.className = "fa-solid fa-star-half-stroke";
-            } else {
-                icon.className = "fa-regular fa-star";
-            }
-        });
+    let currentScore = horrorScore;
+
+    // ⭐ 초기 렌더링
+    if (currentScore > 0) {
+        updateStars(currentScore);
+        label.textContent = currentScore + " / 10";
+    } else {
+        label.textContent = "";
     }
 
-    // ⭐ 별 클릭
+    // ⭐ 마우스 오버: 미리보기 렌더링
+    stars.forEach(star => {
+        star.addEventListener("mouseover", function () {
+            const previewScore = parseInt(this.dataset.value);
+            updateStars(previewScore);
+            label.textContent = previewScore + " / 10";
+        });
+    });
+
+    // ⭐ 마우스 아웃: 기존 점수 복원
+    document.getElementById("horrorScore-rating").addEventListener("mouseleave", function () {
+        updateStars(currentScore);
+        if (currentScore > 0) {
+            label.textContent = currentScore + " / 10";
+        } else {
+            label.textContent = "";
+        }
+    });
+
+    // ⭐ 클릭 시: 저장 및 UI 반영
     stars.forEach(star => {
         star.addEventListener("click", function () {
-            const rating = parseInt(this.dataset.value);
+            const score = parseInt(this.dataset.value);
+            currentScore = score;
 
-            // 별 다시 채우기
-            icons.forEach((icon, idx) => {
-                const value = (idx + 1) * 2;
-                if (rating >= value) {
-                    icon.className = "fa-solid fa-star";
-                } else if (rating === value - 1) {
-                    icon.className = "fa-solid fa-star-half-stroke";
-                } else {
-                    icon.className = "fa-regular fa-star";
-                }
-            });
+            updateStars(score);
+            label.textContent = score + " / 10";
 
-            // 텍스트도 업데이트
-            scoreLabel.innerHTML = `${rating} / 10`;
-
-            // AJAX 요청
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
-            formData.append("horrorScore", rating);
+            formData.append("horrorScore", score);
 
             fetch(contextPath + "/review/saveHorrorUserScore", {
                 method: "POST",
@@ -117,9 +116,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    console.log("저장 성공:", data);
+                    console.log("공포 점수 저장 성공:", data);
                 } else {
-                    alert("공포평가 저장에 실패했습니다: " + data.message);
+                    alert("공포 점수 저장 실패: " + data.message);
                 }
             })
             .catch(err => {
@@ -128,5 +127,22 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+    // ⭐ 별 아이콘 렌더링 함수
+    function updateStars(score) {
+        icons.forEach((icon, idx) => {
+            const value = (idx + 1) * 2;
+
+            icon.classList.remove("fa-solid", "fa-regular", "fa-star", "fa-star-half-stroke");
+
+            if (score >= value) {
+                icon.classList.add("fa-solid", "fa-star");
+            } else if (score === value - 1) {
+                icon.classList.add("fa-solid", "fa-star-half-stroke");
+            } else {
+                icon.classList.add("fa-regular", "fa-star");
+            }
+        });
+    }
 });
 </script>

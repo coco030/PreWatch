@@ -26,20 +26,15 @@
         </span>
     </c:forEach>
 
-    <div class="ms-2" style="font-size: 1rem;">
-        <c:choose>
-            <c:when test="${not empty myReview.violenceScore}">
-                ${myReview.violenceScore} / 10
-            </c:when>
-            <c:otherwise>
-                <span style="color:gray;">아직 폭력성 평가를 하지 않으셨어요.</span>
-            </c:otherwise>
-        </c:choose>
+    <!-- ⭐ 점수 라벨 -->
+    <div class="ms-2" id="violence-label" style="font-size: 1rem;">
+        <c:if test="${not empty myReview.violenceScore}">
+            ${myReview.violenceScore} / 10
+        </c:if>
     </div>
 </div>
 
-
-<!-- ⭐ 원 아이콘 관련 CSS -->
+<!-- ⭐ CSS -->
 <style>
     .circle-wrapper {
         position: relative;
@@ -58,46 +53,56 @@
     .right-half { right: 0; }
 
     .fa-regular.fa-circle { color: #ccc; }
-
     .fa-solid.fa-circle,
-    .fa-solid.fa-circle-half-stroke { color: #e54b4b; } /* 빨간색 원 */
+    .fa-solid.fa-circle-half-stroke { color: #e54b4b; }
 </style>
 
-<!-- ⭐ 폭력성 점수 클릭 및 AJAX 저장 -->
+<!-- ⭐ 점수 저장 로직 -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
     const contextPath = '${pageContext.request.contextPath}';
     const halves = document.querySelectorAll("#violence-score-rating .half");
     const icons = document.querySelectorAll("#violence-score-rating i");
+    const label = document.getElementById("violence-label");
 
-    if (violenceScore > 0) {
-        icons.forEach((icon, idx) => {
-            const value = (idx + 1) * 2;
-            if (violenceScore >= value) {
-                icon.className = "fa-solid fa-circle";
-            } else if (violenceScore === value - 1) {
-                icon.className = "fa-solid fa-circle-half-stroke";
-            } else {
-                icon.className = "fa-regular fa-circle";
-            }
-        });
+    let currentScore = violenceScore;
+
+    // ⭐ 초기 렌더링
+    if (currentScore > 0) {
+        updateCircles(currentScore);
+        label.textContent = currentScore + " / 10";
+    } else {
+        label.textContent = "";
     }
 
+    // ⭐ 마우스 오버: 프리뷰
+    halves.forEach(half => {
+        half.addEventListener("mouseover", function () {
+            const previewScore = parseInt(this.dataset.value);
+            updateCircles(previewScore);
+            label.textContent = previewScore + " / 10";
+        });
+    });
+
+    // ⭐ 마우스 아웃: 원래 점수로 복원
+    document.getElementById("violence-score-rating").addEventListener("mouseleave", function () {
+        updateCircles(currentScore);
+        if (currentScore > 0) {
+            label.textContent = currentScore + " / 10";
+        } else {
+            label.textContent = "";
+        }
+    });
+
+    // ⭐ 클릭: 점수 저장
     halves.forEach(half => {
         half.addEventListener("click", function () {
             const score = parseInt(this.dataset.value);
+            currentScore = score;
 
-            icons.forEach((icon, idx) => {
-                const value = (idx + 1) * 2;
-                if (score >= value) {
-                    icon.className = "fa-solid fa-circle";
-                } else if (score === value - 1) {
-                    icon.className = "fa-solid fa-circle-half-stroke";
-                } else {
-                    icon.className = "fa-regular fa-circle";
-                }
-            });
+            updateCircles(score);
+            label.textContent = score + " / 10";
 
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
@@ -117,5 +122,22 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+    // ⭐ 원 아이콘 렌더링 함수
+    function updateCircles(score) {
+        icons.forEach((icon, idx) => {
+            const value = (idx + 1) * 2;
+
+            icon.classList.remove("fa-solid", "fa-regular", "fa-circle", "fa-circle-half-stroke");
+
+            if (score >= value) {
+                icon.classList.add("fa-solid", "fa-circle");
+            } else if (score === value - 1) {
+                icon.classList.add("fa-solid", "fa-circle-half-stroke");
+            } else {
+                icon.classList.add("fa-regular", "fa-circle");
+            }
+        });
+    }
 });
 </script>

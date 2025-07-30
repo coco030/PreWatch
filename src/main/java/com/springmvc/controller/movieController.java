@@ -240,7 +240,7 @@ public class movieController {
 	     }
 	     
 	     // 25.07.31 coco030
-	     
+	     // userReviewService에서 넘긴 것 getAverageHorrorScore
 	     double avgHorror = userReviewService.getAverageHorrorScore(id);
 	     double avgSexual = userReviewService.getAverageSexualScore(id);
 	     

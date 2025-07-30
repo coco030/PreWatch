@@ -93,7 +93,8 @@
         <h2 class="section-title mb-0">PreWatch 추천 랭킹</h2>
         <a href="<c:url value='/movies/all-recommended'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
     </div>
-    <div class="section-divider"></div> <div class="row g-3 justify-content-center">
+    <div class="section-divider"></div> 
+    <div class="row g-3 justify-content-center">
         <c:set var="rank" value="0" />
         <c:forEach var="movie" items="${recommendedMovies}">
             <c:set var="rank" value="${rank + 1}" />
@@ -132,7 +133,8 @@
 
 	 <!-- 관리자 추천 영화 -->
     <h2 class="section-title">PreWatch 추천 영화</h2>
-    <div class="section-divider"></div> <c:choose>
+    <div class="section-divider"></div> 
+    <c:choose>
         <c:when test="${not empty adminRecommendedMovies}">
             <div class="row g-3 justify-content-center">
                 <c:set var="rank" value="0" />
