@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+// import java.time.YearMonth; // 07-31: 더 이상 필요 없으므로 제거
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,8 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+// import com.springmvc.domain.CalendarData; // 07-31: 더 이상 필요 없으므로 제거
+// import com.springmvc.repository.CalendarUtil; // 07-31: 더 이상 필요 없으므로 제거
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,8 +41,6 @@ import com.springmvc.domain.movie;
 import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService;
-import com.springmvc.service.StatService;
-import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
 import com.springmvc.service.externalMovieApiService;
@@ -48,36 +49,40 @@ import com.springmvc.service.userCartService;
 
 @Controller
 public class movieController {
-	
+
     private static final Logger logger = LoggerFactory.getLogger(movieController.class);
 
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
 
     private final movieService movieService;
+    // private final CalendarUtil calendarUtil; // 07-31: CalendarUtil 필드 삭제 (HomeController로 이동)
     private final externalMovieApiService externalMovieApiService;
     private final userCartService userCartService;
     private final AdminBannerMovieService adminBannerMovieService;
-    private final TmdbApiService tmdbApiService; 
-    
-
-    
-    @Autowired // coco030 07.31
-    private StatService statService;
-    
-    @Autowired 
-    private movieRepository movieRepository; 
-    @Autowired
-    private ActorRepository actorRepository;
-    @Autowired
-    private UserReviewService userReviewService;
+    private final TmdbApiService tmdbApiService;
+    private final movieRepository movieRepository;
+    private final ActorRepository actorRepository;
+    private final UserReviewService userReviewService;
 
     @Autowired
-    public movieController(movieService movieService, externalMovieApiService externalMovieApiService, userCartService userCartService, AdminBannerMovieService adminBannerMovieService, TmdbApiService tmdbApiService) { 
+    public movieController(movieService movieService,
+                           // CalendarUtil calendarUtil, // 07-31: CalendarUtil 파라미터 삭제 (HomeController로 이동)
+                           externalMovieApiService externalMovieApiService,
+                           userCartService userCartService,
+                           AdminBannerMovieService adminBannerMovieService,
+                           TmdbApiService tmdbApiService,
+                           movieRepository movieRepository,
+                           ActorRepository actorRepository,
+                           UserReviewService userReviewService) {
         this.movieService = movieService;
+        // this.calendarUtil = calendarUtil; // 07-31: CalendarUtil 초기화 삭제 (HomeController로 이동)
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
-        this.adminBannerMovieService = adminBannerMovieService; // 
-		this.tmdbApiService = tmdbApiService;  // coco030 07.28
+        this.adminBannerMovieService = adminBannerMovieService;
+        this.tmdbApiService = tmdbApiService;
+        this.movieRepository = movieRepository;
+        this.actorRepository = actorRepository;
+        this.userReviewService = userReviewService;
     }
 
     private boolean isAdmin(HttpSession session) {
@@ -91,7 +96,6 @@ public class movieController {
     }
 
     // --- Create (생성) 작업 ---
-    // 새 영화 등록 폼 페이지 요청  + coco030 7월 30일 수정
     @GetMapping("/movies/new")
     public String createForm(Model model, HttpSession session) {
         if (!isAdmin(session)) {
@@ -111,22 +115,15 @@ public class movieController {
             HttpServletRequest request,
             HttpSession session,
             Model model) {
-
         if (!isAdmin(session)) {
             logger.warn("[POST /movies] 권한 없음: 비관리자 영화 등록 시도.");
             return "redirect:/accessDenied";
         }
-
         logger.info("[POST /movies] 영화 등록 요청: 제목 = {}, IMDb ID = {}", movie.getTitle(), movie.getApiId());
-
-        // 1. api_id가 입력된 경우: TMDB/OMDb에서 정보 자동 불러오기
         Integer tmdbId = null;
         if (movie.getApiId() != null && !movie.getApiId().isBlank()) {
             try {
-                // TMDB ID를 찾는다 (없으면 null)
                 tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-
-                // TMDB ID 유무와 상관없이, 영화 기본정보(타이틀, 장르 등)는 OMDb/IMDb 기반으로 매핑 (출연진 제외)
                 Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId());
                 if (isBlank(movie.getTitle())) movie.setTitle((String) movieInfo.get("title"));
                 if (isBlank(movie.getDirector())) movie.setDirector((String) movieInfo.get("director"));
@@ -140,13 +137,10 @@ public class movieController {
                 if (isBlank(movie.getRuntime())) movie.setRuntime((String) movieInfo.get("runtime"));
                 if (isBlank(movie.getPosterPath())) movie.setPosterPath((String) movieInfo.get("poster_path"));
                 logger.info("영화 정보 자동 매핑 완료: {}", movie.getTitle());
-
             } catch (Exception e) {
                 logger.warn("영화 정보 자동 채우기 실패: {}", e.getMessage());
             }
         }
-
-        // 2. 포스터 수동 업로드 (자동 포스터 없을 때만 적용)
         if ((movie.getPosterPath() == null || movie.getPosterPath().isBlank()) && posterImage != null && !posterImage.isEmpty()) {
             try {
                 String realUploadPath = request.getSession().getServletContext().getRealPath(UPLOAD_DIRECTORY_RELATIVE);
@@ -166,12 +160,9 @@ public class movieController {
                 logger.error("포스터 업로드 실패: {}", e.getMessage());
             }
         }
-
-        // 3. 영화 DB 저장
         movieService.save(movie);
         logger.info("영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movie.getId());
 
-        // 4. 출연진 자동 저장 (TMDB ID가 있을 경우에만)
         if (tmdbId != null) {
             try {
                 List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
@@ -183,7 +174,6 @@ public class movieController {
         } else {
             logger.info("TMDB ID가 없어 출연진 자동 등록을 건너뜀.");
         }
-
         return "redirect:/movies";
     }
 
@@ -191,8 +181,6 @@ public class movieController {
         return value == null || value.trim().isEmpty();
     }
 
-    // coco030 추가 
-    // 외부 API에서 영화 상세 정보 가져와 등록 처리
     @PostMapping("/movies/import-api-detail")
     public String importApiMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session) {
         if (!isAdmin(session)) {
@@ -200,28 +188,20 @@ public class movieController {
             return "redirect:/accessDenied";
         }
         logger.info("[POST /movies/import-api-detail] API에서 영화 상세 정보 가져와 등록 요청: imdbID = {}", imdbId);
-
         movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
-
         if (movieFromApi != null) {
-            movieService.save(movieFromApi); // DB 저장(여기서 id가 할당됨)
-
-            Long movieId = movieFromApi.getId(); // save 이후 id 할당됨
-
-            // id가 null이면 selectIdSql로 강제 조회
+            movieService.save(movieFromApi);
+            Long movieId = movieFromApi.getId();
             if (movieId == null) {
                 movieId = movieService.findByApiId(movieFromApi.getApiId()).getId();
                 movieFromApi.setId(movieId);
             }
             System.out.println("DEBUG: 저장된 영화 id = " + movieId);
-
-            // TMDB 배우/감독 정보 저장
             Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
             if (tmdbId != null) {
                 List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
-                tmdbApiService.saveCastAndCrew(movieId, castAndCrew); // 반드시 null 아님!
+                tmdbApiService.saveCastAndCrew(movieId, castAndCrew);
             }
-
             logger.info("API 영화 '{}' (ID: {}) DB에 성공적으로 등록.", movieFromApi.getTitle(), movieFromApi.getApiId());
             return "redirect:/movies?status=registered";
         } else {
@@ -232,82 +212,78 @@ public class movieController {
     }
 
 
-	    // --- Read (조회) 작업 ---
-	    // read-one: 특정 영화 상세 정보 조회
-	 @GetMapping("/movies/{id}")
-	 @Transactional(readOnly = true)
-	 public String detail(@PathVariable Long id, Model model, HttpSession session) {
-	     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-	     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
-	
-	     if (movie == null) {
-	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-	         return "redirect:/movies?error=notFound";
-	     }
-	     
-	     // 25.07.31 coco030
-	     // userReviewService에서 넘긴 것 getAverageHorrorScore
-	     double avgHorror = userReviewService.getAverageHorrorScore(id);
-	     double avgSexual = userReviewService.getAverageSexualScore(id);     
-	     model.addAttribute("avgHorrorScore", avgHorror);
-	     model.addAttribute("avgSexualScore", avgSexual);
-	     
-	
-	     // 1. DB 출연진 리스트
-	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
-	     model.addAttribute("dbCastList", dbCastList);
-	     System.out.println("dbCastList :" + dbCastList);
-	
-	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
-	         movie.getId(), movie.getTitle(), movie.getLikeCount());
-	
-	     // 2. TMDB 실시간 출연진 (API)
-	     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-	     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
-	     model.addAttribute("tmdbCastList", tmdbCastList);
-	     System.out.println("tmdbCastList :" + tmdbCastList);
-	
-	     // 3. TMDB 그룹핑
-	     Map<String, List<String>> castInfo = new HashMap<>();
-	     for (Map<String, String> cast : tmdbCastList) {
-	         String type = cast.get("roleType"); // "배우", "감독" 등
-	         String name = cast.get("name");
-	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
-	     }
-	     model.addAttribute("castInfo", castInfo);
-	     System.out.println("castInfo :" + castInfo);
-	
-	     // 찜 상태
-	     Member loginMember = (Member) session.getAttribute("loginMember");
-	     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-	         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-	         movie.setIsLiked(isLiked);
-	         logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
-	     } else {
-	         movie.setIsLiked(false);
-	     }
-	     
-	     // 통계 분석 메시지 25.07.31 coco030
-	     List<InsightMessage> insights = statService.generateInsights(id);
-	     model.addAttribute("insights", insights);
-	     // 통계 분석 메시지 25.07.31 coco030 끝 //
-	
-	     model.addAttribute("movie", movie);
-	     model.addAttribute("userRole", session.getAttribute("userRole"));
-	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-	
+    // --- Read (조회) 작업 ---
+    @GetMapping("/movies/{id}")
+    @Transactional(readOnly = true)
+    public String detail(@PathVariable Long id, Model model, HttpSession session) {
+        logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+        movie movie = movieService.findById(id);
 
-	        
-	     return "movie/detailPage";
-	 }
+        if (movie == null) {
+            logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+            return "redirect:/movies?error=notFound";
+        }
 
+        double avgHorror = userReviewService.getAverageHorrorScore(id);
+        double avgSexual = userReviewService.getAverageSexualScore(id);
+
+        model.addAttribute("avgHorrorScore", avgHorror);
+        model.addAttribute("avgSexualScore", avgSexual);
+
+        List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
+        model.addAttribute("dbCastList", dbCastList);
+        System.out.println("dbCastList :" + dbCastList);
+
+        logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}",
+                movie.getId(), movie.getTitle(), movie.getLikeCount());
+
+        Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+        List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+        model.addAttribute("tmdbCastList", tmdbCastList);
+        System.out.println("tmdbCastList :" + tmdbCastList);
+
+        Map<String, List<String>> castInfo = new HashMap<>();
+        for (Map<String, String> cast : tmdbCastList) {
+            String type = cast.get("roleType");
+            String name = cast.get("name");
+            castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+        }
+        model.addAttribute("castInfo", castInfo);
+        System.out.println("castInfo :" + castInfo);
+
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+            movie.setIsLiked(isLiked);
+            logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
+        } else {
+            movie.setIsLiked(false);
+        }
+
+        model.addAttribute("movie", movie);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+
+        return "movie/detailPage";
+    }
+
+    // 07-31: /calendar/data 매핑은 HomeController로 옮겨졌으므로 이 컨트롤러에서는 삭제합니다.
+    /*
+    @GetMapping("/calendar/data")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCalendarDataAjax(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        // ... (메서드 내용) ...
+        return ResponseEntity.ok(response);
+    }
+    */
 
     // read-all: 모든 영화 목록 조회
     @GetMapping({"/movies", "/movies/"})
     @Transactional(readOnly = true)
     public String list(Model model, HttpSession session) {
         logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
-        // findAll()이 이미 like_count 기준으로 정렬되어 있으므로 별도 변경 필요 없음
         List<movie> movies = movieService.findAll();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -316,8 +292,8 @@ public class movieController {
             for (movie movie : movies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
-                logger.debug("  - 영화 ID: {}, 제목: '{}', userCartService.isMovieLiked() 반환값: {}, movie.isLiked() 최종 설정값: {}, likeCount: {}",
-                                         movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser, movie.isLiked(), movie.getLikeCount());
+                logger.debug(" - 영화 ID: {}, 제목: '{}', userCartService.isMovieLiked() 반환값: {}, movie.isLiked() 최종 설정값: {}, likeCount: {}",
+                            movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser, movie.isLiked(), movie.getLikeCount());
             }
             logger.debug("로그인된 일반 회원 ({})의 영화 목록 찜 상태 반영 완료.", loginMember.getId());
         } else {
@@ -329,14 +305,12 @@ public class movieController {
         logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
         return "movie/list";
     }
-    
-    
-    @GetMapping("/movies/all-recent") // 모든 최근 영화를 위한 새로운 URL입니다.
+
+    @GetMapping("/movies/all-recent")
     @Transactional(readOnly = true)
     public String allRecentMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-recent] 모든 최근 등록 영화 목록 요청.");
-
-        List<movie> allRecentMovies = movieService.getAllRecentMovies(); // movieService에 이 메서드를 구현해야 합니다.
+        List<movie> allRecentMovies = movieService.getAllRecentMovies();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -344,7 +318,7 @@ public class movieController {
             for (movie movie : allRecentMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
-                logger.debug("  - 영화 ID: {}, 제목: '{}', 찜 상태: {}", movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser);
+                logger.debug(" - 영화 ID: {}, 제목: '{}', 찜 상태: {}", movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser);
             }
             logger.debug("로그인된 일반 회원 ({})의 전체 최근 영화 목록 찜 상태 반영 완료.", loginMember.getId());
         } else {
@@ -354,17 +328,13 @@ public class movieController {
         model.addAttribute("recentMovies", allRecentMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-recent] movieService.getAllRecentMovies() 호출 완료.");
-        return "movie/recentMoviesList"; // 이 JSP 파일이 새로 생성될 페이지입니다.
-
-
+        return "movie/recentMoviesList";
     }
 
- // ⭐ 새로 추가: 모든 개봉 예정작 목록 페이지
     @GetMapping("/movies/all-upcoming")
     @Transactional(readOnly = true)
     public String allUpcomingMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-upcoming] 모든 개봉 예정 영화 목록 요청.");
-
         List<movie> allUpcomingMovies = movieService.getAllUpcomingMovies();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -373,24 +343,23 @@ public class movieController {
             for (movie movie : allUpcomingMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
-                logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+                logger.debug(" - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
             }
             logger.debug("모든 개봉 예정작 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
         } else {
-            logger.debug("모든 개봉 예정작 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+            logger.debug("비로그인 또는 관리자 계정으로 찜 상태 미반영.");
         }
 
         model.addAttribute("upcomingMovies", allUpcomingMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-upcoming] 모든 개봉 예정작 데이터 로딩 완료.");
-        return "movie/upcomingMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+        return "movie/upcomingMoviesList";
     }
 
     @GetMapping("/movies/all-recommended")
     @Transactional(readOnly = true)
     public String allRecommendedMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-recommended] 모든 찜 랭킹 영화 목록 요청.");
-
         List<movie> allRecommendedMovies = movieService.getAllRecommendedMovies();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -399,64 +368,29 @@ public class movieController {
             for (movie movie : allRecommendedMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
-                logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
+                logger.debug(" - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
             }
             logger.debug("모든 찜 랭킹 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
         } else {
-            logger.debug("모든 찜 랭킹 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+            logger.debug("비로그인 또는 관리자 계정으로 찜 상태 미반영.");
         }
 
         model.addAttribute("recommendedMovies", allRecommendedMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-recommended] 모든 찜 랭킹 영화 데이터 로딩 완료.");
-        return "movie/recommendedMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+        return "movie/recommendedMoviesList";
     }
-    // read-some: 메인 페이지 데이터 (최근 등록, 추천 랭킹)
-    // ⭐ 메인 페이지 (main.jsp) 요청 처리 메서드: 이제 HomeController가 '/'를 담당하므로 이 메서드는 /main 경로만 처리합니다. ⭐ (7-24 오후12:41 추가 된 코드)
-    @GetMapping("/main") // (7-24 오후12:41 추가 된 코드)
-    @Transactional(readOnly = true) // (7-24 오후12:41 추가 된 코드)
-    public String mainPage(Model model, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
-        logger.info("[GET /main] 메인 페이지 (별도 경로) 요청이 들어왔습니다."); // 
-        
-        // 1. 최근 등록된 영화 목록 가져오기 (상위 3개) (7-24 오후12:41 추가 된 코드)
-        List<movie> recentMovies = movieService.getRecentMovies(3); // 
-        model.addAttribute("movies", recentMovies); // 'movies'는 main.jsp의 "최근 등록된 영화" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
 
-        // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개) 
-        List<movie> recommendedMovies = movieService.getTop6RecommendedMovies(); //
-        model.addAttribute("recommendedMovies", recommendedMovies); // 'recommendedMovies'는 main.jsp의 "추천 랭킹" 섹션에 바인딩 (7-24 오후12:41 추가 된 코드)
+    // 07-31: /main 매핑은 HomeController에서 /로 처리하므로 movieController에서는 제거합니다.
+    /*
+    @GetMapping("/main")
+    @Transactional(readOnly = true)
+    public String mainPage(Model model, HttpSession session) {
+        // ... (메서드 내용) ...
+        return "layout/main";
+    }
+    */
 
-        // 07.26 coco030 오후 3시 20분 + 오후 7시 23분
-        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
-        model.addAttribute("upcomingMovies", upcomingMovies);
-        
-
-        Member loginMember = (Member) session.getAttribute("loginMember"); 
-        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId()); //
-            // recentMovies와 recommendedMovies 모두에 찜 상태 반영
-            for (movie movie : recentMovies) {
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // 
-                movie.setIsLiked(isMovieLikedByCurrentUser); 
-                logger.debug("  - 최근 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // 
-            } 
-            for (movie movie : recommendedMovies) { // (7-24 오후12:41 추가 된 코드)
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId()); // 
-                movie.setIsLiked(isMovieLikedByCurrentUser); // (7-24 오후12:41 추가 된 코드)
-                logger.debug("  - 추천 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser); // 
-            } // (7-24 오후12:41 추가 된 코드)
-            // adminRecommendedMovies 찜 상태 반영 로직 제거 (7-24 오후12:41 추가 된 코드)
-            logger.debug("메인 페이지 (별도 경로) - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId()); // 
-        } else { // (7-24 오후12:41 추가 된 코드)
-            logger.debug("메인 페이지 (별도 경로) - 비로그인 또는 관리자 계정으로 찜 상태 미반영."); // 
-        } // (7-24 오후12:41 추가 된 코드)
-
-        model.addAttribute("userRole", session.getAttribute("userRole")); // (7-24 오후12:41 추가 된 코드)
-        logger.debug("[GET /main] 메인 페이지 (별도 경로) 데이터 로딩 완료."); // (7-24 오후12:41 추가 된 코드)
-        return "layout/main"; // main.jsp 경로 (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
-
-    // read-some: API 영화 검색 페이지 또는 검색 결과
     @GetMapping("/movies/search-api")
     @Transactional(readOnly = true)
     public String searchApiMoviesPage(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
@@ -494,7 +428,6 @@ public class movieController {
         return "movie/apiSearchPage";
     }
 
-    // read-some: 헤더 검색 결과
     @GetMapping("/search")
     @Transactional(readOnly = true)
     public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
@@ -528,7 +461,6 @@ public class movieController {
         return "movie/apiSearchPage";
     }
 
-    // read-one: 외부 API 영화 상세 정보 조회
     @GetMapping("/movies/api-external-detail")
     @Transactional(readOnly = true)
     public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
@@ -543,7 +475,6 @@ public class movieController {
                     externalMovieDetail.setId(localMovie.getId());
                     externalMovieDetail.setLikeCount(localMovie.getLikeCount());
 
-
                     Member loginMember = (Member) session.getAttribute("loginMember");
                     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
                         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), localMovie.getId());
@@ -557,20 +488,15 @@ public class movieController {
                     logger.debug("API 상세 페이지에 영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/잔혹도/찜개수 유지.", externalMovieDetail.getTitle(), externalMovieDetail.getApiId());
                     externalMovieDetail.setIsLiked(false);
                     externalMovieDetail.setLikeCount(0);
-                    // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
                 }
-                
-                
-             
-              // TMDB 배우·감독 정보 조회  (25.07.28 coco030)
+
                 String imdbIdForTmdb = externalMovieDetail.getApiId();
                 Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbIdForTmdb);
                 if (tmdbId != null) {
                     List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
                     model.addAttribute("castAndCrew", castAndCrew);
-                } //
-                
-          
+                }
+
                 model.addAttribute("movie", externalMovieDetail);
                 model.addAttribute("userRole", session.getAttribute("userRole"));
                 return "movie/detailPage";
@@ -586,7 +512,6 @@ public class movieController {
         }
     }
 
-    // API 검색 결과에 로컬 데이터 덮어쓰기 (내부 도우미 메서드)
     private void overrideRatingsWithLocalData(List<movie> apiMovies) {
         for (movie apiMovie : apiMovies) {
             movie localMovie = movieService.findByApiId(apiMovie.getApiId());
@@ -595,24 +520,19 @@ public class movieController {
                 apiMovie.setViolence_score_avg(localMovie.getViolence_score_avg());
                 apiMovie.setId(localMovie.getId());
                 apiMovie.setLikeCount(localMovie.getLikeCount());
-                // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
                 logger.debug("영화 '{}' (apiId: {})의 평점/잔혹도/찜개수를 로컬 DB 데이터로 덮어씀.", apiMovie.getTitle(), apiMovie.getApiId());
             } else {
                 logger.debug("영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/잔혹도/찜개수 유지.", apiMovie.getTitle(), apiMovie.getApiId());
                 apiMovie.setLikeCount(0);
-                // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
             }
         }
     }
 
-    // 접근 거부 페이지
     @GetMapping("/accessDenied")
     public String accessDenied() {
         return "accessDenied";
     }
 
-    // --- Update (수정) 작업 ---
-    // 영화 수정 폼 페이지 요청
     @GetMapping("/movies/{id}/edit")
     public String editForm(@PathVariable Long id, Model model, HttpSession session) {
         if (!isAdmin(session)) {
@@ -632,12 +552,11 @@ public class movieController {
         return "movie/form";
     }
 
-    // 영화 정보 업데이트 처리
     @PostMapping("/movies/{id}/edit")
     public String update(@PathVariable Long id,
-                         @ModelAttribute movie movie,
-                         @RequestParam("posterImage") MultipartFile posterImage,
-                         HttpServletRequest request, HttpSession session) {
+                          @ModelAttribute movie movie,
+                          @RequestParam("posterImage") MultipartFile posterImage,
+                          HttpServletRequest request, HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[POST /movies/{}/edit] 권한 없음: 비관리자 영화 업데이트 시도.");
             return "redirect:/accessDenied";
@@ -648,7 +567,6 @@ public class movieController {
         movie existingMovie = movieService.findById(id);
         String oldPosterPath = existingMovie != null ? existingMovie.getPosterPath() : null;
         movie.setLikeCount(existingMovie != null ? existingMovie.getLikeCount() : 0);
-        // isRecommended 로직 제거 (7-24 오후12:41 추가 된 코드)
 
         if (posterImage != null && !posterImage.isEmpty()) {
             try {
@@ -682,12 +600,10 @@ public class movieController {
         }
 
         movieService.update(movie);
-        logger.info("영화 '{}' 업데이트 완료.", movie.getTitle()); // isRecommended 로깅 제거 (7-24 오후12:41 추가 된 코드)
+        logger.info("영화 '{}' 업데이트 완료.", movie.getTitle());
         return "redirect:/movies";
     }
 
-    // --- Delete (삭제) 작업 ---
-    // 영화 삭제 처리
     @PostMapping("/movies/{id}/delete")
     public String delete(@PathVariable Long id, HttpServletRequest request, HttpSession session) {
         if (!isAdmin(session)) {
@@ -718,8 +634,6 @@ public class movieController {
         return "redirect:/movies";
     }
 
-    // --- 기타 기능 ---
-    // Cart (찜) 기능 토글
     @PostMapping("/movies/{movieId}/toggleCart")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> toggleCart(@PathVariable Long movieId, HttpSession session) {
@@ -741,87 +655,75 @@ public class movieController {
         }
     }
 
-    // ⭐ 관리자용 수동 추천 영화 관리 페이지 (Read-All for Admin)
-    @GetMapping("/admin/banner-movies") // (7-24 오후12:41 추가 된 코드)
-    public String adminBannerMovies(Model model, HttpSession session) { 
-        if (!isAdmin(session)) { // (7-24 오후12:41 추가 된 코드)
-            logger.warn("[GET /admin/banner-movies] 권한 없음: 비관리자 접근 시도."); // (7-24 오후12:41 추가 된 코드)
-            return "redirect:/accessDenied"; // (7-24 오후12:41 추가 된 코드)
-        } // (7-24 오후12:41 추가 된 코드)
-        logger.info("[GET /admin/banner-movies] 관리자 수동 추천 영화 관리 페이지 요청."); // (7-24 오후12:41 추가 된 코드)
+    @GetMapping("/admin/banner-movies")
+    public String adminBannerMovies(Model model, HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[GET /admin/banner-movies] 권한 없음: 비관리자 접근 시도.");
+            return "redirect:/accessDenied";
+        }
+        logger.info("[GET /admin/banner-movies] 관리자 수동 추천 영화 관리 페이지 요청.");
+        List<movie> allMovies = movieService.findAll();
+        List<movie> currentAdminBannerMovies = adminBannerMovieService.getAdminRecommendedMovies();
 
-        List<movie> allMovies = movieService.findAll(); // 모든 영화 목록 (추천할 영화 선택용) (7-24 오후12:41 추가 된 코드)
-        List<movie> currentAdminBannerMovies = adminBannerMovieService.getAdminRecommendedMovies(); // 현재 배너에 등록된 영화 (7-24 오후12:41 추가 된 코드)
+        model.addAttribute("allMovies", allMovies);
+        model.addAttribute("currentAdminBannerMovies", currentAdminBannerMovies);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        return "admin/bannerMovieManage";
+    }
 
-        model.addAttribute("allMovies", allMovies); // (7-24 오후12:41 추가 된 코드)
-        model.addAttribute("currentAdminBannerMovies", currentAdminBannerMovies); // (7-24 오후12:41 추가 된 코드)
-        model.addAttribute("userRole", session.getAttribute("userRole")); // (7-24 오후12:41 추가 된 코드)
-        return "admin/bannerMovieManage"; // ⭐ 새로운 JSP 파일 (admin/bannerMovieManage.jsp) (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
+    @PostMapping("/admin/banner-movies/add")
+    public String addBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[POST /admin/banner-movies/add] 권한 없음: 비관리자 추천 영화 추가 시도.");
+            return "redirect:/accessDenied";
+        }
+        logger.info("[POST /admin/banner-movies/add] 수동 추천 영화 추가 요청: Movie ID = {}", movieId);
 
-    // ⭐ 관리자 수동 추천 영화 추가 처리 (Create for Admin) 
-    @PostMapping("/admin/banner-movies/add") //
-    public String addBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
-        if (!isAdmin(session)) { // (7-24 오후12:41 추가 된 코드)
-            logger.warn("[POST /admin/banner-movies/add] 권한 없음: 비관리자 추천 영화 추가 시도."); // (7-24 오후12:41 추가 된 코드)
-            return "redirect:/accessDenied"; // (7-24 오후12:41 추가 된 코드)
-        } // (7-24 오후12:41 추가 된 코드)
-        logger.info("[POST /admin/banner-movies/add] 수동 추천 영화 추가 요청: Movie ID = {}", movieId); // (7-24 오후12:41 추가 된 코드)
+        try {
+            if (adminBannerMovieService.isMovieInAdminBanner(movieId)) {
+                redirectAttributes.addFlashAttribute("errorMessage", "이미 수동 추천 영화로 등록된 영화입니다.");
+                return "redirect:/admin/banner-movies";
+            }
 
-        try { // (7-24 오후12:41 추가 된 코드)
-            // 이미 등록된 영화인지 확인 (7-24 오후12:41 추가 된 코드)
-            if (adminBannerMovieService.isMovieInAdminBanner(movieId)) { // (7-24 오후12:41 추가 된 코드)
-                redirectAttributes.addFlashAttribute("errorMessage", "이미 수동 추천 영화로 등록된 영화입니다."); // (7-24 오후12:41 추가 된 코드)
-                return "redirect:/admin/banner-movies"; // (7-24 오후12:41 추가 된 코드)
-            } // (7-24 오후12:41 추가 된 코드)
+            adminBannerMovieService.addAdminRecommendedMovie(movieId);
+            redirectAttributes.addFlashAttribute("successMessage", "영화가 수동 추천 배너에 추가되었습니다.");
+        } catch (Exception e) {
+            logger.error("수동 추천 영화 추가 실패 (movieId={}): {}", movieId, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 추가 중 오류가 발생했습니다.");
+        }
+        return "redirect:/admin/banner-movies";
+    }
 
-            adminBannerMovieService.addAdminRecommendedMovie(movieId); // (7-24 오후12:41 추가 된 코드)
-            redirectAttributes.addFlashAttribute("successMessage", "영화가 수동 추천 배너에 추가되었습니다."); // (7-24 오후12:41 추가 된 코드)
-        } catch (Exception e) { // (7-24 오후12:41 추가 된 코드)
-            logger.error("수동 추천 영화 추가 실패 (movieId={}): {}", movieId, e.getMessage(), e); // (7-24 오후12:41 추가 된 코드)
-            redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 추가 중 오류가 발생했습니다."); // (7-24 오후12:41 추가 된 코드)
-        } // (7-24 오후12:41 추가 된 코드)
-        return "redirect:/admin/banner-movies"; // (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
+    @PostMapping("/admin/banner-movies/delete")
+    public String deleteBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[POST /admin/banner-movies/delete] 권한 없음: 비관리자 추천 영화 삭제 시도.");
+            return "redirect:/accessDenied";
+        }
+        logger.info("[POST /admin/banner-movies/delete] 수동 추천 영화 삭제 요청: Movie ID = {}", movieId);
 
-    // ⭐ 수동 추천 영화 삭제 처리 (Delete for Admin) ⭐ (7-24 오후12:41 추가 된 코드)
-    @PostMapping("/admin/banner-movies/delete") // (7-24 오후12:41 추가 된 코드)
-    public String deleteBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) { // (7-24 오후12:41 추가 된 코드)
-        if (!isAdmin(session)) { // (7-24 오후12:41 추가 된 코드)
-            logger.warn("[POST /admin/banner-movies/delete] 권한 없음: 비관리자 추천 영화 삭제 시도."); // (7-24 오후12:41 추가 된 코드)
-            return "redirect:/accessDenied"; // (7-24 오후12:41 추가 된 코드)
-        } // (7-24 오후12:41 추가 된 코드)
-        logger.info("[POST /admin/banner-movies/delete] 수동 추천 영화 삭제 요청: Movie ID = {}", movieId); // (7-24 오후12:41 추가 된 코드)
-
-        try { // (7-24 오후12:41 추가 된 코드)
-            adminBannerMovieService.removeAdminRecommendedMovie(movieId); // (7-24 오후12:41 추가 된 코드)
-            redirectAttributes.addFlashAttribute("successMessage", "영화가 수동 추천 배너에서 삭제되었습니다."); // (7-24 오후12:41 추가 된 코드)
-        } catch (Exception e) { // (7-24 오후12:41 추가 된 코드)
-            logger.error("수동 추천 영화 삭제 실패 (movieId={}): {}", movieId, e.getMessage(), e); // (7-24 오후12:41 추가 된 코드)
-            redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 삭제 중 오류가 발생했습니다."); // (7-24 오후12:41 추가 된 코드)
-        } // (7-24 오후12:41 추가 된 코드)
-        return "redirect:/admin/banner-movies"; // (7-24 오후12:41 추가 된 코드)
-    } // (7-24 오후12:41 추가 된 코드)
-    
-    
-   
-    // 최근 개봉 예정작
+        try {
+            adminBannerMovieService.removeAdminRecommendedMovie(movieId);
+            redirectAttributes.addFlashAttribute("successMessage", "영화가 수동 추천 배너에서 삭제되었습니다.");
+        } catch (Exception e) {
+            logger.error("수동 추천 영화 삭제 실패 (movieId={}): {}", movieId, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:/admin/banner-movies";
+    }
 
     @GetMapping("/movies/upcoming")
     public String showUpcomingMovies(Model model) {
-    	System.out.println("업커밍");
+        System.out.println("업커밍");
         List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         return "movie/upcomingMovies";
     }
-	
 
-    // 메인에 최근 코멘트 모듈 
     @GetMapping("/movies/commentCard")
     public String commentCard(Model model, HttpSession session) {
         List<RecentCommentDTO> recentComments = movieService.getRecentComments();
         model.addAttribute("recentComments", recentComments);
         return "movie/comment-card";
     }
-    
 }

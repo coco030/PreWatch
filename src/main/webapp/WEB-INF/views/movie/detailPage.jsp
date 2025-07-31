@@ -173,19 +173,7 @@
     </div>
 </div>
 
-
-<%-- 이 아래에 통계 메시지 영역 추가 --%>
-<c:if test="${not empty insights}">
-    <div class="movie-insights-container" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-        <ul style="list-style-type: '💡'; padding-left: 20px;">
-            <c:forEach var="insight" items="${insights}">
-                <li style="margin-bottom: 8px;">${insight.message}</li>
-            </c:forEach>
-        </ul>
-    </div>
-</c:if>
-
-<!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
+ <!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
 <c:if test="${not empty dbCastList or not empty castAndCrew}">
 <!-- 주요 참여진 박스 전체를 카드로 감싸기 -->
 <div class="card bg mb-4" style="border:none;">
@@ -373,7 +361,7 @@
 	
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 지수</h6>
+	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 평가</h6>
 	                <c:import url="/review/rating">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -385,7 +373,7 @@
 
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 지수</h6>
+	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 평가</h6>
 	                <c:import url="/review/violence">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -393,12 +381,12 @@
 	    </div>
 
 	
-		<!-- 공포성 작성 -->
+		<!-- 공포지수 작성 -->
 
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
-							공포지수</h6>
+							공포지수 평가</h6>
 		                <c:import url="/review/HorrorScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>
@@ -411,7 +399,7 @@
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-eye-fill text-warning me-1"></i>
-							선정성 지수</h6>
+							선정성 평가</h6>
 		                <c:import url="/review/SexualScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>
