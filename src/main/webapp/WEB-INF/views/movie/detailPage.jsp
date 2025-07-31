@@ -173,7 +173,19 @@
     </div>
 </div>
 
- <!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
+
+<%-- 이 아래에 통계 메시지 영역 추가 --%>
+<c:if test="${not empty insights}">
+    <div class="movie-insights-container" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        <ul style="list-style-type: '💡'; padding-left: 20px;">
+            <c:forEach var="insight" items="${insights}">
+                <li style="margin-bottom: 8px;">${insight.message}</li>
+            </c:forEach>
+        </ul>
+    </div>
+</c:if>
+
+<!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
 <c:if test="${not empty dbCastList or not empty castAndCrew}">
 <!-- 주요 참여진 박스 전체를 카드로 감싸기 -->
 <div class="card bg mb-4" style="border:none;">

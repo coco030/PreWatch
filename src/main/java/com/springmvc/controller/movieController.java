@@ -37,7 +37,9 @@ import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.movie;
 import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.movieRepository;
-import com.springmvc.service.AdminBannerMovieService; // ⭐ 새로 추가된 서비스 임포트 (7-24 오후12:41 추가 된 코드)
+import com.springmvc.service.AdminBannerMovieService;
+import com.springmvc.service.StatService;
+import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
 import com.springmvc.service.externalMovieApiService;
@@ -55,13 +57,17 @@ public class movieController {
     private final externalMovieApiService externalMovieApiService;
     private final userCartService userCartService;
     private final AdminBannerMovieService adminBannerMovieService;
-    private final TmdbApiService tmdbApiService; // coco030 07.28
+    private final TmdbApiService tmdbApiService; 
     
 
-    @Autowired // coco030 07.28
-    private movieRepository movieRepository; // coco030 07.28
+    
+    @Autowired // coco030 07.31
+    private StatService statService;
+    
+    @Autowired 
+    private movieRepository movieRepository; 
     @Autowired
-    private ActorRepository actorRepository;  // coco030 07.28
+    private ActorRepository actorRepository;
     @Autowired
     private UserReviewService userReviewService;
 
@@ -242,8 +248,7 @@ public class movieController {
 	     // 25.07.31 coco030
 	     // userReviewService에서 넘긴 것 getAverageHorrorScore
 	     double avgHorror = userReviewService.getAverageHorrorScore(id);
-	     double avgSexual = userReviewService.getAverageSexualScore(id);
-	     
+	     double avgSexual = userReviewService.getAverageSexualScore(id);     
 	     model.addAttribute("avgHorrorScore", avgHorror);
 	     model.addAttribute("avgSexualScore", avgSexual);
 	     
@@ -281,11 +286,18 @@ public class movieController {
 	     } else {
 	         movie.setIsLiked(false);
 	     }
+	     
+	     // 통계 분석 메시지 25.07.31 coco030
+	     List<InsightMessage> insights = statService.generateInsights(id);
+	     model.addAttribute("insights", insights);
+	     // 통계 분석 메시지 25.07.31 coco030 끝 //
 	
 	     model.addAttribute("movie", movie);
 	     model.addAttribute("userRole", session.getAttribute("userRole"));
 	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
 	
+
+	        
 	     return "movie/detailPage";
 	 }
 

@@ -16,9 +16,15 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.movie;
+import com.springmvc.service.StatService;
 
 @Repository
 public class movieRepository {
+	
+	// 25.07.31 coco030추가 
+	@Autowired
+	private StatService statService;
+	// 25.07.31 coco030추가 끝
 
 	 private final JdbcTemplate jdbcTemplate; // final로 변경하여 불변성 확보
 
