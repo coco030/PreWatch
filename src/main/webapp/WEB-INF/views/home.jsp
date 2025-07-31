@@ -86,13 +86,13 @@
         </div>
     </main>
 	<!-- 통계 표시 박스  -->
-    <div class="stats-display-box">
-        <p>영화 댓글 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 만족도 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>
-        <p>영화 공포성 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 선정성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>       
-    </div>   
+<div class="stats-display-box">
+    <p>영화 댓글 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
+    <p>영화 만족도 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
+    <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>
+    <p>영화 공포성 평가가 <strong id="horrorCount" data-count="${globalStats.totalHorrorScoreCount}">0</strong>개가 쌓였어요.</p>
+    <p>영화 선정성 평가가 <strong id="sexualCount" data-count="${globalStats.totalSexualScoreCount}">0</strong>개 쌓였어요.</p>   
+</div>
 
 <script>
     // 숫자 카운트업 애니메이션 함수
@@ -128,6 +128,9 @@
         animateCountUp(document.getElementById('reviewCount'));
         animateCountUp(document.getElementById('ratingCount'));
         animateCountUp(document.getElementById('violenceCount'));
+
+        animateCountUp(document.getElementById('horrorCount'));
+        animateCountUp(document.getElementById('sexualCount'));
     });
     </script>
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 

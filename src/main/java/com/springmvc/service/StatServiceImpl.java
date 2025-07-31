@@ -192,7 +192,7 @@ public class StatServiceImpl implements StatService {
 
         // 상위 2개의 가장 의미있는 메시지만 선택
         List<InsightMessage> finalInsights = new ArrayList<>();
-        int maxInsights = 2;
+        int maxInsights = 3;
         for (int i = 0; i < Math.min(maxInsights, allFacts.size()); i++) {
             finalInsights.add(new InsightMessage(allFacts.get(i).getMessage()));
         }

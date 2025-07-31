@@ -17,6 +17,8 @@ public class GlobalStatService {
         stats.setTotalReviewContentCount(userReviewRepository.getTotalReviewContentCount());
         stats.setTotalUserRatingCount(userReviewRepository.getTotalUserRatingCount());
         stats.setTotalViolenceScoreCount(userReviewRepository.getTotalViolenceScoreCount());
+        stats.setTotalHorrorScoreCount(userReviewRepository.getTotalHorrorScoreCount());
+        stats.setTotalSexualScoreCount(userReviewRepository.getTotalSexualScoreCount());
         return stats;
     }
 }

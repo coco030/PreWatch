@@ -13,6 +13,8 @@ public class StatDTO {
     private long totalReviewContentCount;
     private long totalUserRatingCount;
     private long totalViolenceScoreCount;
+    private long totalHorrorScoreCount;
+    private long totalSexualScoreCount;
 
     // 1. 특정 영화의 정보
     private long movieId;
@@ -24,6 +26,7 @@ public class StatDTO {
     private double horrorScoreAvg;      // movie_stats.horror_score_avg
     private double sexualScoreAvg;      // movie_stats.sexual_score_avg
     private int reviewCount;            // movie_stats.review_count
+
 
     // 3. 특정 영화의 장르 목록 (movie_genres 테이블에서 가져옴)
     private List<String> genres;
@@ -63,7 +66,44 @@ public class StatDTO {
 
 
 
-    // 홈 하단의 전체 통계용 Getters and Setters
+    public StatDTO(long totalReviewContentCount, long totalUserRatingCount, long totalViolenceScoreCount,
+			long totalHorrorScoreCount, long totalSexualScoreCount, long movieId, String title, double userRatingAvg,
+			double violenceScoreAvg, double horrorScoreAvg, double sexualScoreAvg, int reviewCount, List<String> genres,
+			double genreRatingAvg, double genreViolenceScoreAvg, double genreHorrorScoreAvg,
+			double genreSexualScoreAvg) {
+		super();
+		this.totalReviewContentCount = totalReviewContentCount;
+		this.totalUserRatingCount = totalUserRatingCount;
+		this.totalViolenceScoreCount = totalViolenceScoreCount;
+		this.totalHorrorScoreCount = totalHorrorScoreCount;
+		this.totalSexualScoreCount = totalSexualScoreCount;
+		this.movieId = movieId;
+		this.title = title;
+		this.userRatingAvg = userRatingAvg;
+		this.violenceScoreAvg = violenceScoreAvg;
+		this.horrorScoreAvg = horrorScoreAvg;
+		this.sexualScoreAvg = sexualScoreAvg;
+		this.reviewCount = reviewCount;
+		this.genres = genres;
+		this.genreRatingAvg = genreRatingAvg;
+		this.genreViolenceScoreAvg = genreViolenceScoreAvg;
+		this.genreHorrorScoreAvg = genreHorrorScoreAvg;
+		this.genreSexualScoreAvg = genreSexualScoreAvg;
+	}
+
+	@Override
+	public String toString() {
+		return "StatDTO [totalReviewContentCount=" + totalReviewContentCount + ", totalUserRatingCount="
+				+ totalUserRatingCount + ", totalViolenceScoreCount=" + totalViolenceScoreCount
+				+ ", totalHorrorScoreCount=" + totalHorrorScoreCount + ", totalSexualScoreCount="
+				+ totalSexualScoreCount + ", movieId=" + movieId + ", title=" + title + ", userRatingAvg="
+				+ userRatingAvg + ", violenceScoreAvg=" + violenceScoreAvg + ", horrorScoreAvg=" + horrorScoreAvg
+				+ ", sexualScoreAvg=" + sexualScoreAvg + ", reviewCount=" + reviewCount + ", genres=" + genres
+				+ ", genreRatingAvg=" + genreRatingAvg + ", genreViolenceScoreAvg=" + genreViolenceScoreAvg
+				+ ", genreHorrorScoreAvg=" + genreHorrorScoreAvg + ", genreSexualScoreAvg=" + genreSexualScoreAvg + "]";
+	}
+	
+	// 홈 하단의 전체 통계용 Getters and Setters
     public long getTotalReviewContentCount() {
         return totalReviewContentCount;
     }
@@ -87,6 +127,19 @@ public class StatDTO {
     public void setTotalViolenceScoreCount(long totalViolenceScoreCount) {
         this.totalViolenceScoreCount = totalViolenceScoreCount;
     }
+    
+	public long getTotalHorrorScoreCount() {
+		return totalHorrorScoreCount;
+	}
+	public void setTotalHorrorScoreCount(long totalHorrorScoreCount) {
+		this.totalHorrorScoreCount = totalHorrorScoreCount;
+	}
+	public long getTotalSexualScoreCount() {
+		return totalSexualScoreCount;
+	}
+	public void setTotalSexualScoreCount(long totalSexualScoreCount) {
+		this.totalSexualScoreCount = totalSexualScoreCount;
+	}
     // 홈 하단의 전체 통계용 Getters and Setters 끝
 }
     

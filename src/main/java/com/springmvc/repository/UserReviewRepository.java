@@ -378,6 +378,17 @@ public class UserReviewRepository {
         return (count != null) ? count : 0L;
     }
     
+    public long getTotalHorrorScoreCount() {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE horror_score IS NOT NULL";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return (count != null) ? count : 0L;
+    }
+
+    public long getTotalSexualScoreCount() {
+        String sql = "SELECT COUNT(*) FROM user_reviews WHERE sexual_score IS NOT NULL";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return (count != null) ? count : 0L;
+    }
     ///
 
  // ✅ 유저가 평가한 호러 점수 평균 계산 (user_reviews 기준)
