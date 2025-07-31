@@ -1,14 +1,3 @@
-/*
-    파일명: MemberController.java
-    설명:
-        이 class는 회원(Member) 관련 기능을 처리하는 컨트롤러입니다.
-        회원가입, 회원 정보 수정(비밀번호), 회원 탈퇴(비활성화), 마이페이지 등의 요청을 담당합니다.
-
-    목적:
-        사용자가 회원 정보를 관리(가입, 수정, 탈퇴)하고 개인화된 페이지(마이페이지)에 접근하기 위함.
-
-*/
-
 package com.springmvc.controller;
 
 import java.util.HashMap;
@@ -35,8 +24,8 @@ import com.springmvc.service.MemberService;
 import com.springmvc.service.UserReviewService;
 import com.springmvc.service.userCartService;
 
-@Controller // Spring이 컨트롤러로 인식
-@RequestMapping("/member") // 기본 URL 경로 "/member" 설정
+@Controller 
+@RequestMapping("/member") 
 
 public class MemberController {
 	

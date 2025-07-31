@@ -26,11 +26,10 @@ public class movie implements Serializable {
     private LocalDateTime updatedAt;
     private boolean isLiked;
     private int likeCount;
-    private String runtime; // 상영 시간 (예: "142 min")
-    private String rated;   // 연령 등급 (예: "PG-13", "R")
-    private Integer dday; // 25.07.26 coco030
-    
-    // ⭐ 추가: JSP 출력용 포맷된 날짜 문자열 반환
+    private String runtime;
+    private String rated;
+    private Integer dday;
+
     public String getFormattedReleaseDate() {
         if (releaseDate != null) {
             return releaseDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
@@ -38,7 +37,7 @@ public class movie implements Serializable {
             return "";
         }
     }
-    
+
     public movie() {
         this.rating = 0.0;
         this.violence_score_avg = 0.0;
@@ -55,9 +54,8 @@ public class movie implements Serializable {
         this.genre = genre;
     }
 
- // 모든 필드를 포함하는 생성자 (runtime, rated 포함하도록 수정)
     public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
-                 LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount, String runtime, String rated) { // ⭐ runtime, rated 파라미터 추가
+                 LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount, String runtime, String rated) {
         this.id = id;
         this.apiId = apiId;
         this.title = title;
@@ -76,9 +74,8 @@ public class movie implements Serializable {
         this.rated = rated;    
     }
 
- // API에서 가져온 필수 정보를 초기화하는 생성자 (runtime, rated 포함하도록 수정)
     public movie(String apiId, String title, String director, int year,
-                 LocalDate releaseDate, String genre, String overview, String posterPath, String runtime, String rated) { // ⭐ runtime, rated 파라미터 추가
+                 LocalDate releaseDate, String genre, String overview, String posterPath, String runtime, String rated) {
         this();
         this.apiId = apiId;
         this.title = title;
@@ -88,11 +85,10 @@ public class movie implements Serializable {
         this.genre = genre;
         this.overview = overview;
         this.posterPath = posterPath;
-        this.runtime = runtime; // ⭐ 추가
-        this.rated = rated;     // ⭐ 추가
+        this.runtime = runtime;
+        this.rated = rated;
     }
 
-    // Getter/Setter: 각 필드에 대한 값 읽기/쓰기 접근 메서드.
     public String getPosterPath() { return posterPath; }
     public void setPosterPath(String posterPath) { this.posterPath = posterPath; }
 
@@ -132,46 +128,18 @@ public class movie implements Serializable {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public boolean isLiked() {
-        return isLiked;
-    }
+    public boolean isLiked() { return isLiked; }
+    public void setIsLiked(boolean isLiked) { this.isLiked = isLiked; }
 
-    public void setIsLiked(boolean isLiked) {
-        this.isLiked = isLiked;
-    }
+    public int getLikeCount() { return likeCount; }
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
 
-    public int getLikeCount() {
-        return likeCount;
-    }
+    public Integer getDday() { return dday; }
+    public void setDday(Integer dday) { this.dday = dday; }
 
-    public void setLikeCount(int likeCount) {
-        this.likeCount = likeCount;
-    }
+    public String getRuntime() { return runtime; }
+    public void setRuntime(String runtime) { this.runtime = runtime; }
 
-    
-    public Integer getDday() {
-        return dday;
-    }
-
-    public void setDday(Integer dday) {
-        this.dday = dday;
-    }
-    
-    public String getRuntime() {
-        return runtime;
-    }
-
-    public void setRuntime(String runtime) {
-        this.runtime = runtime;
-    }
-
-    public String getRated() {
-        return rated;
-    }
-
-    public void setRated(String rated) {
-        this.rated = rated;
-    }
-
-    
+    public String getRated() { return rated; }
+    public void setRated(String rated) { this.rated = rated; }
 }
