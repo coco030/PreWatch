@@ -67,7 +67,7 @@
 						</p>
 						
 					<p class="card-text mb-1">
-					    <strong>공포지수:</strong>
+					    <strong>공포성:</strong>
 					    <c:choose>
 					        <c:when test="${review.horrorScore == null}">(아직 평가를 하지 않으셨어요)</c:when>
 					        <c:otherwise>${review.horrorScore}점</c:otherwise>

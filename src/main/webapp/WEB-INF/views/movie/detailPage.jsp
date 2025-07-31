@@ -373,7 +373,7 @@
 	
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 평가</h6>
+	                <h6 class="mb-2 fw-bold"><i class="fas fa-star text-warning me-1"></i>만족도 지수</h6>
 	                <c:import url="/review/rating">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -385,7 +385,7 @@
 
 	    <div class="container mt-3">
 	        <div class="bg-body-bg rounded-3 p-3">
-	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 평가</h6>
+	                <h6 class="mb-2 fw-bold"><i class="bi-exclamation-triangle-fill text-danger me-1"></i>폭력성 지수</h6>
 	                <c:import url="/review/violence">
 	                    <c:param name="movieId" value="${movie.id}" />
 	                </c:import>
@@ -393,12 +393,12 @@
 	    </div>
 
 	
-		<!-- 공포지수 작성 -->
+		<!-- 공포성 작성 -->
 
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-emoji-dizzy-fill text-secondary me-1"></i>
-							공포지수 평가</h6>
+							공포지수</h6>
 		                <c:import url="/review/HorrorScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>
@@ -411,7 +411,7 @@
 		    <div class="container mt-3">
 		        <div class="bg-body-bg rounded-3 p-3">
 		                <h6 class="mb-2 fw-bold"><i class="bi-eye-fill text-warning me-1"></i>
-							선정성 평가</h6>
+							선정성 지수</h6>
 		                <c:import url="/review/SexualScoreUserView">
 		                    <c:param name="movieId" value="${movie.id}" />
 		                </c:import>

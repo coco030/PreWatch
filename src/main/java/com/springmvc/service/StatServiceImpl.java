@@ -159,7 +159,7 @@ public class StatServiceImpl implements StatService {
 
             switch (analysisCode) {
                 case "HIGH_RATING":
-                    msg = String.format("만족도 점수가 %s 장르의 평균치보다 눈에 띄게 높아요.", genreListStr);
+                    msg = String.format("만족도 지수가 %s 장르의 평균치보다 눈에 띄게 높아요.", genreListStr);
                     allFacts.add(new AnalyzedFact(msg, 0.8)); // 중요도 점수 부여
                     break;
                 case "HIGH_VIOLENCE":
