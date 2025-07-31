@@ -157,10 +157,14 @@ public class UserReviewRepository {
         return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
     }
 
+    // 마이페이지에 값 넣을 때 여기 수정. 호러/공포 점수 매칭이 안돼서 여기 sql 추가함. 값만 넣고 sql을 안 넣었음.
     public List<UserReview> getPagedReviews(String memberId, int page, int pageSize) {
-    	System.out.println("▶ 마이 페이지의 리뷰 세어보기 완료");
-    	int offset = (page - 1) * pageSize;
-        String sql = "SELECT * FROM user_reviews WHERE member_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        System.out.println("▶ 마이 페이지의 리뷰 페이징 조회 실행");
+        int offset = (page - 1) * pageSize;
+
+        String sql = "SELECT id, member_id, movie_id, user_rating, violence_score, horror_score, sexual_score, review_content, tags, created_at " +
+                     "FROM user_reviews WHERE member_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?";
+
         return jdbcTemplate.query(sql, new Object[]{memberId, pageSize, offset}, (rs, rowNum) -> {
             UserReview review = new UserReview();
             review.setId(rs.getLong("id"));
@@ -168,12 +172,15 @@ public class UserReviewRepository {
             review.setMovieId(rs.getLong("movie_id"));
             review.setUserRating(rs.getObject("user_rating") != null ? rs.getInt("user_rating") : null);
             review.setViolenceScore(rs.getObject("violence_score") != null ? rs.getInt("violence_score") : null);
+            review.setHorrorScore(rs.getObject("horror_score") != null ? rs.getInt("horror_score") : null); // ✅ 추가됨
+            review.setSexualScore(rs.getObject("sexual_score") != null ? rs.getInt("sexual_score") : null); // ✅ 추가됨
             review.setReviewContent(rs.getString("review_content"));
             review.setTags(rs.getString("tags"));
             review.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             return review;
         });
     }
+
     
     // 유저 리뷰 삭제하기
     public boolean deleteByMemberIdAndMovieId(String memberId, Long movieId) {

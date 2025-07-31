@@ -51,19 +51,38 @@
                         <div class="card-body">
                             <h5 class="card-title">${movie.title}</h5>
                             <p class="card-text mb-1">
-                                <strong>만족도:</strong>
-                                <c:choose>
-                                    <c:when test="${empty review.userRating}">(아직 만족도 평가를 하지 않으셨어요)</c:when>
-                                    <c:otherwise>${review.userRating}점</c:otherwise>
-                                </c:choose>
-                            </p>
-                            <p class="card-text mb-1">
-                                <strong>폭력성:</strong>
-                                <c:choose>
-                                    <c:when test="${empty review.violenceScore}">(아직 폭력성 평가를 하지 않으셨어요)</c:when>
-                                    <c:otherwise>${review.violenceScore}점</c:otherwise>
-                                </c:choose>
-                            </p>
+						    <strong>만족도:</strong>
+						    <c:choose>
+						        <c:when test="${review.userRating == 0}">(아직 평가를 하지 않으셨어요)</c:when>
+						        <c:otherwise>${review.userRating}점</c:otherwise>
+						    </c:choose>
+						</p>
+						
+						<p class="card-text mb-1">
+						    <strong>폭력성:</strong>
+						    <c:choose>
+						        <c:when test="${review.violenceScore == 0}">(아직 평가를 하지 않으셨어요)</c:when>
+						        <c:otherwise>${review.violenceScore}점</c:otherwise>
+						    </c:choose>
+						</p>
+						
+					<p class="card-text mb-1">
+					    <strong>공포지수:</strong>
+					    <c:choose>
+					        <c:when test="${review.horrorScore == null}">(아직 평가를 하지 않으셨어요)</c:when>
+					        <c:otherwise>${review.horrorScore}점</c:otherwise>
+					    </c:choose>
+					</p>
+					
+					<p class="card-text mb-1">
+					    <strong>선정성:</strong>
+					    <c:choose>
+					        <c:when test="${review.sexualScore == null}">(아직 평가를 하지 않으셨어요)</c:when>
+					        <c:otherwise>${review.sexualScore}점</c:otherwise>
+					    </c:choose>
+					</p>
+
+                            
                             <p class="card-text mb-1">
 							
 							<fmt:parseDate value="${review.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="writtenDate" />
