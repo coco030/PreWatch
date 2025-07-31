@@ -29,9 +29,11 @@
     </main>
 	<!-- 통계 표시 박스  -->
     <div class="stats-display-box">
-        <p>영화 리뷰 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 만족도 별점 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
-        <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>    
+        <p>영화 댓글 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
+        <p>영화 만족도 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
+        <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>
+        <p>영화 공포성 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
+        <p>영화 선정성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>       
     </div>   
 
 <script>
@@ -44,7 +46,7 @@
         }
 
         // 애니메이션 시간 (밀리초 단위). 
-        const duration = 5000; // 5초
+        const duration = 3000; // 3초
         let startTimestamp = null;
 
         const step = (timestamp) => {

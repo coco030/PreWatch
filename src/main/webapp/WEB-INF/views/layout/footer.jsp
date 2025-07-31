@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%-- JSP 상단 스크립틀릿과 태그 라이브러리 선언은 그대로 둡니다. --%>
 <%
     Object loginMemberObj = session.getAttribute("loginMember");
     String userRole = (String) session.getAttribute("userRole");
