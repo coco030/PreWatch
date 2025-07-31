@@ -1,3 +1,5 @@
+ 
+
 -- 1. 데이터베이스 만들기
 CREATE DATABASE IF NOT EXISTS prewatch_db
 CHARACTER SET utf8mb4
@@ -22,14 +24,24 @@ CREATE TABLE member (
     id VARCHAR(50) PRIMARY KEY,
     password VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER'
+    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
+    taste_title VARCHAR(255) DEFAULT '취향 탐색 중', -- 
+    taste_report TEXT,
+    taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0
 );
+
+-- 멤버 테이블에 새로운 컬럼 3개 더 추가할 때 1회 사용
+ALTER TABLE member
+ADD COLUMN taste_title VARCHAR(255) DEFAULT '취향 탐색 중',
+ADD COLUMN taste_report TEXT,
+ADD COLUMN taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0;
 
 INSERT INTO member (id, password, role) VALUES ('admin', '1234', 'ADMIN');
 INSERT INTO member (id, password, role) VALUES ('member1', '1234', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('guest', '1234', 'MEMBER'); -- 테스트용 일반 회원 추가
 INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
+
 
 -- 5. 영화 테이블 (수정)
 CREATE TABLE movies (
@@ -58,8 +70,8 @@ CREATE TABLE user_reviews (
     movie_id BIGINT NOT NULL,
     user_rating INT,
     violence_score INT,
-    horror_score INT,           -- ✅ 유저의 공포성 평가 점수
-    sexual_score INT,           -- ✅ 유저의 선정성 평가 점수
+    horror_score INT,   
+    sexual_score INT,        
     review_content TEXT,
     tags VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
