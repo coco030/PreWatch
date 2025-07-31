@@ -124,6 +124,10 @@ public class StatServiceImpl implements StatService {
             if (calculateDifference(movieStats.getHorrorScoreAvg(), genreAvgStats.getGenreHorrorScoreAvg()) > 1.2) { // 120% 이상
                 analysisMap.computeIfAbsent("HIGH_HORROR", k -> new ArrayList<>()).add(genre);
             }
+            // 분석 D: 선정성 지수가 장르 평균보다 월등히 높은 경우
+            if (calculateDifference(movieStats.getSexualScoreAvg(), genreAvgStats.getGenreSexualScoreAvg()) > 1.0) { // 100% 이상
+                analysisMap.computeIfAbsent("HIGH_SEXUAL", k -> new ArrayList<>()).add(genre);
+            }
         }
 
         // --- 2-2. 다중 지표 교차 분석 (영화 전체의 특성으로 한 번만 수행) ---
@@ -164,6 +168,10 @@ public class StatServiceImpl implements StatService {
                     break;
                 case "HIGH_VIOLENCE":
                     msg = String.format("%s 장르의 평균과 비교했을 때, 폭력성 지수가 이례적으로 높은 수치를 기록했습니다.", genreListStr);
+                    allFacts.add(new AnalyzedFact(msg, 1.0));
+                    break;
+                case "HIGH_SEXUAL":
+                    msg = String.format("%s 장르의 평균과 비교했을 때, 선정성 지수가 매우 높게 나타납니다. 감각적 또는 자극적인 연출이 포함될 수 있습니다.", genreListStr);
                     allFacts.add(new AnalyzedFact(msg, 1.0));
                     break;
                 case "HIGH_HORROR":
