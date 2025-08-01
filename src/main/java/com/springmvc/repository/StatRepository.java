@@ -38,15 +38,21 @@ public class StatRepository {
     }
     
     // 2. 특정 영화의 기본 정보 및 통계 가져오기 (두 테이블 JOIN)
+ // 2. 특정 영화의 기본 정보 및 통계 가져오기 (두 테이블 JOIN)
     public StatDTO findMovieStatsById(long movieId) {
-        // LEFT JOIN을 사용하여 movie_stats에 데이터가 없어도 영화 정보는 가져올 수 있도록 함
         String sql = "SELECT " +
-                     "    m.id, m.title, m.rating, m.violence_score_avg, " +
-                     "    ms.horror_score_avg, ms.sexual_score_avg, ms.review_count " +
-                     "FROM movies m " +
-                     "LEFT JOIN movie_stats ms ON m.id = ms.movie_id " +
-                     "WHERE m.id = ?";
-        
+                "    m.id, " +
+                "    m.title, " +
+                "    m.rating, " +
+                "    m.violence_score_avg, " +
+                "    m.rated, " + // 영화 등급 추가
+                "    ms.horror_score_avg, " +
+                "    ms.sexual_score_avg, " +
+                "    ms.review_count " +
+                "FROM movies m " +
+                "LEFT JOIN movie_stats ms ON m.id = ms.movie_id " +
+                "WHERE m.id = ?";
+
         try {
             return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
                 StatDTO dto = new StatDTO();
@@ -54,7 +60,7 @@ public class StatRepository {
                 dto.setTitle(rs.getString("title"));
                 dto.setUserRatingAvg(rs.getDouble("rating"));
                 dto.setViolenceScoreAvg(rs.getDouble("violence_score_avg"));
-                // movie_stats의 값은 NULL일 수 있으므로 체크 후 설정
+                dto.setRated(rs.getString("rated")); // rated 세팅
                 dto.setHorrorScoreAvg(rs.getDouble("horror_score_avg"));
                 if (rs.wasNull()) dto.setHorrorScoreAvg(0.0);
                 dto.setSexualScoreAvg(rs.getDouble("sexual_score_avg"));
@@ -67,6 +73,7 @@ public class StatRepository {
             return null; // 영화가 존재하지 않는 경우
         }
     }
+
 
     // 3. 특정 장르의 평균 점수 계산하기
     public StatDTO getGenreAverageScores(String genre) {

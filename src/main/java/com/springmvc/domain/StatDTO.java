@@ -37,6 +37,9 @@ public class StatDTO {
     private double genreHorrorScoreAvg;
     private double genreSexualScoreAvg;
     
+    // 25.08.01 추가
+    private String rated;
+    
     
     // Getter 및 Setter 메서드
     public long getMovieId() { return movieId; }
@@ -66,11 +69,11 @@ public class StatDTO {
 
 
 
-    public StatDTO(long totalReviewContentCount, long totalUserRatingCount, long totalViolenceScoreCount,
+	public StatDTO(long totalReviewContentCount, long totalUserRatingCount, long totalViolenceScoreCount,
 			long totalHorrorScoreCount, long totalSexualScoreCount, long movieId, String title, double userRatingAvg,
 			double violenceScoreAvg, double horrorScoreAvg, double sexualScoreAvg, int reviewCount, List<String> genres,
-			double genreRatingAvg, double genreViolenceScoreAvg, double genreHorrorScoreAvg,
-			double genreSexualScoreAvg) {
+			double genreRatingAvg, double genreViolenceScoreAvg, double genreHorrorScoreAvg, double genreSexualScoreAvg,
+			String rated) {
 		super();
 		this.totalReviewContentCount = totalReviewContentCount;
 		this.totalUserRatingCount = totalUserRatingCount;
@@ -89,8 +92,8 @@ public class StatDTO {
 		this.genreViolenceScoreAvg = genreViolenceScoreAvg;
 		this.genreHorrorScoreAvg = genreHorrorScoreAvg;
 		this.genreSexualScoreAvg = genreSexualScoreAvg;
+		this.rated = rated;
 	}
-
 	@Override
 	public String toString() {
 		return "StatDTO [totalReviewContentCount=" + totalReviewContentCount + ", totalUserRatingCount="
@@ -100,7 +103,18 @@ public class StatDTO {
 				+ userRatingAvg + ", violenceScoreAvg=" + violenceScoreAvg + ", horrorScoreAvg=" + horrorScoreAvg
 				+ ", sexualScoreAvg=" + sexualScoreAvg + ", reviewCount=" + reviewCount + ", genres=" + genres
 				+ ", genreRatingAvg=" + genreRatingAvg + ", genreViolenceScoreAvg=" + genreViolenceScoreAvg
-				+ ", genreHorrorScoreAvg=" + genreHorrorScoreAvg + ", genreSexualScoreAvg=" + genreSexualScoreAvg + "]";
+				+ ", genreHorrorScoreAvg=" + genreHorrorScoreAvg + ", genreSexualScoreAvg=" + genreSexualScoreAvg
+				+ ", rated=" + rated + "]";
+	}
+	
+	
+	
+	// 연령
+	public String getRated() {
+		return rated;
+	}
+	public void setRated(String rated) {
+		this.rated = rated;
 	}
 	
 	// 홈 하단의 전체 통계용 Getters and Setters
