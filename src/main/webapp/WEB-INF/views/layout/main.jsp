@@ -50,9 +50,11 @@
     <!-- 배너 버튼 -->
     <div class="banner-section">
       <div class="d-flex flex-wrap justify-content-center">
-        <a href="<c:url value='/recommend'/>" class="banner-button">추천</a>
-        <a href="<c:url value='/calendar'/>" class="banner-button">캘린더</a>
-        <a href="<c:url value='/event'/>" class="banner-button">이벤트</a>
+        <a href="#upcoming-movies" class="banner-button">개봉 예정작</a>
+        <a href="#recommended-ranking" class="banner-button">추천 랭킹</a>
+        <a href="#admin-recommended-movies" class="banner-button">추천 영화</a>
+        <a href="#recent-comments" class="banner-button">최근 댓글</a>
+        <a href="#calendar-section" class="banner-button">캘린더</a>
         <c:choose>
           <c:when test="${not empty loginMember}">
             <a href="<c:url value='/review/myreviewSummary'/>" class="banner-button">나의 취향 분석</a>
@@ -71,14 +73,14 @@
       </div>
     </div>
 	 <!-- 개봉 예정작 -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3" id="upcoming-movies">
       <h2 class="section-title mb-0">개봉 예정작</h2>
         <a href="<c:url value='/movies/all-upcoming'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
     </div>
     <div class="section-divider"></div> <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
 	
 	 <!-- 보고 싶어요 랭킹 -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3" id="recommended-ranking">
         <h2 class="section-title mb-0">PreWatch 추천 랭킹</h2>
         <a href="<c:url value='/movies/all-recommended'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
     </div>
@@ -121,7 +123,7 @@
     </div>
 
 	 <!-- 관리자 추천 영화 -->
-    <h2 class="section-title">PreWatch 추천 영화</h2>
+    <h2 class="section-title" id="admin-recommended-movies">PreWatch 추천 영화</h2>
     <div class="section-divider"></div> 
     <c:choose>
         <c:when test="${not empty adminRecommendedMovies}">
@@ -170,9 +172,10 @@
     </c:choose>
     
     <!-- 최근 코멘트-->
-
+ <div id="recent-comments">
     <c:import url="/movies/commentCard" />
-<div class="calendar-container">
+    </div>
+<div class="calendar-container" id="calendar-section">
         <div class="calendar-header">
             <div class="calendar-nav-left"> <button type="button" class="calendar-nav" onclick="changeMonth(${currentYear}, ${currentMonth - 1})">&lt; 이전 달</button>
             </div>

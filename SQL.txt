@@ -9,13 +9,14 @@ COLLATE utf8mb4_unicode_ci;
 USE prewatch_db;
 
 -- 3. 기존 테이블 삭제 (자식 → 부모 순서)
-DROP TABLE IF EXISTS movie_genres;          -- (25.07.28 오후 추가) 영화-장르 매핑
-DROP TABLE IF EXISTS movie_actors;          -- (25.07.28 오후 추가) 영화-배우 연결
-DROP TABLE IF EXISTS actors;                -- (25.07.28 오후 추가) 배우 테이블
+DROP TABLE IF EXISTS movie_genres;          -- 영화-장르 매핑
+DROP TABLE IF EXISTS movie_actors;          -- 영화-배우 연결
+DROP TABLE IF EXISTS actors;                -- 배우 테이블
+DROP TABLE IF EXISTS movie_images;          -- (25.08.01 추가) 영화-이미지 연결
 DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
 DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
 DROP TABLE IF EXISTS user_carts;            -- 유저 찜
-DROP TABLE IF EXISTS movie_stats;           -- (25.07.28 오후 추가) 영화별 통계
+DROP TABLE IF EXISTS movie_stats;           -- 영화별 통계
 DROP TABLE IF EXISTS movies;                -- 영화 테이블
 DROP TABLE IF EXISTS member;                -- 회원 테이블
 
@@ -146,8 +147,18 @@ CREATE TABLE movie_genres (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
+--  영화별 이미지 테이블 (갤러리용)
+CREATE TABLE movie_images (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,           -- 각 이미지 고유 ID
+    movie_id BIGINT NOT NULL,                       -- 어떤 영화의 이미지인지 (FK)
+    image_url VARCHAR(500) NOT NULL,                -- TMDb에서 받은 이미지 경로
+    type VARCHAR(50) DEFAULT 'backdrop',            -- 이미지 종류 (예: backdrop, poster, logo)
+    sort_order INT DEFAULT 0,                       -- 정렬 순서
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 저장 시각
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
+);
 
--- 13. 데이터 확인용 SELECT (생성 순서와 일치)
+--  데이터 확인용 SELECT (생성 순서와 일치)
 SELECT * FROM member;
 SELECT * FROM movies;
 SELECT * FROM user_reviews;
@@ -157,7 +168,7 @@ SELECT * FROM movie_stats;      -- (25.07.28 오후 추가)
 SELECT * FROM actors;           -- (25.07.28 오후 추가)
 SELECT * FROM movie_actors;     -- (25.07.28 오후 추가)
 SELECT * FROM movie_genres;     -- (25.07.28 오후 추가)
-
+SELECT * FROM movie_images; -- (25.08.01 추가)
 
 
 -- 배우들 정보 삭제 (순서대로.)

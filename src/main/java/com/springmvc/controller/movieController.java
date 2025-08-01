@@ -294,7 +294,6 @@ public class movieController {
 	     System.out.println("castInfo :" + castInfo);
 	
 		  // 4. 이미지 갤러리 (25.08.01 coco030 추가)
-	  // 4. 이미지 갤러리 (25.08.01 coco030 추가)
 	     List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
 
 	     logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
@@ -321,7 +320,7 @@ public class movieController {
 	         movie.setIsLiked(false);
 	     }
 	     
-	     // 통계 분석 메시지 25.07.31 coco030
+	     // 통계 분석 메시지 
 	     List<InsightMessage> insights = statService.generateInsights(id);
 	     model.addAttribute("insights", insights);
 	
