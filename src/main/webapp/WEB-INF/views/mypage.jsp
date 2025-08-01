@@ -28,14 +28,13 @@
 
 <!-- 헤더 -->
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
-
+	   <a href="<c:url value='/member/mypage_taste'/>" class="btn btn-primary">
+            📊 나의 취향 분석 리포트 보기
+        </a>
 <div class="container pt-2 mt-2">
 	<div class="bg-light p-3 rounded d-flex align-items-center mb-3">
 	  <i class="fas fa-film me-2 text-secondary"></i>
 	  <strong class="text-dark">${sessionScope.loginMember.id}님의 영화 기록</strong>
-	   <a href="<c:url value='/member/mypage_taste'/>" class="btn btn-primary">
-            📊 나의 취향 분석 리포트 보기
-        </a>
 	</div>
 
     <c:forEach var="review" items="${myReviews}">
@@ -87,13 +86,12 @@
                             
                             <p class="card-text mb-1">
 							
-							<fmt:parseDate value="${review.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="writtenDate" />
+			
+							<fmt:parseDate value="${review.createdAt}" pattern="yyyy-MM-dd'T'HH:mm" var="writtenDate" />
 							
 							<p class="card-text mb-1">
-							   
 							    <c:choose>
 							        <c:when test="${empty review.reviewContent}">
-							            (아직 리뷰 작성을 하지 않으셨어요)
 							        </c:when>
 							        <c:otherwise>
 							            ${review.reviewContent}<br>
@@ -106,7 +104,7 @@
                             <p class="card-text">
                              
                                 <c:choose>
-                                    <c:when test="${empty review.tags}">(아직 태그 작성을 하지 않으셨어요)</c:when>
+                                    <c:when test="${empty review.tags}"></c:when>
                                     <c:otherwise>${review.tags}</c:otherwise>
                                 </c:choose>
                             </p>

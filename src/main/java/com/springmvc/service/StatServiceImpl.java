@@ -204,5 +204,41 @@ public class StatServiceImpl implements StatService {
 
         return finalInsights;
     }
+    
+    
+    private List<AnalyzedFact> analyzeGenreContrast(StatDTO movieStats, List<String> genres) {
+        List<AnalyzedFact> facts = new ArrayList<>();
+
+        Map<String, Double> totalDiffs = new HashMap<>();
+        for (String genre : genres) {
+            StatDTO avg = statRepository.getGenreAverageScores(genre);
+            if (avg == null) continue;
+
+            double ratingDiff = Math.abs(movieStats.getUserRatingAvg() - avg.getGenreRatingAvg()) / (avg.getGenreRatingAvg() + 1e-6);
+            double violenceDiff = Math.abs(movieStats.getViolenceScoreAvg() - avg.getGenreViolenceScoreAvg()) / (avg.getGenreViolenceScoreAvg() + 1e-6);
+            double horrorDiff = Math.abs(movieStats.getHorrorScoreAvg() - avg.getGenreHorrorScoreAvg()) / (avg.getGenreHorrorScoreAvg() + 1e-6);
+            double sexualDiff = Math.abs(movieStats.getSexualScoreAvg() - avg.getGenreSexualScoreAvg()) / (avg.getGenreSexualScoreAvg() + 1e-6);
+
+            double totalDiff = ratingDiff * 0.3 + violenceDiff * 0.3 + horrorDiff * 0.2 + sexualDiff * 0.2;
+            totalDiffs.put(genre, totalDiff);
+        }
+
+        if (totalDiffs.isEmpty()) return facts;
+
+        // 편차가 가장 큰 장르 찾기
+        String outlierGenre = totalDiffs.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse(null);
+
+        double diffScore = totalDiffs.get(outlierGenre);
+        if (outlierGenre != null && diffScore > 0.4) {
+            String msg = String.format("이 영화는 '%s' 장르로 분류되었지만, 주요 평가 지표에서 평균과 큰 차이를 보입니다. 전형적인 %s 장르와는 다른 독특한 작품입니다.", outlierGenre, outlierGenre);
+            facts.add(new AnalyzedFact(msg, diffScore));
+        }
+
+        return facts;
+    }
+
 
 }

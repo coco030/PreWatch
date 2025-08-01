@@ -50,8 +50,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         System.out.println("====== [SERVICE 분석 및 저장 완료] ======");
     }
 
-    // ▼▼▼ 여기에 모든 문제의 해결책이 있습니다 ▼▼▼
-    // 인터페이스가 요구하는 'getTasteScores' 라는 이름으로 메소드를 구현합니다.
+
     @Override
     public Map<String, Double> getTasteScores(String memberId) {
         List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
@@ -115,23 +114,30 @@ public class TasteProfileServiceImpl implements TasteProfileService {
     }
 
     private String createKeywordAlias(double rating, double violence, double horror, double sexual,
-                                      double stdDevV, double stdDevH, double stdDevS) {
-        Map<String, Double> coreTastes = Map.of("작품성", rating, "액션", violence, "스릴", horror, "감성", sexual);
-        String coreTaste = coreTastes.entrySet().stream()
-                                     .max(Map.Entry.comparingByValue())
-                                     .map(Map.Entry::getKey)
-                                     .orElse("드라마");
-        String userType = "애호가";
-        double totalStdDev = stdDevV + stdDevH + stdDevS;
-        if (totalStdDev > 7.0) userType = "탐험가";
-        else if (totalStdDev < 3.0) userType = "수집가";
-        else if (rating > 7.5) userType = "감식가";
-        String modifier = "균형잡힌";
-        if (rating > 8.0) modifier = "확고한 작품성의";
-        else if (violence > 6.0 && sexual < 3.0) modifier = "절제된 카타르시스의";
-        else if (totalStdDev > 7.0) modifier = "경계를 넘나드는";
-        return modifier + " " + coreTaste + " " + userType;
-    }
+            double stdDevV, double stdDevH, double stdDevS) {
+			Map<String, Double> coreTastes = Map.of("작품성", rating, "액션", violence, "스릴", horror, "감성", sexual);
+			String coreTaste = coreTastes.entrySet().stream()
+			       .max(Map.Entry.comparingByValue())
+			       .map(Map.Entry::getKey)
+			       .orElse("드라마");
+			String userType = "애호가";
+			double totalStdDev = stdDevV + stdDevH + stdDevS;
+			if (totalStdDev > 7.0) userType = "탐험가";
+			else if (totalStdDev < 3.0) userType = "수집가";
+			else if (rating > 7.5) userType = "감식가";
+			String modifier = "균형잡힌";
+			if (rating > 8.0) modifier = "확고한 작품성의";
+			else if (violence > 6.0 && sexual < 3.0) modifier = "절제된 카타르시스의";
+			else if (totalStdDev > 7.0) modifier = "경계를 넘나드는";
+			
+			// coreTaste가 '작품성'이면, '작품성의'로 시작하지 않도록 수정
+			if ("작품성".equals(coreTaste)) {
+			return modifier + " " + userType;
+			} else {
+			return modifier + " " + coreTaste + " " + userType;
+			}
+}
+
 
     private String createFinalTitle(String keywordAlias, double anomalyScore) {
         String rarityModifier = "균형잡힌 시각의";
@@ -150,7 +156,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         } else {
             rarityDescription = "다양한 장르와 스타일에 열려 있어, 폭넓은 영화 세계를 편견 없이 즐기는 경향이 있습니다.";
         }
-        return String.format("분석 결과, 당신은 '%s'입니다. %s", keywordAlias, rarityDescription);
+        return String.format("당신은 '%s'입니다. %s", keywordAlias, rarityDescription);
     }
     
     private String createInitialComment(List<TasteAnalysisDataDTO> reviewedMovies) {

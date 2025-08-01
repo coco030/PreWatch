@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <title>나의 취향 분석 리포트</title>
     
-    <%-- 전체 레이아웃을 위한 CSS (경로는 실제 프로젝트에 맞게 조정하세요) --%>
+    <%-- 전체 레이아웃을 위한 CSS  --%>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/layout.css">
     
     <%-- 이 페이지의 콘텐츠를 보기 좋게 꾸미기 위한 간단한 스타일 --%>
@@ -78,10 +78,5 @@
 
     <%-- 공통 푸터 포함 --%>
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
-
-    <%-- 
-        차트 관련 <script> 태그를 모두 삭제했습니다. 
-        이 페이지는 이제 순수하게 텍스트만 보여줍니다.
-    --%>
 </body>
 </html>

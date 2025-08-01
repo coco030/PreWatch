@@ -135,5 +135,8 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
 
     }
+
+
+
 }
 

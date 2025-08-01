@@ -18,7 +18,7 @@ import com.springmvc.service.UserReviewService;
 public class UserReviewRepository {
 	
 	
-	// 장르를 나누기 위한 상수 추가 (개인 마이페이지에서 사용. 그 외에는 필요 X)
+	// 장르를 나누기 위한 상수 추가
 	private static final List<String> GENRES = List.of(
 		    "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
 		    "Drama", "Family", "Fantasy", "Film-Noir", "History", "Horror", "Music", "Musical",

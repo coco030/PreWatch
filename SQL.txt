@@ -12,7 +12,7 @@ USE prewatch_db;
 DROP TABLE IF EXISTS movie_genres;          -- 영화-장르 매핑
 DROP TABLE IF EXISTS movie_actors;          -- 영화-배우 연결
 DROP TABLE IF EXISTS actors;                -- 배우 테이블
-DROP TABLE IF EXISTS movie_images;          -- (25.08.01 추가) 영화-이미지 연결
+DROP TABLE IF EXISTS movie_images;          -- 영화-이미지 연결
 DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
 DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
 DROP TABLE IF EXISTS user_carts;            -- 유저 찜
@@ -31,11 +31,7 @@ CREATE TABLE member (
     taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0
 );
 
--- 멤버 테이블에 새로운 컬럼 3개 더 추가할 때 1회 사용
-ALTER TABLE member
-ADD COLUMN taste_title VARCHAR(255) DEFAULT '취향 탐색 중',
-ADD COLUMN taste_report TEXT,
-ADD COLUMN taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0;
+
 
 INSERT INTO member (id, password, role) VALUES ('admin', '1234', 'ADMIN');
 INSERT INTO member (id, password, role) VALUES ('member1', '1234', 'MEMBER');
@@ -102,7 +98,7 @@ CREATE TABLE admin_banner_movies (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 9. 영화별 추가 통계 테이블 (25.07.28 coco030 : horror, 선정성 등)
+-- 9. 영화별 추가 통계 테이블
 CREATE TABLE movie_stats (
     movie_id BIGINT PRIMARY KEY,  -- FK → movies.id
     horror_score_avg DECIMAL(3,1) DEFAULT 0.0,
@@ -112,7 +108,7 @@ CREATE TABLE movie_stats (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 10. 배우 테이블 (25.07.28 오후 추가)
+-- 10. 배우 테이블 
 CREATE TABLE actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -127,7 +123,7 @@ CREATE TABLE actors (
     known_for_department VARCHAR(50)
 );
 
--- 11. 영화-배우/감독 연결 테이블 (25.07.28 오후 추가)
+-- 11. 영화-배우/감독 연결 테이블
 CREATE TABLE movie_actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     movie_id BIGINT NOT NULL,
@@ -143,7 +139,7 @@ CREATE TABLE movie_actors (
 CREATE TABLE movie_genres (
     movie_id BIGINT NOT NULL,
     genre VARCHAR(50) NOT NULL,
-    PRIMARY KEY (movie_id, genre), --  중복 조합 방지
+    PRIMARY KEY (movie_id, genre), 
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
@@ -164,11 +160,11 @@ SELECT * FROM movies;
 SELECT * FROM user_reviews;
 SELECT * FROM user_carts;
 SELECT * FROM admin_banner_movies;
-SELECT * FROM movie_stats;      -- (25.07.28 오후 추가)
-SELECT * FROM actors;           -- (25.07.28 오후 추가)
-SELECT * FROM movie_actors;     -- (25.07.28 오후 추가)
-SELECT * FROM movie_genres;     -- (25.07.28 오후 추가)
-SELECT * FROM movie_images; -- (25.08.01 추가)
+SELECT * FROM movie_stats;     
+SELECT * FROM actors;          
+SELECT * FROM movie_actors;   
+SELECT * FROM movie_genres;    
+SELECT * FROM movie_images; 
 
 
 -- 배우들 정보 삭제 (순서대로.)
