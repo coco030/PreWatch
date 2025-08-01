@@ -31,7 +31,7 @@
                id="tagInput"
                name="tag"
                class="form-control border border-secondary-subtle rounded-pill px-3 py-1"
-               placeholder="예: 절단, 잔인함"
+               placeholder="태그를 , 단위로 써주세요."
                style="min-width: 150px; max-width: 100%; width: auto;" />
     </div>
 
@@ -40,7 +40,7 @@
         <button type="button"
                 class="btn btn-outline-danger btn-sm"
                 onclick="deleteAllTags()">
-            전체 태그 삭제
+            태그 전부 삭제!
         </button>
     </div>
 </div>

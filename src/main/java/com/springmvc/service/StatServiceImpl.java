@@ -19,10 +19,11 @@ public class StatServiceImpl implements StatService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-    
+
     @Autowired
     private StatRepository statRepository;
 
+   
     // 장르 목록
     private static final List<String> GENRES = List.of(
         "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
@@ -54,15 +55,18 @@ public class StatServiceImpl implements StatService {
         }
         System.out.println("movie_genres 초기화 완료");
     }
-   
-    // 내부에서 사용할 메시지 객체 (외부에서 참조할 수 있도록 public으로 유지)
+
+    private static final List<String> VIOLENCE_EXPECTED_GENRES = List.of("Action", "Crime", "Thriller", "War");
+    private static final List<String> HORROR_EXPECTED_GENRES = List.of("Horror", "Thriller");
+    private static final List<String> SEXUAL_EXPECTED_GENRES = List.of("Drama", "Romance", "Thriller");
+    private static final List<String> FAMILY_GENRES = List.of("Animation", "Family", "Musical", "Comedy");
+
     public static class InsightMessage {
         private String message;
         public InsightMessage(String message) { this.message = message; }
         public String getMessage() { return message; }
     }
-    
-    // 분석 결과를 담을 내부 클래스 (private으로 변경하여 이 클래스 내에서만 사용)
+
     private static class AnalyzedFact {
         private String message;
         private double differenceScore;
@@ -72,128 +76,171 @@ public class StatServiceImpl implements StatService {
             this.differenceScore = differenceScore;
         }
 
-        public String getMessage() {
-            return message;
-        }
-
-        public double getDifferenceScore() {
-            return differenceScore;
-        }
+        public String getMessage() { return message; }
+        public double getDifferenceScore() { return differenceScore; }
     }
-    
-    // 편차 계산을 위한 헬퍼 메소드
+
     private double calculateDifference(double movieScore, double genreAvgScore) {
-        if (genreAvgScore == 0) {
-            return 0.0;
-        }
+        if (genreAvgScore == 0) return 0.0;
         return (movieScore - genreAvgScore) / genreAvgScore;
     }
 
     @Override
     public List<InsightMessage> generateInsights(long movieId) {
-        // --- 1. 데이터 수집 (기존과 동일) ---
         StatDTO movieStats = statRepository.findMovieStatsById(movieId);
-        if (movieStats == null) { return Collections.singletonList(new InsightMessage("영화 정보를 분석할 수 없습니다.")); }
+        if (movieStats == null) {
+            return Collections.singletonList(new InsightMessage("영화 정보를 분석할 수 없습니다."));
+        }
+
         List<String> genres = statRepository.findGenresByMovieId(movieId);
-        if (genres.isEmpty()) { return Collections.emptyList(); }
+        if (genres.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        // --- 2. 분석 단계 ---
-
-        // [KEY: 분석 유형 코드, VALUE: 해당하는 장르 목록]
-        // 이 맵에 분석 결과를 그룹화하여 저장합니다.
-        Map<String, List<String>> analysisMap = new HashMap<>();
+        boolean isHorrorExpected = genres.stream().anyMatch(HORROR_EXPECTED_GENRES::contains);
         
-        // 분석 결과를 담을 최종 리스트
+        Map<String, List<String>> analysisMap = new HashMap<>();
         List<AnalyzedFact> allFacts = new ArrayList<>();
 
-        // --- 2-1. 단일 지표 분석 (장르별로 반복하며 그룹화) ---
+        double ratingAvg = movieStats.getUserRatingAvg();
+        double violenceAvg = movieStats.getViolenceScoreAvg();
+        double horrorAvg = movieStats.getHorrorScoreAvg();
+        double sexualAvg = movieStats.getSexualScoreAvg();
+
         for (String genre : genres) {
             StatDTO genreAvgStats = statRepository.getGenreAverageScores(genre);
 
-            // 분석 A: 만족도가 장르 평균보다 월등히 높은 경우
-            if (calculateDifference(movieStats.getUserRatingAvg(), genreAvgStats.getGenreRatingAvg()) > 0.25) { // 25% 이상
+            double genreRatingAvg = genreAvgStats.getGenreRatingAvg();
+            double genreViolenceAvg = genreAvgStats.getGenreViolenceScoreAvg();
+            double genreHorrorAvg = genreAvgStats.getGenreHorrorScoreAvg();
+            double genreSexualAvg = genreAvgStats.getGenreSexualScoreAvg();
+
+            if (ratingAvg > 0.0 && ratingAvg >= 7.0 && calculateDifference(ratingAvg, genreRatingAvg) > 0.25) {
                 analysisMap.computeIfAbsent("HIGH_RATING", k -> new ArrayList<>()).add(genre);
             }
-
-            // 분석 B: 폭력성 지수가 장르 평균보다 월등히 높은 경우
-            if (calculateDifference(movieStats.getViolenceScoreAvg(), genreAvgStats.getGenreViolenceScoreAvg()) > 0.8) { // 80% 이상
-                analysisMap.computeIfAbsent("HIGH_VIOLENCE", k -> new ArrayList<>()).add(genre);
-            }
-            
-            // 분석 C: 공포 지수가 장르 평균보다 월등히 높은 경우
-            if (calculateDifference(movieStats.getHorrorScoreAvg(), genreAvgStats.getGenreHorrorScoreAvg()) > 1.2) { // 120% 이상
-                analysisMap.computeIfAbsent("HIGH_HORROR", k -> new ArrayList<>()).add(genre);
-            }
-            // 분석 D: 선정성 지수가 장르 평균보다 월등히 높은 경우
-            if (calculateDifference(movieStats.getSexualScoreAvg(), genreAvgStats.getGenreSexualScoreAvg()) > 1.0) { // 100% 이상
+            // 선정성
+            if (sexualAvg >= 7.0) {
                 analysisMap.computeIfAbsent("HIGH_SEXUAL", k -> new ArrayList<>()).add(genre);
             }
+            // 폭력성: 기대 장르일 때만 LOW 메시지
+            if (violenceAvg <= 3.0 && VIOLENCE_EXPECTED_GENRES.contains(genre)) {
+                analysisMap.computeIfAbsent("LOW_VIOLENCE", k -> new ArrayList<>()).add(genre);
+            }
+
+            // 공포: 기대 장르일 때만 LOW 메시지
+            if (horrorAvg <= 3.0 && HORROR_EXPECTED_GENRES.contains(genre)) {
+                analysisMap.computeIfAbsent("LOW_HORROR", k -> new ArrayList<>()).add(genre);
+            }
+
+            // 선정성: 기대 장르일 때만 LOW 메시지
+            if (sexualAvg <= 3.0 && SEXUAL_EXPECTED_GENRES.contains(genre)) {
+                analysisMap.computeIfAbsent("LOW_SEXUAL", k -> new ArrayList<>()).add(genre);
+            }
+
+            if (ratingAvg > 0.0 && ratingAvg <= 4.0) {
+                analysisMap.computeIfAbsent("LOW_RATING", k -> new ArrayList<>()).add(genre);
+            }
+            if (violenceAvg > 0.0 && violenceAvg <= 3.0) {
+                analysisMap.computeIfAbsent("LOW_VIOLENCE", k -> new ArrayList<>()).add(genre);
+            }
+         // 수정
+            if (horrorAvg > 0.0 && horrorAvg <= 3.0 && HORROR_EXPECTED_GENRES.contains(genre)) {
+                analysisMap.computeIfAbsent("LOW_HORROR", k -> new ArrayList<>()).add(genre);
+            }
+            if (sexualAvg > 0.0 && sexualAvg <= 3.0) {
+                analysisMap.computeIfAbsent("LOW_SEXUAL", k -> new ArrayList<>()).add(genre);
+            }
         }
 
-        // --- 2-2. 다중 지표 교차 분석 (영화 전체의 특성으로 한 번만 수행) ---
         String primaryGenre = genres.get(0);
         StatDTO primaryGenreAvg = statRepository.getGenreAverageScores(primaryGenre);
+        double violenceDiff = calculateDifference(violenceAvg, primaryGenreAvg.getGenreViolenceScoreAvg());
+        double sexualDiff = calculateDifference(sexualAvg, primaryGenreAvg.getGenreSexualScoreAvg());
 
-        double violenceDiff = calculateDifference(movieStats.getViolenceScoreAvg(), primaryGenreAvg.getGenreViolenceScoreAvg());
-        double sexualDiff = calculateDifference(movieStats.getSexualScoreAvg(), primaryGenreAvg.getGenreSexualScoreAvg());
-        
-        // CASE 1: 높은 폭력성 + 낮은 선정성
-        if (violenceDiff > 0.3 && sexualDiff < -0.4) {
-            String msg = "폭력성 지표는 높게 나타나지만 선정성 지표는 낮아, 자극적 묘사 없이 액션 자체에 집중한 연출로 보입니다.";
+        if (violenceAvg > 0.0 && sexualAvg > 0.0 && violenceAvg >= 7.0 && sexualAvg <= 3.0 &&
+            violenceDiff > 0.3 && sexualDiff < -0.4) {
+            String msg = "선정적인 묘사 없이 액션에 집중한 영화입니다.";
             allFacts.add(new AnalyzedFact(msg, Math.abs(violenceDiff) + Math.abs(sexualDiff)));
         }
-        
-        // CASE 2: 높은 폭력성 + 높은 선정성
-        if (violenceDiff > 0.5 && sexualDiff > 0.5) {
-            String msg = "폭력성과 선정성 지표가 모두 높게 기록되어, 성인 관객층을 겨냥한 강렬한 연출이 특징입니다.";
+
+        if (violenceAvg > 0.0 && sexualAvg > 0.0 && violenceAvg >= 7.0 && sexualAvg >= 7.0 &&
+            violenceDiff > 0.5 && sexualDiff > 0.5) {
+            String msg = "성인 관객층을 겨냥한 강렬한 연출이 특징이에요.";
             allFacts.add(new AnalyzedFact(msg, violenceDiff + sexualDiff));
         }
 
+        if (horrorAvg >= 6.0) {
+            boolean isFamily = genres.stream().anyMatch(FAMILY_GENRES::contains);
+            if (isFamily) {
+                String msg = "가족, 아동, 애니메이션 장르임에도 불구하고 공포 지수가 높아 주의가 필요해요.";
+                allFacts.add(new AnalyzedFact(msg, 1.5));
+            }
+        }
 
-        // --- 3. 그룹화된 분석 결과를 바탕으로 최종 메시지 조립 ---
         for (Map.Entry<String, List<String>> entry : analysisMap.entrySet()) {
-            String analysisCode = entry.getKey();
-            List<String> matchedGenres = entry.getValue();
+            String code = entry.getKey();
+            List<String> genreList = entry.getValue();
+            if (genreList.isEmpty()) continue;
 
-            if (matchedGenres.isEmpty()) continue;
-
-            // 장르 목록을 "'액션', '어드벤처'" 와 같은 문자열로 변환
-            String genreListStr = "'" + String.join("', '", matchedGenres) + "'";
+            String genreStr = "'" + String.join("', '", genreList) + "'";
             String msg = "";
 
-            switch (analysisCode) {
+            switch (code) {
                 case "HIGH_RATING":
-                    msg = String.format("만족도 지수가 %s 장르의 평균치보다 눈에 띄게 높아요.", genreListStr);
-                    allFacts.add(new AnalyzedFact(msg, 0.8)); // 중요도 점수 부여
+                    msg = String.format("만족도 지수가 %s 장르의 평균치보다 높네요. 호평을 받은 작품입니다", genreStr);
+                    allFacts.add(new AnalyzedFact(msg, 0.8));
                     break;
                 case "HIGH_VIOLENCE":
-                    msg = String.format("%s 장르의 평균과 비교했을 때, 폭력성 지수가 이례적으로 높은 수치를 기록했습니다.", genreListStr);
+                    msg = String.format("같은 %s 장르에서 비교했을 때, 이 영화는 폭력적인 장면이 많이 나올 수 있어요.", genreStr);
                     allFacts.add(new AnalyzedFact(msg, 1.0));
                     break;
                 case "HIGH_SEXUAL":
-                    msg = String.format("%s 장르의 평균과 비교했을 때, 선정성 지수가 매우 높게 나타납니다. 감각적 또는 자극적인 연출이 포함될 수 있습니다.", genreListStr);
+                    msg = String.format("같은 %s 장르에서 비교했을 때, 선정성 지수가 매우 높네요! 자극적인 장면이 나올 수 있어요.", genreStr);
                     allFacts.add(new AnalyzedFact(msg, 1.0));
                     break;
                 case "HIGH_HORROR":
-                    // 대표 장르가 공포/스릴러가 아닌데 공포가 높으면 '의외성' 강조
-                    if (!primaryGenre.equals("Horror") && !primaryGenre.equals("Thriller")) {
-                         msg = String.format("'%s'이 대표 장르임에도, 공포 지수가 %s 장르 평균보다 현저히 높아 예상치 못한 긴장감을 유발합니다.", primaryGenre, genreListStr);
+                    if (!isHorrorExpected) {
+                        msg = String.format("'%s' 장르 조합임에도, 공포 지수가 %s 장르 평균보다 높아 긴장감을 유발해요.", primaryGenre, genreStr);
                     } else {
-                         msg = String.format("공포 지수가 %s 장르의 평균치를 크게 상회하여, 극도의 스릴을 제공하는 데 중점을 둔 것으로 보입니다.", genreListStr);
+                        msg = String.format("공포 지수가 %s 장르의 평균치보다 높아요. 심약한 분께는 주의가 필요해요.", genreStr);
                     }
                     allFacts.add(new AnalyzedFact(msg, 1.2));
+                    break;
+                case "LOW_RATING":
+                    msg = String.format("일부 '%s' 장르 팬들에겐 만족도가 낮은 편이에요.", genreStr);
+                    allFacts.add(new AnalyzedFact(msg, 0.4));
+                    break;
+                case "LOW_VIOLENCE":
+                    if (VIOLENCE_EXPECTED_GENRES.contains(primaryGenre)) {
+                        msg = String.format("'%s' 장르지만, 폭력적인 장면은 거의 없어요.", primaryGenre);
+                    } else {
+                        msg = "폭력적인 장면은 거의 없어 편하게 관람할 수 있어요.";
+                    }
+                    allFacts.add(new AnalyzedFact(msg, 0.5));
+                    break;
+                case "LOW_SEXUAL":
+                    if (SEXUAL_EXPECTED_GENRES.contains(primaryGenre)) {
+                        msg = String.format("'%s' 장르로 분류되지만, 선정성은 거의 없습니다.", primaryGenre);
+                    } else {
+                        msg = "선정적인 장면은 거의 없어요.";
+                    }
+                    allFacts.add(new AnalyzedFact(msg, 0.5));
+                    break;
+                case "LOW_HORROR":
+                    if (HORROR_EXPECTED_GENRES.contains(primaryGenre)) {
+                        msg = String.format("'%s' 장르지만 공포 요소는 거의 없어요.", primaryGenre);
+                    } else {
+                        msg = "공포 요소는 거의 없어서 부담 없이 관람할 수 있어요.";
+                    }
+                    allFacts.add(new AnalyzedFact(msg, 0.5));
                     break;
             }
         }
 
-        // --- 4. 최종 메시지 필터링 및 반환 ---
-        // 중요도(differenceScore)가 높은 순서대로 정렬
         allFacts.sort(Comparator.comparingDouble(AnalyzedFact::getDifferenceScore).reversed());
-
-        // 상위 2개의 가장 의미있는 메시지만 선택
         List<InsightMessage> finalInsights = new ArrayList<>();
-        int maxInsights = 3;
-        for (int i = 0; i < Math.min(maxInsights, allFacts.size()); i++) {
+        int max = 3;
+        for (int i = 0; i < Math.min(max, allFacts.size()); i++) {
             finalInsights.add(new InsightMessage(allFacts.get(i).getMessage()));
         }
 
