@@ -126,15 +126,10 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    console.log("공포 점수 저장 성공:", data);
-                } else {
-                    alert("공포 점수 저장 실패: " + data.message);
-                }
+                console.log("공포 점수 저장 응답:", data);  // 에러 alert 제거
             })
             .catch(err => {
-                console.error("저장 실패:", err);
-                alert("서버 오류로 저장에 실패했습니다.");
+                console.error("공포 점수 저장 중 오류:", err);
             });
         });
     });
