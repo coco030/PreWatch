@@ -295,6 +295,38 @@ public class TmdbApiService {
             return 0;
         }
     }
+    
+    // 영화 상세 페이지에 갤러리 추가를 위한 것
+    public List<String> getBackdropImageUrls(String apiId) {
+        List<String> urls = new ArrayList<>();
+        try {
+            Integer tmdbMovieId = getTmdbMovieId(apiId); // 이미 존재함
+            if (tmdbMovieId == null) return urls;
+
+            String url = UriComponentsBuilder
+                .fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbMovieId + "/images")
+                .queryParam("api_key", TMDB_API_KEY)
+                .toUriString();
+
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(json);
+
+            JsonNode backdrops = root.get("backdrops");
+            if (backdrops != null && backdrops.isArray()) {
+                int count = 0;
+                for (JsonNode img : backdrops) {
+                    if (count >= 10) break; // 최대 10장까지만
+                    String filePath = img.get("file_path").asText();
+                    urls.add(filePath);
+                    count++;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[ERROR] 이미지 조회 실패: " + apiId + ", msg=" + e.getMessage());
+        }
+        return urls;
+    }
+
 
 
 

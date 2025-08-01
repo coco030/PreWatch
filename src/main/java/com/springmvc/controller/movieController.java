@@ -33,11 +33,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.springmvc.domain.Member;
+import com.springmvc.domain.MovieImage;
 import com.springmvc.domain.RecentCommentDTO;
+import com.springmvc.domain.UserReview;
 import com.springmvc.domain.movie;
 import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService;
+import com.springmvc.service.MovieImageService;
 import com.springmvc.service.StatService;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
@@ -61,12 +64,12 @@ public class movieController {
     private final movieRepository movieRepository;
     private final ActorRepository actorRepository;
     private final UserReviewService userReviewService;
+    private final MovieImageService movieImageService;
     
 
     
     @Autowired // coco030 07.31
     private StatService statService;
-    
 
 
     @Autowired
@@ -77,7 +80,8 @@ public class movieController {
                            TmdbApiService tmdbApiService,
                            movieRepository movieRepository,
                            ActorRepository actorRepository,
-                           UserReviewService userReviewService) {
+                           UserReviewService userReviewService,
+                           MovieImageService movieImageService) {
         this.movieService = movieService;
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
@@ -86,6 +90,7 @@ public class movieController {
         this.movieRepository = movieRepository;
         this.actorRepository = actorRepository;
         this.userReviewService = userReviewService;
+        this.movieImageService = movieImageService;
     }
 
     private boolean isAdmin(HttpSession session) {
@@ -253,13 +258,16 @@ public class movieController {
 	     }
 	     
 	     // 25.07.31 coco030
-	     // userReviewService에서 넘긴 것 getAverageHorrorScore
+	     // userReviewService에서 넘긴 것 
 	     double avgHorror = userReviewService.getAverageHorrorScore(id);
 	     double avgSexual = userReviewService.getAverageSexualScore(id);     
 	     model.addAttribute("avgHorrorScore", avgHorror);
 	     model.addAttribute("avgSexualScore", avgSexual);
+	     // 리뷰 리스트 
+	     List<UserReview> reviewList = userReviewService.getReviewsByMovie(id);
+	     model.addAttribute("reviewList", reviewList);
 	     
-	
+
 	     // 1. DB 출연진 리스트
 	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
 	     model.addAttribute("dbCastList", dbCastList);
@@ -281,8 +289,27 @@ public class movieController {
 	         String name = cast.get("name");
 	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
 	     }
+	     
 	     model.addAttribute("castInfo", castInfo);
 	     System.out.println("castInfo :" + castInfo);
+	
+		  // 4. 이미지 갤러리 (25.08.01 coco030 추가)
+	  // 4. 이미지 갤러리 (25.08.01 coco030 추가)
+	     List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
+
+	     logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
+	         movie.getId(), movie.getApiId(), movieImages.size());
+
+	     if (!movieImages.isEmpty()) {
+	         logger.debug("첫 번째 이미지 URL: {}", movieImages.get(0).getImageUrl());
+	     }
+
+	     System.out.println("[DEBUG] 이미지 갤러리 호출 결과 - movieId: " + movie.getId()
+	         + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
+
+	     model.addAttribute("movieImages", movieImages);
+	  // 4. 이미지 갤러리 (25.08.01 coco030 추가) 끝
+	 
 	
 	     // 찜 상태
 	     Member loginMember = (Member) session.getAttribute("loginMember");
@@ -297,14 +324,11 @@ public class movieController {
 	     // 통계 분석 메시지 25.07.31 coco030
 	     List<InsightMessage> insights = statService.generateInsights(id);
 	     model.addAttribute("insights", insights);
-	     // 통계 분석 메시지 25.07.31 coco030 끝 //
 	
 	     model.addAttribute("movie", movie);
 	     model.addAttribute("userRole", session.getAttribute("userRole"));
 	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-	
 
-	        
 	     return "movie/detailPage";
 	 }
 
@@ -338,12 +362,12 @@ public class movieController {
     }
     
     
-    @GetMapping("/movies/all-recent") // 모든 최근 영화를 위한 새로운 URL입니다.
+    @GetMapping("/movies/all-recent") 
     @Transactional(readOnly = true)
     public String allRecentMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-recent] 모든 최근 등록 영화 목록 요청.");
 
-        List<movie> allRecentMovies = movieService.getAllRecentMovies(); // movieService에 이 메서드를 구현해야 합니다.
+        List<movie> allRecentMovies = movieService.getAllRecentMovies(); 
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -361,12 +385,12 @@ public class movieController {
         model.addAttribute("recentMovies", allRecentMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-recent] movieService.getAllRecentMovies() 호출 완료.");
-        return "movie/recentMoviesList"; // 이 JSP 파일이 새로 생성될 페이지입니다.
+        return "movie/recentMoviesList"; 
 
 
     }
 
- // ⭐ 새로 추가: 모든 개봉 예정작 목록 페이지
+
     @GetMapping("/movies/all-upcoming")
     @Transactional(readOnly = true)
     public String allUpcomingMovies(Model model, HttpSession session) {
@@ -390,7 +414,7 @@ public class movieController {
         model.addAttribute("upcomingMovies", allUpcomingMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-upcoming] 모든 개봉 예정작 데이터 로딩 완료.");
-        return "movie/upcomingMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+        return "movie/upcomingMoviesList";
     }
 
     @GetMapping("/movies/all-recommended")
@@ -416,7 +440,7 @@ public class movieController {
         model.addAttribute("recommendedMovies", allRecommendedMovies);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-recommended] 모든 찜 랭킹 영화 데이터 로딩 완료.");
-        return "movie/recommendedMoviesList"; // ⭐ 새로 생성할 JSP 파일 이름
+        return "movie/recommendedMoviesList"; 
     }
     
     // read-some: API 영화 검색 페이지 또는 검색 결과

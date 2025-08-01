@@ -446,14 +446,39 @@
 	        <h5 class="fw-bold mb-3">
 	            <i class="fas fa-comments text-primary me-1"></i>코멘트
 	        </h5>
-	        <c:import url="/review/list">
-	            <c:param name="movieId" value="${movie.id}" />
-	        </c:import>
+	       <jsp:include page="/WEB-INF/views/reviewModule/reviewList.jsp">
+			    <jsp:param name="movieId" value="${movie.id}" />
+			</jsp:include>
 	    </div>
 	 </div>
 	</div>
 </div>
 </c:if>
+
+
+<div class="container mt-4 mb-5">
+  <c:if test="${not empty movieImages}">
+  <div class="gallery-section mt-4">
+    <h4>스틸컷</h4>
+    <div class="row g-2">
+      <c:forEach var="img" items="${movieImages}" varStatus="status">
+        <div class="col-4 ${status.index >= 6 ? 'd-none more-gallery' : ''}">
+          <img src="https://image.tmdb.org/t/p/w500${img.imageUrl}"
+               alt="스틸컷"
+               class="img-fluid rounded shadow-sm">
+        </div>
+      </c:forEach>
+    </div>
+
+    <!-- 6장 넘는 경우에만 '더 보기' 버튼 출력 -->
+    <c:if test="${movieImages.size() > 6}">
+      <div class="mt-2 text-center">
+        <button id="toggleGalleryBtn" class="btn btn-outline-secondary btn-sm">더 보기</button>
+      </div>
+    </c:if>
+  </div>
+</c:if>
+</div>
 
 
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
@@ -501,6 +526,14 @@
                     }
                 }
             });
+        });
+        // 스틸컷 '더 보기' 처리
+        $('#toggleGalleryBtn').on('click', function() {
+            const hiddenImages = $('.more-gallery');
+            const isHidden = hiddenImages.first().hasClass('d-none');
+
+            hiddenImages.toggleClass('d-none');
+            $(this).text(isHidden ? '간단히 보기' : '더 보기');
         });
     });
 </script>

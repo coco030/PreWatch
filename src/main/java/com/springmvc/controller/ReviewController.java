@@ -212,11 +212,12 @@ public class ReviewController {
 
         if (loginMember != null) {
             UserReview myReview = userReviewService.getMyReview(loginMember.getId(), movieId);
-            model.addAttribute("myReview", myReview);
+            model.addAttribute("myReview", myReview);  
         }
 
         List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
         model.addAttribute("reviewList", reviewList);
+        System.out.println(">>> reviewList :" + reviewList);
 
         return "reviewModule/reviewList"; // → /WEB-INF/views/reviewModule/reviewList.jsp
     }
