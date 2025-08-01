@@ -1,12 +1,18 @@
 package com.springmvc.repository;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.sql.DataSource; // DB 연결 풀 관리
 
-import org.springframework.beans.factory.annotation.Autowired; 
-import org.springframework.jdbc.core.JdbcTemplate;             
-import org.springframework.stereotype.Repository;              
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-import com.springmvc.domain.Member;                           
-import org.springframework.dao.EmptyResultDataAccessException; 
+import com.springmvc.domain.Member; 
 
 // MemberRepositoryImpl 클래스: MemberRepository 인터페이스 구현.
 // 목적: JDBC와 JdbcTemplate을 사용하여 실제 'member' 테이블에 접근.
@@ -15,6 +21,9 @@ public class MemberRepositoryImpl implements MemberRepository {
 
 	private JdbcTemplate jdbcTemplate; // DB 작업 수행 객체
 
+	 @Autowired
+	    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+	 
 	// 생성자를 통한 DataSource 주입: JdbcTemplate 초기화
 	@Autowired
     public MemberRepositoryImpl(DataSource dataSource) {
@@ -100,4 +109,31 @@ public class MemberRepositoryImpl implements MemberRepository {
 
         System.out.println("실제 수정된 행 수: " + result);
     }
+
+
+	
+	@Override
+    public Member findById(String id) {
+        String sql = "SELECT * FROM member WHERE id = :id";
+        try {
+            Map<String, String> params = Collections.singletonMap("id", id);
+            return namedParameterJdbcTemplate.queryForObject(sql, params, new BeanPropertyRowMapper<>(Member.class));
+        } catch (EmptyResultDataAccessException e) {
+            // 해당 ID의 회원이 없을 경우 예외가 발생하므로, null을 반환하도록 처리
+            return null; 
+        }
+    }
+	
+	@Override
+	public void updateTasteProfile(String memberId, String title, String report, double score) {
+	    String sql = "UPDATE member SET taste_title = :title, taste_report = :report, taste_anomaly_score = :score WHERE id = :memberId";
+	    
+	    Map<String, Object> params = new HashMap<>();
+	    params.put("title", title);
+	    params.put("report", report);
+	    params.put("score", score);
+	    params.put("memberId", memberId);
+	    
+	    namedParameterJdbcTemplate.update(sql, params);
+	}
 }

@@ -29,11 +29,17 @@
 
 	<context:component-scan	base-package="com.springmvc.*" />
 	
-	
+
+
 	<!-- multipart-->
 	<beans:bean id="multipartResolver"
 		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<beans:property name="maxUploadSize" value="10240000" />
+	</beans:bean>
+	
+		
+	<beans:bean id="namedParameterJdbcTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+    <beans:constructor-arg ref="dataSource" />
 	</beans:bean>
 	
 	<!-- interceptors

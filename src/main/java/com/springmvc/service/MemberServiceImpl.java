@@ -1,9 +1,9 @@
 package com.springmvc.service;
 
-import org.springframework.beans.factory.annotation.Autowired; 
-import org.springframework.stereotype.Service;                 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import com.springmvc.domain.Member;                         
+import com.springmvc.domain.Member;
 import com.springmvc.repository.MemberRepository;             
 
 // MemberServiceImpl 클래스: MemberService 인터페이스 구현.
@@ -54,4 +54,11 @@ public class MemberServiceImpl implements MemberService{
 	public void deactivate(String id) {
 		memberRepository.deactivate(id);
 	}
+	
+	// 인터페이스에 추가한 findById 메소드 구현
+    @Override
+    public Member findById(String id) {
+        // 실제 작업은 Repository에 위임
+        return memberRepository.findById(id);
+    }
 }

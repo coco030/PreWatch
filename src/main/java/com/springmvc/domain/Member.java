@@ -6,14 +6,52 @@ public class Member {
 	private String id;       // 회원의 고유 아이디 (PRIMARY KEY)
 	private String password; // 회원의 비밀번호
 	private String role;     // 회원의 권한(역할)
+	
+	private String tasteTitle;          // taste_title 컬럼
+    private String tasteReport;         // taste_report 컬럼
+    private Double tasteAnomalyScore;   // taste_anomaly_score 컬럼
 
-	// 매개변수 생성자: 모든 필드 값을 받아 초기화 (role 필드 포함).
-	public Member(String id, String password, String role) {
+	public Member(String id, String password, String role, String tasteTitle, String tasteReport,
+			Double tasteAnomalyScore) {
 		super();
 		this.id = id;
 		this.password = password;
 		this.role = role;
+		this.tasteTitle = tasteTitle;
+		this.tasteReport = tasteReport;
+		this.tasteAnomalyScore = tasteAnomalyScore;
 	}
+
+
+	public String getTasteTitle() {
+		return tasteTitle;
+	}
+
+
+	public void setTasteTitle(String tasteTitle) {
+		this.tasteTitle = tasteTitle;
+	}
+
+
+	public String getTasteReport() {
+		return tasteReport;
+	}
+
+
+	public void setTasteReport(String tasteReport) {
+		this.tasteReport = tasteReport;
+	}
+
+
+	public Double getTasteAnomalyScore() {
+		return tasteAnomalyScore;
+	}
+
+
+	public void setTasteAnomalyScore(Double tasteAnomalyScore) {
+		this.tasteAnomalyScore = tasteAnomalyScore;
+	}
+
 
 	// 기본 생성자: 매개변수 없이 객체 생성. Spring MVC 폼 바인딩 등에 사용.
 	public Member() {}
@@ -40,9 +78,9 @@ public class Member {
 		this.role = role;
 	}
 
-	// toString 메서드: 객체 상태를 문자열로 반환 (디버깅/로그 출력용, role 포함).
 	@Override
 	public String toString() {
-		return "Member [id=" + id + ", password=" + password + ", role=" + role + "]";
+		return "Member [id=" + id + ", password=" + password + ", role=" + role + ", tasteTitle=" + tasteTitle
+				+ ", tasteReport=" + tasteReport + ", tasteAnomalyScore=" + tasteAnomalyScore + "]";
 	}
 }

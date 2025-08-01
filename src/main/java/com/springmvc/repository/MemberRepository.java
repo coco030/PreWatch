@@ -19,4 +19,8 @@ public interface MemberRepository {
 
     // 회원 상태 'INACTIVE'로 변경 (U - Update, 논리적 삭제)
     void deactivate(String id);
+
+
+	void updateTasteProfile(String memberId, String title, String report, double score);
+	Member findById(String id);
 }

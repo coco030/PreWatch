@@ -19,4 +19,7 @@ public interface MemberService {
 
     // 특정 회원을 비활성화 (예: 회원 탈퇴 처리).
     void deactivate(String id); // 
+    
+ // ID로 회원 정보 조회 기능 선언
+    Member findById(String id);
 }

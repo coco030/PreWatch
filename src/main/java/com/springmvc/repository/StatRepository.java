@@ -2,18 +2,26 @@ package com.springmvc.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.StatDTO;
+import com.springmvc.domain.UserReviewScoreDTO;
 
 @Repository
 public class StatRepository {
 	
+	 @Autowired
+	 private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+	 
 	@Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -90,4 +98,21 @@ public class StatRepository {
         // queryForObject는 결과가 정확히 하나일 때 사용
         return jdbcTemplate.queryForObject(sql, genreAvgRowMapper, genre);
     }
+    
+
+    
+    public List<UserReviewScoreDTO> findUserReviewScoresForAnalysis(String memberId) {
+        String sql = "SELECT " +
+                     "    user_rating as userRating, " +
+                     "    violence_score as violenceScore, " +
+                     "    horror_score as horrorScore, " +
+                     "    sexual_score as sexualScore " +
+                     "FROM user_reviews " +
+                     "WHERE member_id = :memberId";
+
+        Map<String, String> params = Collections.singletonMap("memberId", memberId);
+        
+        return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(UserReviewScoreDTO.class));
+    }
 }
+

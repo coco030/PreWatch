@@ -21,6 +21,7 @@ import com.springmvc.domain.UserReview;
 import com.springmvc.domain.movie;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.MemberService;
+import com.springmvc.service.TasteProfileService;
 import com.springmvc.service.UserReviewService;
 import com.springmvc.service.userCartService;
 
@@ -29,6 +30,9 @@ import com.springmvc.service.userCartService;
 
 public class MemberController {
 	
+	@Autowired
+    private TasteProfileService tasteProfileService;
+
 	@Autowired
     private userCartService userCartService; 
 	
@@ -166,5 +170,31 @@ public class MemberController {
             System.out.println("비로그인 또는 관리자 계정으로 마이페이지 접근 시도.");
             return "redirect:/accessDenied"; 
         }
+    }
+    
+    // 25.8.01 취향 분석 리포트 페이지 (리팩토링 완료)
+    @GetMapping("/mypage_taste")
+    public String showTasteReport(HttpSession session, Model model) {
+        System.out.println("mypage_taste 뷰 이동");
+        
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null) {
+            return "redirect:/login";
+        }
+        String memberId = loginMember.getId();
+
+        // 1. DB의 taste_title, taste_report 업데이트
+        tasteProfileService.updateUserTasteProfile(memberId);
+
+        // 2. 우리가 새로 만든 findById 메소드로 최신 정보를 다시 조회
+        Member memberInfo = memberService.findById(memberId); 
+        
+        model.addAttribute("memberInfo", memberInfo);
+        
+        // 3. 차트용 데이터 조회
+        Map<String, Double> tasteScores = tasteProfileService.getTasteScores(memberId);
+        model.addAttribute("tasteScores", tasteScores);
+        
+        return "mypage_taste"; 
     }
 }

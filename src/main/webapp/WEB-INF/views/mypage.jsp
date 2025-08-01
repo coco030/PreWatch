@@ -33,6 +33,9 @@
 	<div class="bg-light p-3 rounded d-flex align-items-center mb-3">
 	  <i class="fas fa-film me-2 text-secondary"></i>
 	  <strong class="text-dark">${sessionScope.loginMember.id}님의 영화 기록</strong>
+	   <a href="<c:url value='/member/mypage_taste'/>" class="btn btn-primary">
+            📊 나의 취향 분석 리포트 보기
+        </a>
 	</div>
 
     <c:forEach var="review" items="${myReviews}">
