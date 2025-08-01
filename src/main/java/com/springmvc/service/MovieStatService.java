@@ -14,6 +14,8 @@ import java.util.Map;
 @Service
 public class MovieStatService {
 
+// 엉망이네 여차하면 버려
+    
     @Autowired
     private StatRepository statRepository;
 
@@ -45,34 +47,47 @@ public class MovieStatService {
         return statRepository.findTasteAnalysisData(memberId);
     }
 
+
+ 
     // 6. 영화의 평균 만족도 점수 계산
     public Double getAverageRating(Long movieId) {
-        return statRepository.getAverageRating(movieId);
+        // UserReviewRepository에서 계산된 평균 점수 가져오기
+        Double avgRating = userReviewRepository.getAverageRating(movieId);
+        return (avgRating != null) ? avgRating : 0.0; // null 처리
     }
 
     // 7. 영화의 평균 폭력성 점수 계산
     public Double getAverageViolenceScore(Long movieId) {
-        return statRepository.getAverageViolenceScore(movieId);
+        // UserReviewRepository에서 계산된 평균 폭력성 점수 가져오기
+        Double avgViolence = userReviewRepository.getAverageViolenceScore(movieId);
+        return (avgViolence != null) ? avgViolence : 0.0; // null 처리
     }
 
     // 8. 영화의 평균 공포성 점수 계산
     public Double getAverageHorrorScore(Long movieId) {
-        return statRepository.getAverageHorrorScore(movieId);
+        // UserReviewRepository에서 계산된 평균 공포성 점수 가져오기
+        Double avgHorror = userReviewRepository.getAverageHorrorScore(movieId);
+        return (avgHorror != null) ? avgHorror : 0.0; // null 처리
     }
 
     // 9. 영화의 평균 선정성 점수 계산
     public Double getAverageSexualScore(Long movieId) {
-        return statRepository.getAverageSexualScore(movieId);
+        // UserReviewRepository에서 계산된 평균 선정성 점수 가져오기
+        Double avgSexual = userReviewRepository.getAverageSexualScore(movieId);
+        return (avgSexual != null) ? avgSexual : 0.0; // null 처리
     }
+
 
     // 10. 저장된 평균 공포성 점수 조회
     public Double getSavedAverageHorrorScore(Long movieId) {
-        return statRepository.getSavedAverageHorrorScore(movieId);
+        StatDTO statDTO = statRepository.findMovieStatsById(movieId);
+        return (statDTO != null && statDTO.getHorrorScoreAvg() != null) ? statDTO.getHorrorScoreAvg() : 0.0;
     }
 
     // 11. 저장된 평균 선정성 점수 조회
     public Double getSavedAverageSexualScore(Long movieId) {
-        return statRepository.getSavedAverageSexualScore(movieId);
+        StatDTO statDTO = statRepository.findMovieStatsById(movieId);
+        return (statDTO != null && statDTO.getSexualScoreAvg() != null) ? statDTO.getSexualScoreAvg() : 0.0;
     }
 
     // 12. 특정 사용자가 평가한 영화들의 평균 만족도 점수 계산

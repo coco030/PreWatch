@@ -1,11 +1,16 @@
 package com.springmvc.service;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.springmvc.domain.TasteAnalysisDataDTO;
 import com.springmvc.repository.MemberRepository;
 import com.springmvc.repository.StatRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import java.util.*;
 
 @Service
 public class TasteProfileServiceImpl implements TasteProfileService {
@@ -16,38 +21,48 @@ public class TasteProfileServiceImpl implements TasteProfileService {
     @Autowired
     private MemberRepository memberRepository;
     
-    // ... (모든 private 메소드 및 updateUserTasteProfile 메소드는 완벽하니 그대로 둡니다) ...
     @Override
     public void updateUserTasteProfile(String memberId) {
-        System.out.println("====== [SERVICE 최종 로직 진입] ======");
-        System.out.println("분석 시작. memberId: [" + memberId + "]");
         List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
         if (reviewedMovies.isEmpty()) {
             memberRepository.updateTasteProfile(memberId, "취향 탐색 중", "아직 평가한 영화가 없네요. 첫 평가를 남겨 당신의 취향을 알려주세요!", 0.0);
             return;
         }
+
+        // 평균 계산
         double ratingAvg = calculateWeightedAverage(reviewedMovies, "rating");
         double violenceAvg = calculateWeightedAverage(reviewedMovies, "violence");
         double horrorAvg = calculateWeightedAverage(reviewedMovies, "horror");
         double sexualAvg = calculateWeightedAverage(reviewedMovies, "sexual");
+
         double violenceStdDev = calculateWeightedStandardDeviation(reviewedMovies, "violence", violenceAvg);
         double horrorStdDev = calculateWeightedStandardDeviation(reviewedMovies, "horror", horrorAvg);
         double sexualStdDev = calculateWeightedStandardDeviation(reviewedMovies, "sexual", sexualAvg);
-        double anomalyScore = calculateInternalAnomalyScore(ratingAvg, violenceAvg, horrorAvg, sexualAvg, violenceStdDev, horrorStdDev, sexualStdDev);
-        String keywordAlias = createKeywordAlias(ratingAvg, violenceAvg, horrorAvg, sexualAvg, violenceStdDev, horrorStdDev, sexualStdDev);
-        String finalTitle;
-        String finalReport;
+
+        double anomalyScore = calculateInternalAnomalyScore(
+            ratingAvg, violenceAvg, horrorAvg, sexualAvg,
+            violenceStdDev, horrorStdDev, sexualStdDev
+        );
+
+        String keywordAlias = createKeywordAlias(
+            ratingAvg, violenceAvg, horrorAvg, sexualAvg,
+            violenceStdDev, horrorStdDev, sexualStdDev
+        );
+
+        String finalTitle = "";
+        String finalReport = "";
+
         if (reviewedMovies.size() < 5) {
-            String baseReport = createFinalReport(keywordAlias, anomalyScore);
-            String initialComment = createInitialComment(reviewedMovies);
-            finalReport = baseReport + " " + initialComment;
             finalTitle = "취향을 알아가는 중인 감상가";
+            String base = "정확한 결과를 위해 당신의 취향을 파악 중입니다. 더 많은 평가를 남겨 주세요.";
+            String encouragement = createInitialComment(reviewedMovies);
+            finalReport = encouragement + " " + base;
         } else {
             finalTitle = createFinalTitle(keywordAlias, anomalyScore);
             finalReport = createFinalReport(keywordAlias, anomalyScore);
         }
+
         memberRepository.updateTasteProfile(memberId, finalTitle, finalReport, anomalyScore);
-        System.out.println("====== [SERVICE 분석 및 저장 완료] ======");
     }
 
 
@@ -158,15 +173,51 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         }
         return String.format("당신은 '%s'입니다. %s", keywordAlias, rarityDescription);
     }
-    
+
     private String createInitialComment(List<TasteAnalysisDataDTO> reviewedMovies) {
-        TasteAnalysisDataDTO latestReview = reviewedMovies.get(reviewedMovies.size() - 1);
-        String firstImpression = "당신의 평가는 앞으로 만들어갈 영화 세계의 소중한 첫걸음입니다.";
-        if (latestReview.getMyViolenceScore() != null && latestReview.getMyViolenceScore() > 6) {
-            firstImpression = "강렬한 액션으로 영화 여정을 시작하셨군요!";
-        } else if (latestReview.getMyHorrorScore() != null && latestReview.getMyHorrorScore() > 6) {
-            firstImpression = "짜릿한 스릴과 함께 당신의 취향을 찾아가고 있네요.";
+        int size = reviewedMovies.size();
+        String stageMessage = "";
+        switch (size) {
+            case 1:
+                stageMessage = "첫 평가를 남기셨어요.";
+                break;
+            case 2:
+                stageMessage = "두 번째 평가도 완료!";
+                break;
+            case 3:
+                stageMessage = "세 번째 영화까지 평가 완료!";
+                break;
+            case 4:
+                stageMessage = "네 편의 영화에서 취향의 힌트가 보이기 시작했어요.";
+                break;
+            default:
+                return "";
         }
-        return "아직은 당신의 취향을 더 깊이 파악하기에 데이터가 조금 부족해요. 더 많은 영화에 평가를 남겨주시면, 당신만의 프로필을 더욱 정교하게 만들어 드릴게요. " + firstImpression;
+
+        // 마지막 평가한 영화 기준으로 인상 포인트 도출
+        TasteAnalysisDataDTO latestReview = reviewedMovies.get(reviewedMovies.size() - 1);
+        String firstImpression = createFirstImpression(latestReview);
+
+        return stageMessage + firstImpression;
     }
+    
+    private String createFirstImpression(TasteAnalysisDataDTO latestReview) {
+        Integer violence = latestReview.getMyViolenceScore();
+        Integer horror = latestReview.getMyHorrorScore();
+        Integer sexual = latestReview.getMySexualScore();
+        Integer rating = latestReview.getMyUserRating();
+
+        if (violence != null && violence > 6) {
+            return " 강렬한 액션으로 영화 여정을 시작하셨군요.";
+        } else if (horror != null && horror > 6) {
+            return " 짜릿한 스릴과 함께 당신의 취향을 찾아가고 있네요.";
+        } else if (sexual != null && sexual > 6) {
+            return " 감성적이면서도 선정적인 영화로 시작하셨네요.";
+        } else if (rating != null && rating > 8) {
+            return " 작품성 높은 영화를 인상 깊게 보셨네요.";
+        } else {
+            return "";
+        }
+    }
+
 }
