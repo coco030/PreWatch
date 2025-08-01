@@ -172,7 +172,7 @@ public class MemberController {
         }
     }
     
-    // 25.8.01 취향 분석 리포트 페이지 (리팩토링 완료)
+    // 25.8.01 취향 분석 리포트 페이지 
     @GetMapping("/mypage_taste")
     public String showTasteReport(HttpSession session, Model model) {
         System.out.println("mypage_taste 뷰 이동");
@@ -186,12 +186,12 @@ public class MemberController {
         // 1. DB의 taste_title, taste_report 업데이트
         tasteProfileService.updateUserTasteProfile(memberId);
 
-        // 2. 우리가 새로 만든 findById 메소드로 최신 정보를 다시 조회
+        // 2. findById 메소드로 최신 정보를 다시 조회
         Member memberInfo = memberService.findById(memberId); 
         
         model.addAttribute("memberInfo", memberInfo);
         
-        // 3. 차트용 데이터 조회
+        // 3. 차트용 데이터 조회 (필요없어 안 만든다고)
         Map<String, Double> tasteScores = tasteProfileService.getTasteScores(memberId);
         model.addAttribute("tasteScores", tasteScores);
         

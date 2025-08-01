@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.StatDTO;
+import com.springmvc.domain.TasteAnalysisDataDTO;
 import com.springmvc.domain.UserReviewScoreDTO;
 
 @Repository
@@ -113,6 +114,26 @@ public class StatRepository {
         Map<String, String> params = Collections.singletonMap("memberId", memberId);
         
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(UserReviewScoreDTO.class));
+    }
+    
+    public List<TasteAnalysisDataDTO> findTasteAnalysisData(String memberId) {
+        String sql = "SELECT " +
+                     "    ur.user_rating AS myUserRating, " +
+                     "    ur.violence_score AS myViolenceScore, " +
+                     "    ur.horror_score AS myHorrorScore, " +
+                     "    ur.sexual_score AS mySexualScore, " +
+                     "    m.rating AS movieAvgRating, " +
+                     "    m.violence_score_avg AS movieAvgViolence, " +
+                     "    ms.horror_score_avg AS movieAvgHorror, " +
+                     "    ms.sexual_score_avg AS movieAvgSexual " +
+                     "FROM user_reviews ur " +
+                     "JOIN movies m ON ur.movie_id = m.id " +
+                     "LEFT JOIN movie_stats ms ON ur.movie_id = ms.movie_id " +
+                     "WHERE ur.member_id = :memberId AND ur.user_rating IS NOT NULL";
+        
+        Map<String, String> params = Collections.singletonMap("memberId", memberId);
+        return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
+
     }
 }
 

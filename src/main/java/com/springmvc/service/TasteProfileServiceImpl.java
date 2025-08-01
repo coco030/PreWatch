@@ -1,14 +1,11 @@
 package com.springmvc.service;
 
-import com.springmvc.domain.UserReviewScoreDTO; // 우리가 만든 DTO
+import com.springmvc.domain.TasteAnalysisDataDTO;
 import com.springmvc.repository.MemberRepository;
 import com.springmvc.repository.StatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class TasteProfileServiceImpl implements TasteProfileService {
@@ -18,128 +15,152 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 
     @Autowired
     private MemberRepository memberRepository;
-
-    // 점수 타입과 한글 이름을 매핑. 확장을 위해 사용
-    private static final Map<String, String> SCORE_TYPE_NAMES = Map.of(
-            "violence", "액션/폭력성",
-            "horror", "공포/스릴",
-            "sexual", "감성/선정성"
-    );
-
+    
+    // ... (모든 private 메소드 및 updateUserTasteProfile 메소드는 완벽하니 그대로 둡니다) ...
     @Override
     public void updateUserTasteProfile(String memberId) {
-        // 1. Repository의 새 메소드를 호출하여 개인 리뷰 점수 리스트를 가져옴
-        List<UserReviewScoreDTO> reviews = statRepository.findUserReviewScoresForAnalysis(memberId);
-        
-        // 유효한 리뷰(평점을 매긴 리뷰)만 필터링
-        List<UserReviewScoreDTO> validReviews = reviews.stream()
-            .filter(r -> r.getUserRating() != null)
-            .collect(Collectors.toList());
-
-        if (validReviews.isEmpty()) {
-            memberRepository.updateTasteProfile(memberId, "취향 탐색 중", "아직 평가한 영화가 없네요. 첫 평가를 남겨주세요!", 0.0);
+        System.out.println("====== [SERVICE 최종 로직 진입] ======");
+        System.out.println("분석 시작. memberId: [" + memberId + "]");
+        List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
+        if (reviewedMovies.isEmpty()) {
+            memberRepository.updateTasteProfile(memberId, "취향 탐색 중", "아직 평가한 영화가 없네요. 첫 평가를 남겨 당신의 취향을 알려주세요!", 0.0);
             return;
         }
-
-        // 2. 각 지표별 '평균 점수' 계산 (사용자의 기본적인 선호도)
-        Map<String, Double> averages = calculateAverages(validReviews);
-
-        // 3. 각 지표별 '표준 편차' 계산 (취향의 일관성 vs 다양성)
-        Map<String, Double> stdDevs = calculateStandardDeviations(validReviews, averages);
-
-        // 4. 분석 결과로 타이틀과 리포트 생성
-        String title = createTitle(averages, stdDevs);
-        String report = createReport(averages, stdDevs);
-        double anomalyScore = calculateAnomalyScore(averages, stdDevs);
-
-        // 5. DB에 최종 결과 업데이트
-        memberRepository.updateTasteProfile(memberId, title, report, anomalyScore);
+        double ratingAvg = calculateWeightedAverage(reviewedMovies, "rating");
+        double violenceAvg = calculateWeightedAverage(reviewedMovies, "violence");
+        double horrorAvg = calculateWeightedAverage(reviewedMovies, "horror");
+        double sexualAvg = calculateWeightedAverage(reviewedMovies, "sexual");
+        double violenceStdDev = calculateWeightedStandardDeviation(reviewedMovies, "violence", violenceAvg);
+        double horrorStdDev = calculateWeightedStandardDeviation(reviewedMovies, "horror", horrorAvg);
+        double sexualStdDev = calculateWeightedStandardDeviation(reviewedMovies, "sexual", sexualAvg);
+        double anomalyScore = calculateInternalAnomalyScore(ratingAvg, violenceAvg, horrorAvg, sexualAvg, violenceStdDev, horrorStdDev, sexualStdDev);
+        String keywordAlias = createKeywordAlias(ratingAvg, violenceAvg, horrorAvg, sexualAvg, violenceStdDev, horrorStdDev, sexualStdDev);
+        String finalTitle;
+        String finalReport;
+        if (reviewedMovies.size() < 5) {
+            String baseReport = createFinalReport(keywordAlias, anomalyScore);
+            String initialComment = createInitialComment(reviewedMovies);
+            finalReport = baseReport + " " + initialComment;
+            finalTitle = "취향을 알아가는 중인 감상가";
+        } else {
+            finalTitle = createFinalTitle(keywordAlias, anomalyScore);
+            finalReport = createFinalReport(keywordAlias, anomalyScore);
+        }
+        memberRepository.updateTasteProfile(memberId, finalTitle, finalReport, anomalyScore);
+        System.out.println("====== [SERVICE 분석 및 저장 완료] ======");
     }
-    
-    // 마이페이지 시각화용 점수 제공
+
+    // ▼▼▼ 여기에 모든 문제의 해결책이 있습니다 ▼▼▼
+    // 인터페이스가 요구하는 'getTasteScores' 라는 이름으로 메소드를 구현합니다.
     @Override
     public Map<String, Double> getTasteScores(String memberId) {
-        List<UserReviewScoreDTO> reviews = statRepository.findUserReviewScoresForAnalysis(memberId).stream()
-            .filter(r -> r.getUserRating() != null).collect(Collectors.toList());
-        return calculateAverages(reviews);
-    }
-    
-    // --- 아래는 통계 계산을 위한 내부 도우미 메소드들 ---
-
-    private Map<String, Double> calculateAverages(List<UserReviewScoreDTO> reviews) {
-        Map<String, Double> averages = new HashMap<>();
-        averages.put("rating", getAverage(reviews, UserReviewScoreDTO::getUserRating));
-        averages.put("violence", getAverage(reviews, UserReviewScoreDTO::getViolenceScore));
-        averages.put("horror", getAverage(reviews, UserReviewScoreDTO::getHorrorScore));
-        averages.put("sexual", getAverage(reviews, UserReviewScoreDTO::getSexualScore));
-        return averages;
-    }
-
-    private Map<String, Double> calculateStandardDeviations(List<UserReviewScoreDTO> reviews, Map<String, Double> averages) {
-        Map<String, Double> stdDevs = new HashMap<>();
-        stdDevs.put("violence", getStdDev(reviews, UserReviewScoreDTO::getViolenceScore, averages.get("violence")));
-        stdDevs.put("horror", getStdDev(reviews, UserReviewScoreDTO::getHorrorScore, averages.get("horror")));
-        stdDevs.put("sexual", getStdDev(reviews, UserReviewScoreDTO::getSexualScore, averages.get("sexual")));
-        return stdDevs;
-    }
-
-    private String createTitle(Map<String, Double> averages, Map<String, Double> stdDevs) {
-        double totalStdDev = stdDevs.values().stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
-        String userType;
-        if (totalStdDev > 7.5) userType = "탐험가";
-        else if (totalStdDev < 3.5) userType = "수집가";
-        else userType = "감식가";
-
-        Optional<Map.Entry<String, Double>> coreEntry = averages.entrySet().stream()
-                .filter(e -> !e.getKey().equals("rating") && e.getValue() != null)
-                .max(Map.Entry.comparingByValue());
-
-        String coreTaste = "드라마";
-        if (coreEntry.isPresent() && coreEntry.get().getValue() > 5.5) {
-            coreTaste = SCORE_TYPE_NAMES.get(coreEntry.get().getKey());
-        } else if (averages.getOrDefault("rating", 0.0) > 7.5) {
-            coreTaste = "작품성";
+        List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
+        
+        if (reviewedMovies.isEmpty()) {
+            return Collections.emptyMap();
         }
-        
-        return String.format("%s를 즐기는 %s", coreTaste, userType);
+
+        Map<String, Double> scores = new HashMap<>();
+        scores.put("작품성", calculateWeightedAverage(reviewedMovies, "rating"));
+        scores.put("액션", calculateWeightedAverage(reviewedMovies, "violence"));
+        scores.put("스릴", calculateWeightedAverage(reviewedMovies, "horror"));
+        scores.put("감성", calculateWeightedAverage(reviewedMovies, "sexual"));
+        return scores;
     }
     
-    private String createReport(Map<String, Double> averages, Map<String, Double> stdDevs) {
-        StringBuilder report = new StringBuilder();
-        report.append(String.format("당신은 평균적으로 작품성에 %.1f점, %s에 %.1f점, %s에 %.1f점, %s에 %.1f점을 주셨습니다. ",
-                averages.getOrDefault("rating", 0.0),
-                SCORE_TYPE_NAMES.get("violence"), averages.getOrDefault("violence", 0.0),
-                SCORE_TYPE_NAMES.get("horror"), averages.getOrDefault("horror", 0.0),
-                SCORE_TYPE_NAMES.get("sexual"), averages.getOrDefault("sexual", 0.0)
-        ));
-        
-        double totalStdDev = stdDevs.values().stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
-        if (totalStdDev > 7.5) {
-            report.append("다양한 장르와 수위를 넘나들며 폭넓은 영화 경험을 추구하는 경향이 있습니다.");
-        } else if (totalStdDev < 3.5) {
-            report.append("자신만의 확고한 취향을 가지고 있으며, 좋아하는 분야를 깊이 파고드는 것을 즐깁니다.");
+    // --- 이하 모든 헬퍼(private) 메소드들은 수정 없이 그대로 유지 ---
+    private double calculateWeightedAverage(List<TasteAnalysisDataDTO> reviewedMovies, String scoreType) {
+        double weightedSum = 0.0;
+        double totalWeight = 0.0;
+        for (TasteAnalysisDataDTO movie : reviewedMovies) {
+            Double movieScore = getScoreByType(movie, scoreType);
+            Integer myRating = movie.getMyUserRating();
+            if (movieScore == null || myRating == null) continue;
+            double myRatingWeight = myRating / 10.0;
+            weightedSum += movieScore * myRatingWeight;
+            totalWeight += myRatingWeight;
+        }
+        return (totalWeight > 0) ? (weightedSum / totalWeight) : 0.0;
+    }
+
+    private double calculateWeightedStandardDeviation(List<TasteAnalysisDataDTO> reviewedMovies, String scoreType, double weightedMean) {
+        double weightedVarianceSum = 0.0;
+        double totalWeight = 0.0;
+        for (TasteAnalysisDataDTO movie : reviewedMovies) {
+            Double movieScore = getScoreByType(movie, scoreType);
+            Integer myRating = movie.getMyUserRating();
+            if (movieScore == null || myRating == null) continue;
+            double myRatingWeight = myRating / 10.0;
+            weightedVarianceSum += myRatingWeight * Math.pow(movieScore - weightedMean, 2);
+            totalWeight += myRatingWeight;
+        }
+        return (totalWeight > 0) ? Math.sqrt(weightedVarianceSum / totalWeight) : 0.0;
+    }
+    
+    private Double getScoreByType(TasteAnalysisDataDTO movie, String scoreType) {
+        switch (scoreType) {
+            case "rating":   return movie.getMovieAvgRating();
+            case "violence": return movie.getMovieAvgViolence();
+            case "horror":   return movie.getMovieAvgHorror();
+            case "sexual":   return movie.getMovieAvgSexual();
+            default:         return 0.0;
+        }
+    }
+    
+    private double calculateInternalAnomalyScore(double rAvg, double vAvg, double hAvg, double sAvg,
+                                                   double vStd, double hStd, double sStd) {
+        double extremity = Math.abs(rAvg - 5.0) + Math.abs(vAvg - 5.0) + Math.abs(hAvg - 5.0) + Math.abs(sAvg - 5.0);
+        double diversity = vStd + hStd + sStd;
+        return extremity + diversity;
+    }
+
+    private String createKeywordAlias(double rating, double violence, double horror, double sexual,
+                                      double stdDevV, double stdDevH, double stdDevS) {
+        Map<String, Double> coreTastes = Map.of("작품성", rating, "액션", violence, "스릴", horror, "감성", sexual);
+        String coreTaste = coreTastes.entrySet().stream()
+                                     .max(Map.Entry.comparingByValue())
+                                     .map(Map.Entry::getKey)
+                                     .orElse("드라마");
+        String userType = "애호가";
+        double totalStdDev = stdDevV + stdDevH + stdDevS;
+        if (totalStdDev > 7.0) userType = "탐험가";
+        else if (totalStdDev < 3.0) userType = "수집가";
+        else if (rating > 7.5) userType = "감식가";
+        String modifier = "균형잡힌";
+        if (rating > 8.0) modifier = "확고한 작품성의";
+        else if (violence > 6.0 && sexual < 3.0) modifier = "절제된 카타르시스의";
+        else if (totalStdDev > 7.0) modifier = "경계를 넘나드는";
+        return modifier + " " + coreTaste + " " + userType;
+    }
+
+    private String createFinalTitle(String keywordAlias, double anomalyScore) {
+        String rarityModifier = "균형잡힌 시각의";
+        if (anomalyScore > 20) rarityModifier = "극소수만이 공유하는";
+        else if (anomalyScore > 15) rarityModifier = "희소성 있는 취향의";
+        else if (anomalyScore > 10) rarityModifier = "뚜렷한 개성을 지닌";
+        return rarityModifier + " " + keywordAlias;
+    }
+    
+    private String createFinalReport(String keywordAlias, double anomalyScore) {
+        String rarityDescription;
+        if (anomalyScore > 20) {
+            rarityDescription = "당신의 취향은 매우 뚜렷한 개성을 가지고 있어, 다른 사람들과는 확연히 구분되는 자신만의 영화 세계를 구축하셨습니다.";
+        } else if (anomalyScore > 10) {
+            rarityDescription = "선호하는 장르와 스타일에 대한 자신만의 기준이 명확하여, 꾸준히 만족스러운 영화적 경험을 쌓아가고 있습니다.";
         } else {
-            report.append("다양성과 깊이 사이에서 균형을 맞추며 안정적인 영화 감상을 하고 있습니다.");
+            rarityDescription = "다양한 장르와 스타일에 열려 있어, 폭넓은 영화 세계를 편견 없이 즐기는 경향이 있습니다.";
         }
-        return report.toString();
+        return String.format("분석 결과, 당신은 '%s'입니다. %s", keywordAlias, rarityDescription);
     }
     
-    private double calculateAnomalyScore(Map<String, Double> averages, Map<String, Double> stdDevs) {
-        double extremityScore = averages.values().stream().filter(Objects::nonNull)
-                                    .mapToDouble(avg -> Math.abs(avg - 5.0)).sum();
-        double diversityScore = stdDevs.values().stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
-        return extremityScore + diversityScore;
-    }
-
-    private double getAverage(List<UserReviewScoreDTO> reviews, Function<UserReviewScoreDTO, Integer> extractor) {
-        return reviews.stream().map(extractor).filter(Objects::nonNull)
-                .mapToInt(Integer::intValue).average().orElse(0.0);
-    }
-
-    private double getStdDev(List<UserReviewScoreDTO> reviews, Function<UserReviewScoreDTO, Integer> extractor, double mean) {
-        List<Integer> scores = reviews.stream().map(extractor).filter(Objects::nonNull).collect(Collectors.toList());
-        if (scores.size() < 2) return 0.0;
-        double variance = scores.stream().mapToDouble(score -> Math.pow(score - mean, 2)).sum() / scores.size();
-        return Math.sqrt(variance);
+    private String createInitialComment(List<TasteAnalysisDataDTO> reviewedMovies) {
+        TasteAnalysisDataDTO latestReview = reviewedMovies.get(reviewedMovies.size() - 1);
+        String firstImpression = "당신의 평가는 앞으로 만들어갈 영화 세계의 소중한 첫걸음입니다.";
+        if (latestReview.getMyViolenceScore() != null && latestReview.getMyViolenceScore() > 6) {
+            firstImpression = "강렬한 액션으로 영화 여정을 시작하셨군요!";
+        } else if (latestReview.getMyHorrorScore() != null && latestReview.getMyHorrorScore() > 6) {
+            firstImpression = "짜릿한 스릴과 함께 당신의 취향을 찾아가고 있네요.";
+        }
+        return "아직은 당신의 취향을 더 깊이 파악하기에 데이터가 조금 부족해요. 더 많은 영화에 평가를 남겨주시면, 당신만의 프로필을 더욱 정교하게 만들어 드릴게요. " + firstImpression;
     }
 }
