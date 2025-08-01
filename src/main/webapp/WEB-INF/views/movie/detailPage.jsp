@@ -458,33 +458,56 @@
 
 <div class="container mt-4 mb-5">
   <c:if test="${not empty movieImages}">
-  <div class="gallery-section mt-4">
-    <h4>스틸컷</h4>
-    <div class="row g-2">
-      <c:forEach var="img" items="${movieImages}" varStatus="status">
-        <div class="col-4 ${status.index >= 6 ? 'd-none more-gallery' : ''}">
-          <img src="https://image.tmdb.org/t/p/w500${img.imageUrl}"
-               alt="스틸컷"
-               class="img-fluid rounded shadow-sm">
-        </div>
-      </c:forEach>
-    </div>
-
-    <!-- 6장 넘는 경우에만 '더 보기' 버튼 출력 -->
-    <c:if test="${movieImages.size() > 6}">
-      <div class="mt-2 text-center">
-        <button id="toggleGalleryBtn" class="btn btn-outline-secondary btn-sm">더 보기</button>
+    <div class="gallery-section mt-4">
+      <h4>스틸컷</h4>
+      <div class="row g-2">
+        <c:forEach var="img" items="${movieImages}" varStatus="status">
+          <div class="col-6 col-md-4 ${status.index >= 6 ? 'd-none more-gallery' : ''}">
+            <img src="https://image.tmdb.org/t/p/w500${img.imageUrl}"
+                 alt="스틸컷"
+                 class="img-fluid rounded shadow-sm"
+                 style="cursor:pointer"
+                 data-bs-toggle="modal"
+                 data-bs-target="#imageModal"
+                 data-bs-image="https://image.tmdb.org/t/p/original${img.imageUrl}">
+          </div>
+        </c:forEach>
       </div>
-    </c:if>
-  </div>
-</c:if>
+
+      <!-- 6장 넘는 경우에만 '더 보기' 버튼 출력 -->
+      <c:if test="${movieImages.size() > 6}">
+        <div class="mt-2 text-center">
+          <button id="toggleGalleryBtn" class="btn btn-outline-secondary btn-sm">더 보기</button>
+        </div>
+      </c:if>
+    </div>
+  </c:if>
 </div>
+
 
 
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>
 
+<!-- 더보기 모달창 -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-sm-down">
+    <div class="modal-content position-relative bg-transparent border-0">
+      
+      <!-- 닫기 버튼 (오른쪽 상단에 고정) -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3"
+              data-bs-dismiss="modal" aria-label="Close"
+              style="filter: brightness(0.7); background-color: rgba(255,255,255,0.6);">
+      </button>
 
+      <!-- 이미지 자체: 가운데 정렬, 최대크기 조절 -->
+      <img id="modalImage"
+           src=""
+           class="img-fluid rounded d-block mx-auto"
+           style="max-height: 95vh; object-fit: contain;">
+    </div>
+  </div>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
@@ -535,7 +558,15 @@
             hiddenImages.toggleClass('d-none');
             $(this).text(isHidden ? '간단히 보기' : '더 보기');
         });
+        
+        // 스틸컷 이미지 클릭 시 모달에 크게 보여주기
+        $('[data-bs-toggle="modal"]').on('click', function() {
+            const imgSrc = $(this).data('bs-image');
+            $('#modalImage').attr('src', imgSrc);
+        });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
 </body>
 </html>
