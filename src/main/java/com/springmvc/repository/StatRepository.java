@@ -155,7 +155,11 @@ public class StatRepository {
         String ratedPlaceholders = String.join(",", Collections.nCopies(allowedRatings.size(), "?"));
 
         String sql = "SELECT m.id AS movie_id, m.title, m.rated, m.rating, m.violence_score_avg, " +
-                "       s.horror_score_avg, s.sexual_score_avg " +
+                "       s.horror_score_avg, s.sexual_score_avg, COUNT(DISTINCT mg.genre) AS genre_match_count, " +
+                "       ABS(m.rating - ?) + " +
+                "       ABS(m.violence_score_avg - ?) + " +
+                "       ABS(s.horror_score_avg - ?) + " +
+                "       ABS(s.sexual_score_avg - ?) AS total_score_diff " +
                 "FROM movies m " +
                 "JOIN movie_stats s ON m.id = s.movie_id " +
                 "JOIN movie_genres mg ON m.id = mg.movie_id " +
@@ -163,31 +167,31 @@ public class StatRepository {
                 "  AND m.rated IN (" + ratedPlaceholders + ") " +
                 "  AND mg.genre IN (" + genrePlaceholders + ") " +
                 "GROUP BY m.id, m.title, m.rated, m.rating, m.violence_score_avg, s.horror_score_avg, s.sexual_score_avg " +
-                "HAVING COUNT(DISTINCT mg.genre) >= 2 " +
-                "   AND ABS(m.rating - ?) < 2 " +
-                "   AND ABS(m.violence_score_avg - ?) < 2 " +
-                "   AND ABS(s.horror_score_avg - ?) < 2 " +
-                "   AND ABS(s.sexual_score_avg - ?) < 2 " +
-                "ORDER BY m.id LIMIT 10";
+                "ORDER BY genre_match_count DESC, total_score_diff ASC " +
+                "LIMIT 10";
 
         List<Object> params = new ArrayList<>();
-        params.add(baseMovieId);
-        params.addAll(allowedRatings);
-        params.addAll(genres);
+        // 평가지표 비교용 파라미터
         params.add(userRatingAvg);
         params.add(violenceScoreAvg);
         params.add(horrorScoreAvg);
         params.add(sexualScoreAvg);
+        // 영화 제외 ID
+        params.add(baseMovieId);
+        // 등급 필터
+        params.addAll(allowedRatings);
+        // 장르 필터
+        params.addAll(genres);
 
         return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
             StatDTO dto = new StatDTO();
             dto.setMovieId(rs.getLong("movie_id"));
             dto.setTitle(rs.getString("title"));
-            dto.setRated(rs.getString("rated")); 
-            dto.setUserRatingAvg(rs.getDouble("rating")); // ← m.rating
-            dto.setViolenceScoreAvg(rs.getDouble("violence_score_avg")); // ← m.violence_score_avg
-            dto.setHorrorScoreAvg(rs.getDouble("horror_score_avg"));     // ← s.horror_score_avg
-            dto.setSexualScoreAvg(rs.getDouble("sexual_score_avg"));     // ← s.sexual_score_avg
+            dto.setRated(rs.getString("rated"));
+            dto.setUserRatingAvg(rs.getDouble("rating"));
+            dto.setViolenceScoreAvg(rs.getDouble("violence_score_avg"));
+            dto.setHorrorScoreAvg(rs.getDouble("horror_score_avg"));
+            dto.setSexualScoreAvg(rs.getDouble("sexual_score_avg"));
             return dto;
         });
     }
