@@ -8,7 +8,6 @@ public class UserReviewScoreDTO {
     private Integer horrorScore;
     private Integer sexualScore;
 
-    // 기본 생성자
     public UserReviewScoreDTO() {
     }
 

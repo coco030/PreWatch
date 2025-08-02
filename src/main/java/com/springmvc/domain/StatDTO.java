@@ -36,8 +36,7 @@ public class StatDTO {
     private double genreViolenceScoreAvg;
     private double genreHorrorScoreAvg;
     private double genreSexualScoreAvg;
-    
-    // 25.08.01 추가
+   
     private String rated;
     
     

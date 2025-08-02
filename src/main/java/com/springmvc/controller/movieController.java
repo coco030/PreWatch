@@ -65,12 +65,7 @@ public class movieController {
     private final ActorRepository actorRepository;
     private final UserReviewService userReviewService;
     private final MovieImageService movieImageService;
-    
-
-    
-    @Autowired // coco030 07.31
-    private StatService statService;
-
+    private final StatService statService;
 
     @Autowired
     public movieController(movieService movieService,
@@ -81,7 +76,8 @@ public class movieController {
                            movieRepository movieRepository,
                            ActorRepository actorRepository,
                            UserReviewService userReviewService,
-                           MovieImageService movieImageService) {
+                           MovieImageService movieImageService, 
+                           StatService statService) {
         this.movieService = movieService;
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
@@ -91,6 +87,7 @@ public class movieController {
         this.actorRepository = actorRepository;
         this.userReviewService = userReviewService;
         this.movieImageService = movieImageService;
+        this.statService = statService;
     }
 
     private boolean isAdmin(HttpSession session) {
@@ -250,66 +247,67 @@ public class movieController {
 	 @Transactional(readOnly = true)
 	 public String detail(@PathVariable Long id, Model model, HttpSession session) {
 	     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-	     movie movie = movieService.findById(id); // DB에서 영화 정보 조회
+	     movie movie = movieService.findById(id); 
 	
 	     if (movie == null) {
 	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
 	         return "redirect:/movies?error=notFound";
 	     }
-	     
-	     // 25.07.31 coco030
-	     // userReviewService에서 넘긴 것 
+
 	     double avgHorror = userReviewService.getAverageHorrorScore(id);
 	     double avgSexual = userReviewService.getAverageSexualScore(id);     
 	     model.addAttribute("avgHorrorScore", avgHorror);
 	     model.addAttribute("avgSexualScore", avgSexual);
-	     // 리뷰 리스트 
+	     System.out.println("평균 호러/평균 선정성 값 :" + avgHorror + avgSexual);
+
 	     List<UserReview> reviewList = userReviewService.getReviewsByMovie(id);
 	     model.addAttribute("reviewList", reviewList);
+	     System.out.println("리뷰 전체 리스트 :" + reviewList);
 	     
+	     // 25.08.02 오후 4시 coco030
+	     Map<String, Object> recommendationData = recommendationService.getHybridRecommendations(movieId, memberId);
+	     model.addAttribute("recommendationData", recommendationData);
+	     System.out.println("비슷한 영화 추천데이터 :" + recommendationData);
 
-	     // 1. DB 출연진 리스트
 	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
 	     model.addAttribute("dbCastList", dbCastList);
-	     System.out.println("dbCastList :" + dbCastList);
-	
-	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
-	         movie.getId(), movie.getTitle(), movie.getLikeCount());
-	
-	     // 2. TMDB 실시간 출연진 (API)
+	     System.out.println("DB 출연진 리스트 :" + dbCastList);
+
 	     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
 	     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
 	     model.addAttribute("tmdbCastList", tmdbCastList);
-	     System.out.println("tmdbCastList :" + tmdbCastList);
+	     System.out.println("TMDB 실시간 출연진 (API) :" + tmdbCastList);
 	
-	     // 3. TMDB 그룹핑
 	     Map<String, List<String>> castInfo = new HashMap<>();
 	     for (Map<String, String> cast : tmdbCastList) {
-	         String type = cast.get("roleType"); // "배우", "감독" 등
+	         String type = cast.get("roleType"); 
 	         String name = cast.get("name");
 	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+	         System.out.println(" TMDB 그룹핑 :" + castInfo);
 	     }
-	     
 	     model.addAttribute("castInfo", castInfo);
-	     System.out.println("castInfo :" + castInfo);
+	     System.out.println("출연진 정보 :" + castInfo);
 	
-		  // 4. 이미지 갤러리 (25.08.01 coco030 추가)
 	     List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
-
 	     logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
 	         movie.getId(), movie.getApiId(), movieImages.size());
-
 	     if (!movieImages.isEmpty()) {
 	         logger.debug("첫 번째 이미지 URL: {}", movieImages.get(0).getImageUrl());
 	     }
-
 	     System.out.println("[DEBUG] 이미지 갤러리 호출 결과 - movieId: " + movie.getId()
 	         + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
-
 	     model.addAttribute("movieImages", movieImages);
-	  // 4. 이미지 갤러리 (25.08.01 coco030 추가) 끝
+	     System.out.println("갤러리 스틸컷 :" + movieImages);
 	 
-	
+	     List<InsightMessage> insights = statService.generateInsights(id);
+	     model.addAttribute("insights", insights);
+	     model.addAttribute("movie", movie);
+	     model.addAttribute("userRole", session.getAttribute("userRole"));
+	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+	     System.out.println("통계 분석 메시지  :" + insights);
+	     
+	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
+		         movie.getId(), movie.getTitle(), movie.getLikeCount());
 	     // 찜 상태
 	     Member loginMember = (Member) session.getAttribute("loginMember");
 	     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -319,15 +317,6 @@ public class movieController {
 	     } else {
 	         movie.setIsLiked(false);
 	     }
-	     
-	     // 통계 분석 메시지 
-	     List<InsightMessage> insights = statService.generateInsights(id);
-	     model.addAttribute("insights", insights);
-	
-	     model.addAttribute("movie", movie);
-	     model.addAttribute("userRole", session.getAttribute("userRole"));
-	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-
 	     return "movie/detailPage";
 	 }
 
@@ -385,8 +374,6 @@ public class movieController {
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.debug("[GET /movies/all-recent] movieService.getAllRecentMovies() 호출 완료.");
         return "movie/recentMoviesList"; 
-
-
     }
 
 
