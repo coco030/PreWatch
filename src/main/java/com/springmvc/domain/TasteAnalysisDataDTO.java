@@ -14,6 +14,7 @@ public class TasteAnalysisDataDTO {
     private Double movieAvgViolence;
     private Double movieAvgHorror;
     private Double movieAvgSexual;
+    
 	public Integer getMyUserRating() {
 		return myUserRating;
 	}

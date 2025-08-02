@@ -200,5 +200,77 @@ public class StatRepository {
    }
 
     
+    
+ // 로그인 사용자를 위한 개선된 추천 쿼리 (가중치 반영)
+    public List<StatDTO> findSimilarMoviesForLoggedInUser(
+            double userRatingAvg,
+            double violenceScoreAvg,
+            double horrorScoreAvg,
+            double sexualScoreAvg,
+            List<String> genres,
+            List<String> allowedRatings,
+            long baseMovieId,
+            Map<String, Double> userPreferences) {
+
+       // 장르가 하나 이상일 경우에만 추천
+       if (genres.isEmpty()) {
+           return Collections.emptyList();
+       }
+
+       // IN 절을 위한 placeholder 생성
+       String genrePlaceholders = String.join(",", Collections.nCopies(genres.size(), "?"));
+       String ratedPlaceholders = String.join(",", Collections.nCopies(allowedRatings.size(), "?"));
+
+       // 사용자 선호도 가중치 계산
+       double ratingWeight = 1.0 + Math.abs(userPreferences.getOrDefault("작품성", 0.0)) * 0.3;
+       double violenceWeight = 1.0 + Math.abs(userPreferences.getOrDefault("액션", 0.0)) * 0.3;
+       double horrorWeight = 1.0 + Math.abs(userPreferences.getOrDefault("스릴", 0.0)) * 0.3;
+       double sexualWeight = 1.0 + Math.abs(userPreferences.getOrDefault("감성", 0.0)) * 0.3;
+
+       String sql = "SELECT m.id AS movie_id, m.title, m.rated, m.rating, m.violence_score_avg, " +
+               "       s.horror_score_avg, s.sexual_score_avg, m.poster_path, " +
+               "       SUM(CASE WHEN mg.genre IN (" + genrePlaceholders + ") THEN 1 ELSE 0 END) AS genre_match_count, " +
+               "       (ABS(IFNULL(m.rating, 0) - ?) * ? + " +  // 작품성 가중치 적용
+               "        ABS(IFNULL(m.violence_score_avg, 0) - ?) * ? + " +  // 액션 가중치 적용
+               "        ABS(IFNULL(s.horror_score_avg, 0) - ?) * ? + " +  // 스릴 가중치 적용
+               "        ABS(IFNULL(s.sexual_score_avg, 0) - ?) * ?) AS weighted_score_diff " +  // 감성 가중치 적용
+               "FROM movies m " +
+               "LEFT JOIN movie_stats s ON m.id = s.movie_id " +
+               "JOIN movie_genres mg ON m.id = mg.movie_id " +
+               "WHERE m.id != ? " +
+               "  AND m.rated IN (" + ratedPlaceholders + ") " +
+               "GROUP BY m.id, m.title, m.rated, m.rating, m.violence_score_avg, s.horror_score_avg, s.sexual_score_avg " +
+               "HAVING genre_match_count >= 1 " +
+               "ORDER BY genre_match_count DESC, weighted_score_diff ASC " +
+               "LIMIT 10";
+
+       List<Object> params = new ArrayList<>();
+       params.addAll(genres);             // 장르 매칭
+       params.add(userRatingAvg);         // 평가지표
+       params.add(ratingWeight);          // 작품성 가중치
+       params.add(violenceScoreAvg);      // 폭력성
+       params.add(violenceWeight);        // 액션 가중치
+       params.add(horrorScoreAvg);        // 공포성
+       params.add(horrorWeight);          // 스릴 가중치
+       params.add(sexualScoreAvg);        // 선정성
+       params.add(sexualWeight);          // 감성 가중치
+       params.add(baseMovieId);           // 기준 영화 제외
+       params.addAll(allowedRatings);     // 허용 등급
+
+       return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
+           StatDTO dto = new StatDTO();
+           dto.setMovieId(rs.getLong("movie_id"));
+           dto.setTitle(rs.getString("title"));
+           dto.setRated(rs.getString("rated"));
+           dto.setUserRatingAvg(rs.getDouble("rating"));
+           dto.setViolenceScoreAvg(rs.getDouble("violence_score_avg"));
+           dto.setHorrorScoreAvg(rs.getDouble("horror_score_avg"));
+           dto.setSexualScoreAvg(rs.getDouble("sexual_score_avg"));
+           dto.setPosterPath(rs.getString("poster_path")); 
+           return dto;
+       });
+    }
+    
+    
 }
 

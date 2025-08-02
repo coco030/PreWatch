@@ -6,12 +6,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.springmvc.domain.StatDTO;
+import com.springmvc.domain.TasteAnalysisDataDTO;
 import com.springmvc.repository.StatRepository;
 
 @Service
@@ -276,6 +278,179 @@ public class StatServiceImpl implements StatService {
             movieId                        // 기준 영화 ID
         );
     }
+    
+    
+    
+    //개인화 로그인한 상태에서 비슷한 영화 취향 분석
+ // 사용자 취향을 고려한 허용 등급 계산
+    private List<String> getSmartAllowedRatings(String baseMovieRated, Map<String, Double> userDeviationScores) {
+        // 기본적으로는 기준 영화와 동일한 등급 체계 사용
+        List<String> baseAllowedRatings = getAllowedRatingsForGuest(baseMovieRated);
+        
+        // 사용자 취향 분석이 없으면 기본 등급만 허용
+        if (userDeviationScores.isEmpty()) {
+            return baseAllowedRatings;
+        }
+        
+        // 사용자 취향 분석
+        double violencePref = userDeviationScores.getOrDefault("액션", 0.0);
+        double horrorPref = userDeviationScores.getOrDefault("스릴", 0.0);
+        double sexualPref = userDeviationScores.getOrDefault("감성", 0.0);
+        
+        // 자극적인 콘텐츠를 싫어하는 사용자
+        boolean prefersLowIntensity = violencePref < -1.5 && horrorPref < -1.5 && sexualPref < -1.5;
+        
+        // 자극적인 콘텐츠를 좋아하는 사용자  
+        boolean prefersHighIntensity = violencePref > 1.5 || horrorPref > 1.5 || sexualPref > 1.5;
+        
+        List<String> smartRatings = new ArrayList<>(baseAllowedRatings);
+        
+        if (prefersLowIntensity) {
+            // 순화된 콘텐츠를 선호하는 사용자: 더 낮은 등급으로 제한
+            smartRatings = smartRatings.stream()
+                .filter(rating -> isLowerOrEqualRating(rating, baseMovieRated))
+                .collect(Collectors.toList());
+        } else if (prefersHighIntensity && isAdultSafeRating(baseMovieRated)) {
+            // 자극적인 콘텐츠를 선호하고 기준 영화가 성인 안전 등급인 경우: 한 단계 상향 허용
+            String higherRating = getNextHigherRating(baseMovieRated);
+            if (higherRating != null && !smartRatings.contains(higherRating)) {
+                smartRatings.add(higherRating);
+            }
+        }
+        
+        return smartRatings.isEmpty() ? baseAllowedRatings : smartRatings;
+    }
+
+    // 등급 비교 헬퍼 메서드들
+    private boolean isLowerOrEqualRating(String rating, String baseRating) {
+        List<String> ratingOrder = List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
+        int ratingIndex = ratingOrder.indexOf(rating);
+        int baseIndex = ratingOrder.indexOf(baseRating);
+        return ratingIndex != -1 && baseIndex != -1 && ratingIndex <= baseIndex;
+    }
+
+    private boolean isAdultSafeRating(String rating) {
+        return List.of("12세", "PG-13", "15세").contains(rating);
+    }
+
+    private String getNextHigherRating(String currentRating) {
+        Map<String, String> nextRating = Map.of(
+            "전체관람가", "12세",
+            "G", "PG-13", 
+            "PG", "PG-13",
+            "12세", "15세",
+            "PG-13", "15세",
+            "15세", "청불"
+        );
+        return nextRating.get(currentRating);
+    }
+    
+    // 08.02
+    
+    @Override
+    public List<StatDTO> recommendForLoggedInUser(long movieId, String memberId) {
+    	System.out.println("[DEBUG] 편차 계산 시작 - memberId: " + memberId);
+        StatDTO stat = statRepository.findMovieStatsById(movieId);
+        List<String> genres = statRepository.findGenresByMovieId(movieId);
+        stat.setGenres(genres);
+
+        Map<String, Double> userDeviationScores = calculateUserDeviationScores(memberId);
+
+        double adjustedRating = stat.getUserRatingAvg();
+        double adjustedViolence = stat.getViolenceScoreAvg();
+        double adjustedHorror = stat.getHorrorScoreAvg();
+        double adjustedSexual = stat.getSexualScoreAvg();
+
+        // 편차 반영
+        if (!userDeviationScores.isEmpty()) {
+            adjustedRating += userDeviationScores.getOrDefault("작품성", 0.0) * 0.5;
+            adjustedViolence += userDeviationScores.getOrDefault("액션", 0.0) * 0.5;
+            adjustedHorror += userDeviationScores.getOrDefault("스릴", 0.0) * 0.5;
+            adjustedSexual += userDeviationScores.getOrDefault("감성", 0.0) * 0.5;
+
+            // 0~10 범위 제한
+            adjustedRating = Math.max(0, Math.min(10, adjustedRating));
+            adjustedViolence = Math.max(0, Math.min(10, adjustedViolence));
+            adjustedHorror = Math.max(0, Math.min(10, adjustedHorror));
+            adjustedSexual = Math.max(0, Math.min(10, adjustedSexual));
+        }
+
+        List<String> allowedRatings = List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
+
+        return statRepository.findSimilarMoviesForLoggedInUser(
+            adjustedRating,
+            adjustedViolence,
+            adjustedHorror,
+            adjustedSexual,
+            genres,
+            allowedRatings,
+            movieId,
+            userDeviationScores
+        );
+    }
 
 
+    // 사용자 취향 편차 점수 계산
+    @Override
+    public Map<String, Double> calculateUserDeviationScores(String memberId) {
+        List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
+        
+        if (reviewedMovies.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        
+        Map<String, Double> deviationScores = new HashMap<>();
+        
+        // 전체 평균 (모든 영화의 평균값 - 실제로는 5.0 정도로 가정)
+        double globalRatingAvg = 5.0;
+        double globalViolenceAvg = 5.0;
+        double globalHorrorAvg = 5.0;
+        double globalSexualAvg = 5.0;
+        
+        // 사용자 가중 평균 계산
+        double userRatingAvg = calculateWeightedAverage(reviewedMovies, "rating");
+        double userViolenceAvg = calculateWeightedAverage(reviewedMovies, "violence");
+        double userHorrorAvg = calculateWeightedAverage(reviewedMovies, "horror");
+        double userSexualAvg = calculateWeightedAverage(reviewedMovies, "sexual");
+        
+        // 편차 점수 계산 (사용자 평균 - 전체 평균)
+        deviationScores.put("작품성", userRatingAvg - globalRatingAvg);
+        deviationScores.put("액션", userViolenceAvg - globalViolenceAvg);
+        deviationScores.put("스릴", userHorrorAvg - globalHorrorAvg);
+        deviationScores.put("감성", userSexualAvg - globalSexualAvg);
+        
+        return deviationScores;
+    }
+
+    private double calculateWeightedAverage(List<TasteAnalysisDataDTO> reviewedMovies, String type) {
+        double sum = 0.0;
+        int count = 0;
+
+        System.out.println("[DEBUG] 유저 리뷰 조회 결과 - 개수: " + reviewedMovies.size());
+
+        for (TasteAnalysisDataDTO dto : reviewedMovies) {
+
+            Double value = switch (type) {
+                case "rating" -> dto.getMyUserRating() != null ? dto.getMyUserRating().doubleValue() : null;
+                case "violence" -> dto.getMyViolenceScore() != null ? dto.getMyViolenceScore().doubleValue() : null;
+                case "horror" -> dto.getMyHorrorScore() != null ? dto.getMyHorrorScore().doubleValue() : null;
+                case "sexual" -> dto.getMySexualScore() != null ? dto.getMySexualScore().doubleValue() : null;
+                default -> null;
+            };
+
+            if (value != null) {
+                sum += value;
+                count++;
+
+                System.out.println("[DEBUG] [" + type + "] 유저 점수: " + value);
+            }
+        }
+
+        double result = (count == 0) ? 0.0 : sum / count;
+        System.out.println("[DEBUG] [" + type + "] 평균 점수 계산 완료 → 평균: " + result);
+        return result;
+    }
+
+
+    
 }

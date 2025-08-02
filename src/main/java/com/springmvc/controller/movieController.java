@@ -278,16 +278,33 @@ public class movieController {
         List<String> genres = statRepository.findGenresByMovieId(id);
         stat.setGenres(genres);
 
-        // 추천 영화 리스트
-        List<StatDTO> recommended = statService.recommendForGuest(id); // 서비스에서 처리
+     // 추천 영화 리스트 - 로그인 상태에 따라 분기 처리
+        List<StatDTO> recommended;
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            // 로그인한 사용자: 취향 기반 추천
+            recommended = statService.recommendForLoggedInUser(id, loginMember.getId());
+            
+            // 사용자 취향 편차 점수도 모델에 추가 (선택사항 - 디버깅용)
+            Map<String, Double> userTasteScores = statService.calculateUserDeviationScores(loginMember.getId());
+            model.addAttribute("userTasteScores", userTasteScores);
+            
+            logger.info("로그인 사용자 {}의 취향 기반 추천 영화 {} 개 조회 완료", 
+                        loginMember.getId(), recommended.size());
+        } else {
+            // 비로그인 사용자: 기존 게스트 추천
+            recommended = statService.recommendForGuest(id);
+            
+            logger.info("비로그인 사용자를 위한 게스트 추천 영화 {} 개 조회 완료", 
+                        recommended.size());
+        }
 
         // JSP 전달
         model.addAttribute("stat", stat); 
         model.addAttribute("recommended", recommended); 
         model.addAttribute("movie", movie); 
         System.out.println("영화 지표 및 통계 정보  :" + stat);
-        System.out.println("========추천 영화 개수  :" + recommended.size()+ "=========="); // 추천된 영화 개수만 출력
-        System.out.println("========추천된 영화  :" + recommended + "=========="); 
+        System.out.println("========추천 영화 개수  :" + recommended.size()+ "==========");
+        System.out.println("========추천된 영화  :" + recommended + "==========");
         
         List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
         model.addAttribute("dbCastList", dbCastList);
