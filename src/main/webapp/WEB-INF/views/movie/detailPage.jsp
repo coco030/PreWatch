@@ -20,27 +20,49 @@
 </c:import>   
 
 
-
-<c:if test="${not empty recommendedMovies}">
+<c:if test="${not empty recommended}">
     <div class="recommended-box">
-<p>
-    <c:choose>
-        <c:when test="${empty sessionScope.loginMember}">
-            이 영화와 비슷한 영화를 추천해드릴게요
-        </c:when>
-        <c:otherwise>
-            ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
-        </c:otherwise>
-    </c:choose>
-</p>
+        <p>
+            <c:choose>
+                <c:when test="${empty sessionScope.loginMember}">
+                    이 영화와 비슷한 영화를 추천해드릴게요
+                </c:when>
+                <c:otherwise>
+                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
+                </c:otherwise>
+            </c:choose>
+        </p>
 
-<ul>
-    <c:forEach var="rec" items="${recommended}">
-        <li>${rec.title} (관람등급: ${rec.rated})</li>
-    </c:forEach>
-</ul>
+                <ul>
+            <c:forEach var="rec" items="${recommended}">
+    		<li>
+		        <!-- 추천 영화 제목과 포스터 -->
+		   		 <a href="${pageContext.request.contextPath}/movies/${rec.movieId}">
+		            <div class="flex-shrink-0">
+		                <c:choose>
+		                    <c:when test="${not empty rec.posterPath and fn:startsWith(rec.posterPath, 'http')}">
+                    <img src="${rec.posterPath}" width="70" class="rounded shadow-sm"/>
+		                    </c:when>
+		                    <c:when test="${not empty rec.posterPath}">
+		                        <img src="https://image.tmdb.org/t/p/w185/${rec.posterPath}" width="70" class="rounded shadow-sm"/>
+		                    </c:when>
+		                    <c:otherwise>
+		                        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" width="70" class="rounded shadow-sm"/>
+		                    </c:otherwise> 
+		                </c:choose>
+		            </div>
+		            ${rec.title} (관람등급: ${rec.rated})
+		      </a>
+		    </li>
+		</c:forEach>
+        </ul>
     </div>
 </c:if>
+
+
+
+
+
 
 <div class="container mt-4">
 <div class="row g-4 align-items-start">

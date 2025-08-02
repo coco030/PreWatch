@@ -248,132 +248,99 @@ public class movieController {
 
 
 
-	    // read-one: 특정 영화 상세 정보 조회
-	 @GetMapping("/movies/{id}")
-	 @Transactional(readOnly = true)
-	 public String detail(@PathVariable Long id, Model model, HttpSession session) {
-	     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-	     movie movie = movieService.findById(id); 
-	     Member loginMember = (Member) session.getAttribute("loginMember");
-	
-	     if (movie == null) {
-	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-	         return "redirect:/movies?error=notFound";
-	     }
-	     double avgHorror = userReviewService.getAverageHorrorScore(id);
-	     double avgSexual = userReviewService.getAverageSexualScore(id);     
-	     model.addAttribute("avgHorrorScore", avgHorror);
-	     model.addAttribute("avgSexualScore", avgSexual);
-	     System.out.println("평균 호러/평균 선정성 값 :" + avgHorror + avgSexual);
+	 // read-one: 특정 영화 상세 정보 조회
+    // 25.08.02 coco030 영화 상세 정보 조회
+    @GetMapping("/movies/{id}")
+    @Transactional(readOnly = true)
+    public String detail(@PathVariable Long id, Model model, HttpSession session) {
+        logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+        movie movie = movieService.findById(id); 
+        Member loginMember = (Member) session.getAttribute("loginMember");
 
-	     List<UserReview> reviewList = userReviewService.getReviewsByMovie(id);
-	     model.addAttribute("reviewList", reviewList);
-	     System.out.println("리뷰 전체 리스트 :" + reviewList);
-	     
-	     // 25.08.02 오후 4시 coco030
-	  // 25.08.02 오후 4시 coco030
-	  // 1. 영화 통계 정보 가져오기
-	  StatDTO stat = statRepository.findMovieStatsById(id);
-	  List<String> genres = statRepository.findGenresByMovieId(id);
-	  stat.setGenres(genres);
+        if (movie == null) {
+            logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+            return "redirect:/movies?error=notFound";
+        }
+        
+        double avgHorror = userReviewService.getAverageHorrorScore(id);
+        double avgSexual = userReviewService.getAverageSexualScore(id);     
+        model.addAttribute("avgHorrorScore", avgHorror);
+        model.addAttribute("avgSexualScore", avgSexual);
+        System.out.println("평균 호러/평균 선정성 값 :" + avgHorror + avgSexual);
 
-	  // 2. 추천 영화 리스트
-	  List<StatDTO> recommended = Collections.emptyList();
+        List<UserReview> reviewList = userReviewService.getReviewsByMovie(id);
+        model.addAttribute("reviewList", reviewList);
+        System.out.println("리뷰 전체 리스트");
+        
+        // 25.08.02 coco030 영화 통계 정보 가져오기
+        // 영화 통계 정보 가져오기
+        StatDTO stat = statRepository.findMovieStatsById(id);
+        List<String> genres = statRepository.findGenresByMovieId(id);
+        stat.setGenres(genres);
 
-	  if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-	      // 로그인 사용자 → 취향 기반 추천 (서비스에서 구현 필요)
+        // 추천 영화 리스트
+        List<StatDTO> recommended = statService.recommendForGuest(id); // 서비스에서 처리
 
-	  } else if (genres.size() == 3) {
-	      // 비로그인 사용자 → 영화 자체 기반 추천
+        // JSP 전달
+        model.addAttribute("stat", stat); 
+        model.addAttribute("recommended", recommended); 
+        model.addAttribute("movie", movie); 
+        System.out.println("영화 지표 및 통계 정보  :" + stat);
+        System.out.println("========추천 영화 개수  :" + recommended.size()+ "=========="); // 추천된 영화 개수만 출력
+        System.out.println("========추천된 영화  :" + recommended + "=========="); 
+        
+        List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
+        model.addAttribute("dbCastList", dbCastList);
+        System.out.println("DB 출연진 리스트");
 
-	      // 관람 등급 필터 목록 생성
-	      List<String> allowedRatings = getAllowedRatingsForGuest(stat.getRated());
+        Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+        List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+        model.addAttribute("tmdbCastList", tmdbCastList);
+        System.out.println("TMDB 실시간 출연진 (API)");
 
-	      recommended = statRepository.findSimilarMoviesWithGenres(
-	          stat.getUserRatingAvg(),
-	          stat.getViolenceScoreAvg(),
-	          stat.getHorrorScoreAvg(),
-	          stat.getSexualScoreAvg(),
-	          genres,
-	          allowedRatings,
-	          id
-	      );
-	  }
+        Map<String, List<String>> castInfo = new HashMap<>();
+        for (Map<String, String> cast : tmdbCastList) {
+            String type = cast.get("roleType"); 
+            String name = cast.get("name");
+            castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+            System.out.println(" TMDB 그룹핑");
+        }
+        model.addAttribute("castInfo", castInfo);
+        System.out.println("출연진 정보");
 
-	  // 4. JSP 전달
-	  model.addAttribute("stat", stat); 
-	  model.addAttribute("recommended", recommended); 
-	  model.addAttribute("movie", movie); 
-	  System.out.println("영화 지표 및 통계 정보  :" + stat);
-	  System.out.println("추천 영화 리스트  :" + recommended);
+        List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
+        logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
+            movie.getId(), movie.getApiId(), movieImages.size());
+        if (!movieImages.isEmpty()) {
+            logger.debug("첫 번째 이미지 URL: {}", movieImages.get(0).getImageUrl());
+        }
+        System.out.println("[DEBUG] 이미지 갤러리 호출 결과 - movieId: " + movie.getId()
+            + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
+        model.addAttribute("movieImages", movieImages);
+        System.out.println("갤러리 스틸컷 :" + movieImages);
 
+        List<InsightMessage> insights = statService.generateInsights(id);
+        model.addAttribute("insights", insights);
+        model.addAttribute("movie", movie);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
+        System.out.println("통계 분석 메시지  :" + insights);
 
-	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
-	     model.addAttribute("dbCastList", dbCastList);
-	     System.out.println("DB 출연진 리스트 :" + dbCastList);
+        logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
+                movie.getId(), movie.getTitle(), movie.getLikeCount());
+        // 찜 상태
 
-	     Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-	     List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
-	     model.addAttribute("tmdbCastList", tmdbCastList);
-	     System.out.println("TMDB 실시간 출연진 (API) :" + tmdbCastList);
-	
-	     Map<String, List<String>> castInfo = new HashMap<>();
-	     for (Map<String, String> cast : tmdbCastList) {
-	         String type = cast.get("roleType"); 
-	         String name = cast.get("name");
-	         castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
-	         System.out.println(" TMDB 그룹핑 :" + castInfo);
-	     }
-	     model.addAttribute("castInfo", castInfo);
-	     System.out.println("출연진 정보 :" + castInfo);
-	
-	     List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
-	     logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
-	         movie.getId(), movie.getApiId(), movieImages.size());
-	     if (!movieImages.isEmpty()) {
-	         logger.debug("첫 번째 이미지 URL: {}", movieImages.get(0).getImageUrl());
-	     }
-	     System.out.println("[DEBUG] 이미지 갤러리 호출 결과 - movieId: " + movie.getId()
-	         + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
-	     model.addAttribute("movieImages", movieImages);
-	     System.out.println("갤러리 스틸컷 :" + movieImages);
-	 
-	     List<InsightMessage> insights = statService.generateInsights(id);
-	     model.addAttribute("insights", insights);
-	     model.addAttribute("movie", movie);
-	     model.addAttribute("userRole", session.getAttribute("userRole"));
-	     logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
-	     System.out.println("통계 분석 메시지  :" + insights);
-	     
-	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
-		         movie.getId(), movie.getTitle(), movie.getLikeCount());
-	     // 찜 상태
-	     
-	     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-	         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-	         movie.setIsLiked(isLiked);
-	         logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
-	     } else {
-	         movie.setIsLiked(false);
-	     }
-	    
-	    
-	     return "movie/detailPage";
-	 }
-	 
-	// 25.08.02 coco030 관람등급에 따른 허용 등급 리스트 반환
-	 private List<String> getAllowedRatingsForGuest(String rated) {
-	     if (rated == null) return Collections.emptyList();
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+            movie.setIsLiked(isLiked);
+            logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
+        } else {
+            movie.setIsLiked(false);
+        }
 
-	     return switch (rated) {
-	         case "전체관람가", "G", "PG" -> List.of("전체관람가", "G", "PG");
-	         case "12세", "PG-13" -> List.of("전체관람가", "G", "PG", "12세", "PG-13");
-	         case "15세" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세");
-	         case "청불", "R", "18+" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
-	         default -> Collections.emptyList();
-	     };
-	 }
-	// 25.08.02 coco030 관람등급에 따른 허용 등급 리스트 반환//
+        return "movie/detailPage";
+    }
+
 
 
 

@@ -20,6 +20,7 @@ public class StatDTO {
     private long movieId;
     private String title;
     private String rated;
+    private String posterPath;  // 포스터 경로 추가
 
     // 2. 특정 영화의 통계 점수 (두 테이블에서 가져옴)
     private double userRatingAvg;       // movies.rating
@@ -69,11 +70,18 @@ public class StatDTO {
 
 
 
+	public String getPosterPath() {
+		return posterPath;
+	}
+	public void setPosterPath(String posterPath) {
+		this.posterPath = posterPath;
+	}
+	
 	public StatDTO(long totalReviewContentCount, long totalUserRatingCount, long totalViolenceScoreCount,
-			long totalHorrorScoreCount, long totalSexualScoreCount, long movieId, String title, double userRatingAvg,
-			double violenceScoreAvg, double horrorScoreAvg, double sexualScoreAvg, int reviewCount, List<String> genres,
-			double genreRatingAvg, double genreViolenceScoreAvg, double genreHorrorScoreAvg, double genreSexualScoreAvg,
-			String rated) {
+			long totalHorrorScoreCount, long totalSexualScoreCount, long movieId, String title, String rated,
+			String posterPath, double userRatingAvg, double violenceScoreAvg, double horrorScoreAvg,
+			double sexualScoreAvg, int reviewCount, List<String> genres, double genreRatingAvg,
+			double genreViolenceScoreAvg, double genreHorrorScoreAvg, double genreSexualScoreAvg) {
 		super();
 		this.totalReviewContentCount = totalReviewContentCount;
 		this.totalUserRatingCount = totalUserRatingCount;
@@ -82,6 +90,8 @@ public class StatDTO {
 		this.totalSexualScoreCount = totalSexualScoreCount;
 		this.movieId = movieId;
 		this.title = title;
+		this.rated = rated;
+		this.posterPath = posterPath;
 		this.userRatingAvg = userRatingAvg;
 		this.violenceScoreAvg = violenceScoreAvg;
 		this.horrorScoreAvg = horrorScoreAvg;
@@ -92,19 +102,19 @@ public class StatDTO {
 		this.genreViolenceScoreAvg = genreViolenceScoreAvg;
 		this.genreHorrorScoreAvg = genreHorrorScoreAvg;
 		this.genreSexualScoreAvg = genreSexualScoreAvg;
-		this.rated = rated;
 	}
+	
 	@Override
 	public String toString() {
 		return "StatDTO [totalReviewContentCount=" + totalReviewContentCount + ", totalUserRatingCount="
 				+ totalUserRatingCount + ", totalViolenceScoreCount=" + totalViolenceScoreCount
 				+ ", totalHorrorScoreCount=" + totalHorrorScoreCount + ", totalSexualScoreCount="
-				+ totalSexualScoreCount + ", movieId=" + movieId + ", title=" + title + ", userRatingAvg="
-				+ userRatingAvg + ", violenceScoreAvg=" + violenceScoreAvg + ", horrorScoreAvg=" + horrorScoreAvg
-				+ ", sexualScoreAvg=" + sexualScoreAvg + ", reviewCount=" + reviewCount + ", genres=" + genres
-				+ ", genreRatingAvg=" + genreRatingAvg + ", genreViolenceScoreAvg=" + genreViolenceScoreAvg
-				+ ", genreHorrorScoreAvg=" + genreHorrorScoreAvg + ", genreSexualScoreAvg=" + genreSexualScoreAvg
-				+ ", rated=" + rated + "]";
+				+ totalSexualScoreCount + ", movieId=" + movieId + ", title=" + title + ", rated=" + rated
+				+ ", posterPath=" + posterPath + ", userRatingAvg=" + userRatingAvg + ", violenceScoreAvg="
+				+ violenceScoreAvg + ", horrorScoreAvg=" + horrorScoreAvg + ", sexualScoreAvg=" + sexualScoreAvg
+				+ ", reviewCount=" + reviewCount + ", genres=" + genres + ", genreRatingAvg=" + genreRatingAvg
+				+ ", genreViolenceScoreAvg=" + genreViolenceScoreAvg + ", genreHorrorScoreAvg=" + genreHorrorScoreAvg
+				+ ", genreSexualScoreAvg=" + genreSexualScoreAvg + "]";
 	}
 	
 	

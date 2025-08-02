@@ -242,29 +242,40 @@ public class StatServiceImpl implements StatService {
         return facts;
     }
     
-    
+ // getAllowedRatingsForGuest() 메서드
+    public List<String> getAllowedRatingsForGuest(String rated) {
+        if (rated == null) return Collections.emptyList();
+
+        return switch (rated) {
+            case "전체관람가", "G" -> List.of("전체관람가", "G", "PG", "PG-13");
+            case "PG" -> List.of("전체관람가", "G", "PG", "PG-13");
+            case "12세", "PG-13" -> List.of("전체관람가", "G", "PG", "12세", "PG-13");
+            case "15세" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세");
+            case "청불", "R", "18+" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
+            default -> List.of("전체관람가", "G", "PG", "12세", "PG-13");
+        };
+    }
+
     @Override
     public List<StatDTO> recommendForGuest(long movieId) {
-        // 1. 영화 통계 정보 조회
+        // 1. 기준 영화의 통계 정보와 장르 정보 조회
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
-        stat.setGenres(genres);
+        stat.setGenres(genres); // StatDTO 내부 필드에 장르 저장
 
-        // 2. 추천 로직: 장르가 정확히 2개일 때만 시도
-        if (genres.size() == 2) {
-        	return statRepository.findSimilarMoviesWithGenres(
-        		    stat.getUserRatingAvg(),
-        		    stat.getViolenceScoreAvg(),
-        		    stat.getHorrorScoreAvg(),
-        		    stat.getSexualScoreAvg(),
-        		    genres,
-        		    List.of(stat.getRated()),
-        		    movieId
-        		);
-        }
+        // 2. 기준 영화의 연령등급에 따라 허용 등급 리스트 계산
+        List<String> allowedRatings = getAllowedRatingsForGuest(stat.getRated());
 
-        // 장르 개수가 부족한 경우: 빈 리스트 반환
-        return Collections.emptyList();
+        return statRepository.findSimilarMoviesWithGenres(
+            stat.getUserRatingAvg(),       // 만족도
+            stat.getViolenceScoreAvg(),    // 폭력성
+            stat.getHorrorScoreAvg(),      // 공포성
+            stat.getSexualScoreAvg(),      // 선정성
+            genres,                        // 기준 영화 장르 리스트
+            allowedRatings,                // 허용된 등급 리스트
+            movieId                        // 기준 영화 ID
+        );
     }
+
 
 }
