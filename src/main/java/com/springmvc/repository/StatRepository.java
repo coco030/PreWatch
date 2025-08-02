@@ -2,6 +2,7 @@ package com.springmvc.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,28 +27,27 @@ public class StatRepository {
 	@Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // RowMapper를 재사용하기 위해 멤버 변수로 정의
-    private final RowMapper<StatDTO> genreAvgRowMapper = new RowMapper<StatDTO>() {
-        @Override
-        public StatDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
-            StatDTO dto = new StatDTO();
-            // 쿼리 결과에서 COALESCE를 사용하여 NULL을 0으로 처리했으므로, getDouble/getInt 사용
-            dto.setGenreRatingAvg(rs.getDouble("avg_rating"));
-            dto.setGenreViolenceScoreAvg(rs.getDouble("avg_violence"));
-            dto.setGenreHorrorScoreAvg(rs.getDouble("avg_horror"));
-            dto.setGenreSexualScoreAvg(rs.getDouble("avg_sexual"));
-            return dto;
-        }
-    };
+	private final RowMapper<StatDTO> genreAvgRowMapper = new RowMapper<StatDTO>() {
+	    @Override
+	    public StatDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+	        StatDTO dto = new StatDTO();
+	        dto.setGenres(Collections.singletonList(rs.getString("genre"))); // 장르 정보
+	        dto.setGenreRatingAvg(rs.getDouble("avg_rating"));               // 작품성 평균
+	        dto.setGenreViolenceScoreAvg(rs.getDouble("avg_violence"));      // 폭력성 평균
+	        dto.setGenreHorrorScoreAvg(rs.getDouble("avg_horror"));          // 공포성 평균
+	        dto.setGenreSexualScoreAvg(rs.getDouble("avg_sexual"));          // 선정성 평균
+	        return dto;
+	    }
+	};
     
     // 1. 특정 영화의 장르 목록 가져오기
     public List<String> findGenresByMovieId(long movieId) {
         String sql = "SELECT genre FROM movie_genres WHERE movie_id = ?";
         return jdbcTemplate.queryForList(sql, String.class, movieId);
     }
-    
+
     // 2. 특정 영화의 기본 정보 및 통계 가져오기 (두 테이블 JOIN)
- // 2. 특정 영화의 기본 정보 및 통계 가져오기 (두 테이블 JOIN)
+
     public StatDTO findMovieStatsById(long movieId) {
         String sql = "SELECT " +
                 "    m.id, " +
@@ -84,9 +84,10 @@ public class StatRepository {
     }
 
 
-    // 3. 특정 장르의 평균 점수 계산하기
+ // 3. 특정 장르의 평균 점수 계산하기 - 전체 필드 출력
     public StatDTO getGenreAverageScores(String genre) {
         String sql = "SELECT " +
+                     "    mg.genre AS genre, " +  
                      "    COALESCE(AVG(m.rating), 0.0) as avg_rating, " +
                      "    COALESCE(AVG(m.violence_score_avg), 0.0) as avg_violence, " +
                      "    COALESCE(AVG(ms.horror_score_avg), 0.0) as avg_horror, " +
@@ -94,14 +95,15 @@ public class StatRepository {
                      "FROM movies m " +
                      "JOIN movie_genres mg ON m.id = mg.movie_id " +
                      "LEFT JOIN movie_stats ms ON m.id = ms.movie_id " +
-                     "WHERE mg.genre = ?";
-        
-        // queryForObject는 결과가 정확히 하나일 때 사용
+                     "WHERE mg.genre = ? " +
+                     "GROUP BY mg.genre";
+
         return jdbcTemplate.queryForObject(sql, genreAvgRowMapper, genre);
     }
-    
 
     
+
+    // 유저 상세 점수 분석
     public List<UserReviewScoreDTO> findUserReviewScoresForAnalysis(String memberId) {
         String sql = "SELECT " +
                      "    user_rating as userRating, " +
@@ -116,6 +118,7 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(UserReviewScoreDTO.class));
     }
     
+    // 유저 상세 프로필 
     public List<TasteAnalysisDataDTO> findTasteAnalysisData(String memberId) {
         String sql = "SELECT " +
                      "    ur.user_rating AS myUserRating, " +
@@ -135,6 +138,61 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
 
     }
+    
+    
+    
+    // 25.08.02
+    public List<StatDTO> findSimilarMoviesWithGenres(
+            double userRatingAvg,
+            double violenceScoreAvg,
+            double horrorScoreAvg,
+            double sexualScoreAvg,
+            List<String> genres,
+            List<String> allowedRatings,
+            long baseMovieId) {
 
+        String genrePlaceholders = String.join(",", Collections.nCopies(genres.size(), "?"));
+        String ratedPlaceholders = String.join(",", Collections.nCopies(allowedRatings.size(), "?"));
+
+        String sql = "SELECT m.id AS movie_id, m.title, m.rated, m.rating, m.violence_score_avg, " +
+                "       s.horror_score_avg, s.sexual_score_avg " +
+                "FROM movies m " +
+                "JOIN movie_stats s ON m.id = s.movie_id " +
+                "JOIN movie_genres mg ON m.id = mg.movie_id " +
+                "WHERE m.id != ? " +
+                "  AND m.rated IN (" + ratedPlaceholders + ") " +
+                "  AND mg.genre IN (" + genrePlaceholders + ") " +
+                "GROUP BY m.id, m.title, m.rated, m.rating, m.violence_score_avg, s.horror_score_avg, s.sexual_score_avg " +
+                "HAVING COUNT(DISTINCT mg.genre) >= 2 " +
+                "   AND ABS(m.rating - ?) < 2 " +
+                "   AND ABS(m.violence_score_avg - ?) < 2 " +
+                "   AND ABS(s.horror_score_avg - ?) < 2 " +
+                "   AND ABS(s.sexual_score_avg - ?) < 2 " +
+                "ORDER BY m.id LIMIT 10";
+
+        List<Object> params = new ArrayList<>();
+        params.add(baseMovieId);
+        params.addAll(allowedRatings);
+        params.addAll(genres);
+        params.add(userRatingAvg);
+        params.add(violenceScoreAvg);
+        params.add(horrorScoreAvg);
+        params.add(sexualScoreAvg);
+
+        return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
+            StatDTO dto = new StatDTO();
+            dto.setMovieId(rs.getLong("movie_id"));
+            dto.setTitle(rs.getString("title"));
+            dto.setRated(rs.getString("rated")); 
+            dto.setUserRatingAvg(rs.getDouble("rating")); // ← m.rating
+            dto.setViolenceScoreAvg(rs.getDouble("violence_score_avg")); // ← m.violence_score_avg
+            dto.setHorrorScoreAvg(rs.getDouble("horror_score_avg"));     // ← s.horror_score_avg
+            dto.setSexualScoreAvg(rs.getDouble("sexual_score_avg"));     // ← s.sexual_score_avg
+            return dto;
+        });
+    }
+
+
+    
 }
 

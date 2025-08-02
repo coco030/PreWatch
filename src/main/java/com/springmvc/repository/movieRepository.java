@@ -22,10 +22,8 @@ import com.springmvc.service.StatService;
 @Repository
 public class movieRepository {
 	
-	// 25.07.31 coco030추가 
 	@Autowired
 	private StatService statService;
-	// 25.07.31 coco030추가 끝
 
 	private final JdbcTemplate jdbcTemplate;
 

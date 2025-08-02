@@ -219,5 +219,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
             return "";
         }
     }
+    
+    
 
 }

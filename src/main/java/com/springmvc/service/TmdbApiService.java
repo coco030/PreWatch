@@ -327,9 +327,4 @@ public class TmdbApiService {
         return urls;
     }
 
-
-
-
-
-
 }

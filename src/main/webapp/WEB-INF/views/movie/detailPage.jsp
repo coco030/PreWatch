@@ -19,6 +19,29 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>   
 
+
+
+<c:if test="${not empty recommendedMovies}">
+    <div class="recommended-box">
+<p>
+    <c:choose>
+        <c:when test="${empty sessionScope.loginMember}">
+            이 영화와 비슷한 영화를 추천해드릴게요
+        </c:when>
+        <c:otherwise>
+            ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
+        </c:otherwise>
+    </c:choose>
+</p>
+
+<ul>
+    <c:forEach var="rec" items="${recommended}">
+        <li>${rec.title} (관람등급: ${rec.rated})</li>
+    </c:forEach>
+</ul>
+    </div>
+</c:if>
+
 <div class="container mt-4">
 <div class="row g-4 align-items-start">
   <!-- 왼쪽: 포스터 + 찜 버튼 -->

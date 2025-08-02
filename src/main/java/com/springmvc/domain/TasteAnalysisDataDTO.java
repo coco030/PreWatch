@@ -35,7 +35,6 @@ public class TasteAnalysisDataDTO {
 
 
 	public TasteAnalysisDataDTO(UserReviewScoreDTO review, StatDTO movieStats) {
-		// TODO Auto-generated constructor stub
 	}
 	public void setMyUserRating(Integer myUserRating) {
 		this.myUserRating = myUserRating;

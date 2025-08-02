@@ -19,6 +19,7 @@ public class StatDTO {
     // 1. 특정 영화의 정보
     private long movieId;
     private String title;
+    private String rated;
 
     // 2. 특정 영화의 통계 점수 (두 테이블에서 가져옴)
     private double userRatingAvg;       // movies.rating
@@ -37,7 +38,7 @@ public class StatDTO {
     private double genreHorrorScoreAvg;
     private double genreSexualScoreAvg;
    
-    private String rated;
+
     
     
     // Getter 및 Setter 메서드

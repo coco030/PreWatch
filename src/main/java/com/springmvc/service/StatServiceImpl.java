@@ -17,6 +17,7 @@ import com.springmvc.repository.StatRepository;
 @Service
 public class StatServiceImpl implements StatService {
 
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -206,6 +207,7 @@ public class StatServiceImpl implements StatService {
     }
     
     
+    
     private List<AnalyzedFact> analyzeGenreContrast(StatDTO movieStats, List<String> genres) {
         List<AnalyzedFact> facts = new ArrayList<>();
 
@@ -239,6 +241,30 @@ public class StatServiceImpl implements StatService {
 
         return facts;
     }
+    
+    
+    @Override
+    public List<StatDTO> recommendForGuest(long movieId) {
+        // 1. 영화 통계 정보 조회
+        StatDTO stat = statRepository.findMovieStatsById(movieId);
+        List<String> genres = statRepository.findGenresByMovieId(movieId);
+        stat.setGenres(genres);
 
+        // 2. 추천 로직: 장르가 정확히 2개일 때만 시도
+        if (genres.size() == 2) {
+        	return statRepository.findSimilarMoviesWithGenres(
+        		    stat.getUserRatingAvg(),
+        		    stat.getViolenceScoreAvg(),
+        		    stat.getHorrorScoreAvg(),
+        		    stat.getSexualScoreAvg(),
+        		    genres,
+        		    List.of(stat.getRated()),
+        		    movieId
+        		);
+        }
+
+        // 장르 개수가 부족한 경우: 빈 리스트 반환
+        return Collections.emptyList();
+    }
 
 }

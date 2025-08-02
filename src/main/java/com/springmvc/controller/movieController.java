@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.MovieImage;
 import com.springmvc.domain.RecentCommentDTO;
+import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.UserReview;
 import com.springmvc.domain.movie;
 import com.springmvc.repository.ActorRepository;
+import com.springmvc.repository.StatRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.AdminBannerMovieService;
 import com.springmvc.service.MovieImageService;
@@ -67,6 +70,9 @@ public class movieController {
     private final MovieImageService movieImageService;
     private final StatService statService;
 
+    @Autowired
+    private StatRepository statRepository;
+    
     @Autowired
     public movieController(movieService movieService,
                            externalMovieApiService externalMovieApiService,
@@ -248,12 +254,12 @@ public class movieController {
 	 public String detail(@PathVariable Long id, Model model, HttpSession session) {
 	     logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
 	     movie movie = movieService.findById(id); 
+	     Member loginMember = (Member) session.getAttribute("loginMember");
 	
 	     if (movie == null) {
 	         logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
 	         return "redirect:/movies?error=notFound";
 	     }
-
 	     double avgHorror = userReviewService.getAverageHorrorScore(id);
 	     double avgSexual = userReviewService.getAverageSexualScore(id);     
 	     model.addAttribute("avgHorrorScore", avgHorror);
@@ -265,9 +271,42 @@ public class movieController {
 	     System.out.println("리뷰 전체 리스트 :" + reviewList);
 	     
 	     // 25.08.02 오후 4시 coco030
-	     Map<String, Object> recommendationData = recommendationService.getHybridRecommendations(movieId, memberId);
-	     model.addAttribute("recommendationData", recommendationData);
-	     System.out.println("비슷한 영화 추천데이터 :" + recommendationData);
+	  // 25.08.02 오후 4시 coco030
+	  // 1. 영화 통계 정보 가져오기
+	  StatDTO stat = statRepository.findMovieStatsById(id);
+	  List<String> genres = statRepository.findGenresByMovieId(id);
+	  stat.setGenres(genres);
+
+	  // 2. 추천 영화 리스트
+	  List<StatDTO> recommended = Collections.emptyList();
+
+	  if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+	      // 로그인 사용자 → 취향 기반 추천 (서비스에서 구현 필요)
+
+	  } else if (genres.size() == 3) {
+	      // 비로그인 사용자 → 영화 자체 기반 추천
+
+	      // 관람 등급 필터 목록 생성
+	      List<String> allowedRatings = getAllowedRatingsForGuest(stat.getRated());
+
+	      recommended = statRepository.findSimilarMoviesWithGenres(
+	          stat.getUserRatingAvg(),
+	          stat.getViolenceScoreAvg(),
+	          stat.getHorrorScoreAvg(),
+	          stat.getSexualScoreAvg(),
+	          genres,
+	          allowedRatings,
+	          id
+	      );
+	  }
+
+	  // 4. JSP 전달
+	  model.addAttribute("stat", stat); 
+	  model.addAttribute("recommended", recommended); 
+	  model.addAttribute("movie", movie); 
+	  System.out.println("영화 지표 및 통계 정보  :" + stat);
+	  System.out.println("추천 영화 리스트  :" + recommended);
+
 
 	     List<Map<String, Object>> dbCastList = actorRepository.findCastAndCrewByMovieId(id);
 	     model.addAttribute("dbCastList", dbCastList);
@@ -309,7 +348,7 @@ public class movieController {
 	     logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
 		         movie.getId(), movie.getTitle(), movie.getLikeCount());
 	     // 찜 상태
-	     Member loginMember = (Member) session.getAttribute("loginMember");
+	     
 	     if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
 	         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
 	         movie.setIsLiked(isLiked);
@@ -317,8 +356,25 @@ public class movieController {
 	     } else {
 	         movie.setIsLiked(false);
 	     }
+	    
+	    
 	     return "movie/detailPage";
 	 }
+	 
+	// 25.08.02 coco030 관람등급에 따른 허용 등급 리스트 반환
+	 private List<String> getAllowedRatingsForGuest(String rated) {
+	     if (rated == null) return Collections.emptyList();
+
+	     return switch (rated) {
+	         case "전체관람가", "G", "PG" -> List.of("전체관람가", "G", "PG");
+	         case "12세", "PG-13" -> List.of("전체관람가", "G", "PG", "12세", "PG-13");
+	         case "15세" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세");
+	         case "청불", "R", "18+" -> List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
+	         default -> Collections.emptyList();
+	     };
+	 }
+	// 25.08.02 coco030 관람등급에 따른 허용 등급 리스트 반환//
+
 
 
     // read-all: 모든 영화 목록 조회
