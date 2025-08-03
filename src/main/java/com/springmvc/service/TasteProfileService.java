@@ -2,11 +2,12 @@
 
 package com.springmvc.service;
 
-import java.util.List;
 import java.util.Map;
+
+import com.springmvc.domain.TasteReportDTO;
 
 public interface TasteProfileService {
 
-	   void updateUserTasteProfile(String memberId);
+	 TasteReportDTO updateUserTasteProfile(String memberId);
 	   Map<String, Double> getTasteScores(String memberId);
 }

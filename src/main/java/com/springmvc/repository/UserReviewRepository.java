@@ -470,6 +470,131 @@ public class UserReviewRepository {
         jdbcTemplate.update(sql, memberId, movieId, sexualScore);
     }
 
+    
+    // 08.03
+    
+ // UserReviewRepository.java 파일에 아래 4개 메소드 추가
+
+    // 8점 이상을 "높은 평점"의 기준으로 삼겠습니다.
+    private static final int HIGH_RATING_THRESHOLD = 8;
+
+    /**
+     * [취향 분석용] 사용자의 시그니처 장르(가장 많이 보고, 평점도 높게 준)를 조회합니다.
+     */
+    public String findSignatureGenre(String memberId) {
+        String sql = "SELECT " +
+                     "    g.genre " +
+                     "FROM " +
+                     "    user_reviews r " +
+                     "JOIN " +
+                     "    movie_genres g ON r.movie_id = g.movie_id " +
+                     "WHERE " +
+                     "    r.member_id = ? AND r.user_rating IS NOT NULL " +
+                     "GROUP BY " +
+                     "    g.genre " +
+                     "ORDER BY " +
+                     "    COUNT(*) * AVG(r.user_rating) DESC " + // (리뷰 개수 * 평균 평점)으로 정렬
+                     "LIMIT 1";
+        try {
+            // queryForObject는 결과가 없을 때 예외를 발생시키므로 try-catch로 감쌉니다.
+            return jdbcTemplate.queryForObject(sql, String.class, memberId);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null; // 결과가 없을 경우 null을 반환하여 서비스단에서 처리하도록 합니다.
+        }
+    }
+
+    /**
+     * [취향 분석용] 사용자가 높은 평점을 준 영화에 가장 많이 등장한 인물(배우/감독)을 조회합니다.
+     */
+    public Map<String, String> findFavoritePerson(String memberId) {
+        String sql = "SELECT " +
+                     "    a.name AS personName, " +
+                     "    ma.role_type AS personRole " +
+                     "FROM " +
+                     "    user_reviews r " +
+                     "JOIN " +
+                     "    movie_actors ma ON r.movie_id = ma.movie_id " +
+                     "JOIN " +
+                     "    actors a ON ma.actor_id = a.id " +
+                     "WHERE " +
+                     "    r.member_id = ? AND r.user_rating >= ? " + // 높은 평점을 준 영화만 대상
+                     "GROUP BY " +
+                     "    a.id, a.name, ma.role_type " +
+                     "ORDER BY " +
+                     "    COUNT(*) DESC, a.name ASC " + // 가장 많이 등장한 순서대로
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                Map<String, String> person = new HashMap<>();
+                person.put("name", rs.getString("personName"));
+                person.put("role", rs.getString("personRole"));
+                return person;
+            }, memberId, HIGH_RATING_THRESHOLD);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * [취향 분석용] 사용자가 가장 활발하게 리뷰를 작성한 요일을 조회합니다.
+     */
+    public String findActivityPattern(String memberId) {
+        String sql = "SELECT " +
+                     "    CASE DAYOFWEEK(created_at) " +
+                     "        WHEN 1 THEN '일요일' WHEN 2 THEN '월요일' WHEN 3 THEN '화요일' " +
+                     "        WHEN 4 THEN '수요일' WHEN 5 THEN '목요일' WHEN 6 THEN '금요일' " +
+                     "        WHEN 7 THEN '토요일' " +
+                     "    END as day_of_week " +
+                     "FROM " +
+                     "    user_reviews " +
+                     "WHERE " +
+                     "    member_id = ? " +
+                     "GROUP BY " +
+                     "    day_of_week " +
+                     "ORDER BY " +
+                     "    COUNT(*) DESC " +
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForObject(sql, String.class, memberId);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * [취향 분석용] 사용자가 높은 평점을 준 영화들의 평균 개봉연도와 평균 상영시간을 조회합니다.
+     */
+    public Map<String, Double> findMoviePreferenceMeta(String memberId) {
+        // REGEXP_REPLACE를 지원하는 DB(MySQL 8.0+, MariaDB 10.0.5+)에서만 동작합니다.
+        String sql = "SELECT " +
+                     "    AVG(m.year) as avg_year, " +
+                     "    AVG(CAST(REGEXP_REPLACE(m.runtime, '[^0-9]+', '') AS UNSIGNED)) as avg_runtime " +
+                     "FROM " +
+                     "    user_reviews r " +
+                     "JOIN " +
+                     "    movies m ON r.movie_id = m.id " +
+                     "WHERE " +
+                     "    r.member_id = ? AND r.user_rating >= ?";
+        
+        try {
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                Map<String, Double> meta = new HashMap<>();
+                // 결과가 NULL일 수 있으므로 getDouble 대신 getObject로 받고 확인
+                Object avgYearObj = rs.getObject("avg_year");
+                Object avgRuntimeObj = rs.getObject("avg_runtime");
+
+                if (avgYearObj != null) {
+                    meta.put("avgYear", ((Number) avgYearObj).doubleValue());
+                }
+                if (avgRuntimeObj != null) {
+                    meta.put("avgRuntime", ((Number) avgRuntimeObj).doubleValue());
+                }
+                return meta;
+            }, memberId, HIGH_RATING_THRESHOLD);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+             return null;
+        }
+    }
 
 
 }
