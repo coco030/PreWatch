@@ -8,15 +8,12 @@ import com.springmvc.service.StatServiceImpl.InsightMessage;
 
 public interface StatService {
     void initializeMovieGenres();
-
+    public List<StatDTO> recommendForGuest(long movieId);
 
     List<InsightMessage> generateInsights(long movieId);
-
+    Map<String, Double> calculateUserDeviationScores(String memberId);
+    List<String> getAllowedRatingsForGuest(String rated);
     List<StatDTO> recommendForLoggedInUser(long movieId, String memberId);
 
-    Map<String, Double> calculateUserDeviationScores(String memberId);
 
-    List<String> getAllowedRatingsForGuest(String rated);
-
-    public List<StatDTO> recommendForGuest(long movieId);
 }

@@ -1,3 +1,4 @@
+
 package com.springmvc.service;
 
 import java.util.ArrayList;
@@ -349,11 +350,22 @@ public class StatServiceImpl implements StatService {
     
     @Override
     public List<StatDTO> recommendForLoggedInUser(long movieId, String memberId) {
-    	System.out.println("[DEBUG] 편차 계산 시작 - memberId: " + memberId);
+        System.out.println("[DEBUG] 편차 계산 시작 - memberId: " + memberId);
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
-        stat.setGenres(genres);
 
+        // 장르 정보 출력
+        System.out.println("[DEBUG] 추천 영화 장르: " + genres);
+
+        // 장르가 없다면 바로 종료
+        if (genres == null || genres.isEmpty()) {
+            System.out.println("[DEBUG] 장르 정보가 없습니다. 영화 추천을 종료합니다.");
+            return Collections.emptyList();
+        }
+
+        stat.setGenres(genres);  // StatDTO에 장르 설정
+
+        // 유저의 취향과 편차를 반영한 점수 계산
         Map<String, Double> userDeviationScores = calculateUserDeviationScores(memberId);
 
         double adjustedRating = stat.getUserRatingAvg();
@@ -377,7 +389,8 @@ public class StatServiceImpl implements StatService {
 
         List<String> allowedRatings = List.of("전체관람가", "G", "PG", "12세", "PG-13", "15세", "청불", "R", "18+");
 
-        return statRepository.findSimilarMoviesForLoggedInUser(
+        // 추천된 영화 목록 조회
+        List<StatDTO> recommendedMovies = statRepository.findSimilarMoviesForLoggedInUser(
             adjustedRating,
             adjustedViolence,
             adjustedHorror,
@@ -387,6 +400,11 @@ public class StatServiceImpl implements StatService {
             movieId,
             userDeviationScores
         );
+
+        // 추천된 영화 출력
+        System.out.println("[DEBUG] 추천된 영화: " + recommendedMovies);
+
+        return recommendedMovies;
     }
 
 
@@ -421,6 +439,7 @@ public class StatServiceImpl implements StatService {
         
         return deviationScores;
     }
+    
 
     private double calculateWeightedAverage(List<TasteAnalysisDataDTO> reviewedMovies, String type) {
         double sum = 0.0;

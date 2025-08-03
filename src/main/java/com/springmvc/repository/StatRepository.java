@@ -245,6 +245,7 @@ public class StatRepository {
                "LIMIT 10";
 
        List<Object> params = new ArrayList<>();
+
        params.addAll(genres);             // 장르 매칭
        params.add(userRatingAvg);         // 평가지표
        params.add(ratingWeight);          // 작품성 가중치
@@ -256,6 +257,13 @@ public class StatRepository {
        params.add(sexualWeight);          // 감성 가중치
        params.add(baseMovieId);           // 기준 영화 제외
        params.addAll(allowedRatings);     // 허용 등급
+
+       System.out.println("[DEBUG] 추천 요청 - 기준 영화 ID: " + baseMovieId);
+       System.out.println("[DEBUG] 유저 평균 점수 - rating: " + userRatingAvg 
+           + ", violence: " + violenceScoreAvg 
+           + ", horror: " + horrorScoreAvg 
+           + ", sexual: " + sexualScoreAvg);
+       System.out.println("[DEBUG] 유저 선호 장르: " + genres);
 
        return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
            StatDTO dto = new StatDTO();
