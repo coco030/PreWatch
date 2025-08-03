@@ -1,145 +1,126 @@
 package com.springmvc.domain;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 사용자의 취향 분석 리포트 전체를 담는 최상위 DTO입니다.
+ * 리포트의 각 섹션은 내부 클래스로 구조화되어 있습니다.
+ */
 public class TasteReportDTO {
-	public TasteReportDTO() {};
-	
-    // 1. 타이틀
-    private String title; // 예: "크리스토퍼 놀란의 페르소나, 작품성 중심의 스릴러 전문가"
 
-    // 2. 취향 키워드
-    private List<String> topGenres; // 예: ["스릴러", "드라마", "미스터리"]
-    private String userStyle; // 예: "#확고한편", "#탐험가형"
+    // --- 리포트의 주요 섹션들 ---
+    private String title;
+    private Keywords keywords;
+    private Analysis analysis;
+    private FrequentPersons frequentPersons;
+    private Preferences preferences;
+    private String activityPattern;
+    private Recommendation recommendation;
 
-    // 3. 상세 분석
-    private List<String> strengthKeywords; // 강점 키워드 리스트 (예: ["작품성"])
-    private List<String> weaknessKeywords; // 주의점 키워드 리스트 (예: ["감성"])
-    private String specialInsight; // 특별한 발견 문장
+    // --- 분석 전/후 상태를 관리하는 필드 ---
+    private boolean isInitialReport = false;
+    private String initialMessage;
 
-    // 4. 선호 인물 (배우/감독)
-    private String favoritePersonName; // 예: "크리스토퍼 놀란"
-    private String favoritePersonRole; // 예: "감독"
+    // --- 내부 클래스 정의 ---
 
-    // 5. 영화 선택 스타일
-    private String preferredYear; // 예: "2010년대 최신 영화"
-    private String preferredRuntime; // 예: "120분 이상의 긴 호흡"
+    public static class Keywords {
+        private List<String> topGenres;
+        private String style;
+        // Getters & Setters
+        public List<String> getTopGenres() { return topGenres; }
+        public void setTopGenres(List<String> topGenres) { this.topGenres = topGenres; }
+        public String getStyle() { return style; }
+        public void setStyle(String style) { this.style = style; }
+    }
 
-    // 6. 활동 패턴
-    private String activityPattern; // 예: "주말 저녁 몰입형"
-
-    // 7. 추천 가이드
-    private String bestBetRecommendation; // 안전한 선택 추천 문장
-    private String adventurousRecommendation; // 새로운 도전 추천 문장
-	public String getTitle() {
-		return title;
-	}
-	public void setTitle(String title) {
-		this.title = title;
-	}
-	public List<String> getTopGenres() {
-		return topGenres;
-	}
-	public void setTopGenres(List<String> topGenres) {
-		this.topGenres = topGenres;
-	}
-	public String getUserStyle() {
-		return userStyle;
-	}
-	public void setUserStyle(String userStyle) {
-		this.userStyle = userStyle;
-	}
-	public List<String> getStrengthKeywords() {
-		return strengthKeywords;
-	}
-	public void setStrengthKeywords(List<String> strengthKeywords) {
-		this.strengthKeywords = strengthKeywords;
-	}
-	public List<String> getWeaknessKeywords() {
-		return weaknessKeywords;
-	}
-	public void setWeaknessKeywords(List<String> weaknessKeywords) {
-		this.weaknessKeywords = weaknessKeywords;
-	}
-	public String getSpecialInsight() {
-		return specialInsight;
-	}
-	public void setSpecialInsight(String specialInsight) {
-		this.specialInsight = specialInsight;
-	}
-	public String getFavoritePersonName() {
-		return favoritePersonName;
-	}
-	public void setFavoritePersonName(String favoritePersonName) {
-		this.favoritePersonName = favoritePersonName;
-	}
-	public String getFavoritePersonRole() {
-		return favoritePersonRole;
-	}
-	public void setFavoritePersonRole(String favoritePersonRole) {
-		this.favoritePersonRole = favoritePersonRole;
-	}
-	public String getPreferredYear() {
-		return preferredYear;
-	}
-	public void setPreferredYear(String preferredYear) {
-		this.preferredYear = preferredYear;
-	}
-	public String getPreferredRuntime() {
-		return preferredRuntime;
-	}
-	public void setPreferredRuntime(String preferredRuntime) {
-		this.preferredRuntime = preferredRuntime;
-	}
-	public String getActivityPattern() {
-		return activityPattern;
-	}
-	public void setActivityPattern(String activityPattern) {
-		this.activityPattern = activityPattern;
-	}
-	public String getBestBetRecommendation() {
-		return bestBetRecommendation;
-	}
-	public void setBestBetRecommendation(String bestBetRecommendation) {
-		this.bestBetRecommendation = bestBetRecommendation;
-	}
-	public String getAdventurousRecommendation() {
-		return adventurousRecommendation;
-	}
-	public void setAdventurousRecommendation(String adventurousRecommendation) {
-		this.adventurousRecommendation = adventurousRecommendation;
-	}
-	public TasteReportDTO(String title, List<String> topGenres, String userStyle, List<String> strengthKeywords,
-			List<String> weaknessKeywords, String specialInsight, String favoritePersonName, String favoritePersonRole,
-			String preferredYear, String preferredRuntime, String activityPattern, String bestBetRecommendation,
-			String adventurousRecommendation) {
-		super();
-		this.title = title;
-		this.topGenres = topGenres;
-		this.userStyle = userStyle;
-		this.strengthKeywords = strengthKeywords;
-		this.weaknessKeywords = weaknessKeywords;
-		this.specialInsight = specialInsight;
-		this.favoritePersonName = favoritePersonName;
-		this.favoritePersonRole = favoritePersonRole;
-		this.preferredYear = preferredYear;
-		this.preferredRuntime = preferredRuntime;
-		this.activityPattern = activityPattern;
-		this.bestBetRecommendation = bestBetRecommendation;
-		this.adventurousRecommendation = adventurousRecommendation;
-	}
-	@Override
-	public String toString() {
-		return "TasteReportDTO [title=" + title + ", topGenres=" + topGenres + ", userStyle=" + userStyle
-				+ ", strengthKeywords=" + strengthKeywords + ", weaknessKeywords=" + weaknessKeywords
-				+ ", specialInsight=" + specialInsight + ", favoritePersonName=" + favoritePersonName
-				+ ", favoritePersonRole=" + favoritePersonRole + ", preferredYear=" + preferredYear
-				+ ", preferredRuntime=" + preferredRuntime + ", activityPattern=" + activityPattern
-				+ ", bestBetRecommendation=" + bestBetRecommendation + ", adventurousRecommendation="
-				+ adventurousRecommendation + "]";
-	}
-	
-	
+    public static class Analysis {
+        private List<String> strengths;
+        private List<String> weaknesses;
+        private String specialInsight;
+        // Getters & Setters
+        public List<String> getStrengths() { return strengths; }
+        public void setStrengths(List<String> strengths) { this.strengths = strengths; }
+        public List<String> getWeaknesses() { return weaknesses; }
+        public void setWeaknesses(List<String> weaknesses) { this.weaknesses = weaknesses; }
+        public String getSpecialInsight() { return specialInsight; }
+        public void setSpecialInsight(String specialInsight) { this.specialInsight = specialInsight; }
+    }
     
+    public static class Person {
+        private Long id;
+        private String name;
+        private String imageUrl;
+        public Person(Long id, String name, String imageUrl) { this.id = id; this.name = name; this.imageUrl = imageUrl; }
+        // Getters
+        public Long getId() { return id; }
+        public String getName() { return name; }
+        public String getImageUrl() { return imageUrl; }
+    }
+    
+    public static class FrequentPersons {
+        private Person mostReviewedActor;
+        private Person highlyRatedActor;
+        private Person mostReviewedDirector;
+        private Person highlyRatedDirector;
+        
+        // --- 모든 필드에 대한 Getter & Setter ---
+        public Person getMostReviewedActor() { return mostReviewedActor; }
+        public void setMostReviewedActor(Person mostReviewedActor) { this.mostReviewedActor = mostReviewedActor; }
+        public Person getHighlyRatedActor() { return highlyRatedActor; }
+        public void setHighlyRatedActor(Person highlyRatedActor) { this.highlyRatedActor = highlyRatedActor; }
+        public Person getMostReviewedDirector() { return mostReviewedDirector; }
+        public void setMostReviewedDirector(Person mostReviewedDirector) { this.mostReviewedDirector = mostReviewedDirector; }
+        public Person getHighlyRatedDirector() { return highlyRatedDirector; }
+        public void setHighlyRatedDirector(Person highlyRatedDirector) { this.highlyRatedDirector = highlyRatedDirector; }
+    }
+
+    public static class Preferences {
+        private String preferredYear;
+        private String preferredRuntime;
+        // Getters & Setters
+        public String getPreferredYear() { return preferredYear; }
+        public void setPreferredYear(String preferredYear) { this.preferredYear = preferredYear; }
+        public String getPreferredRuntime() { return preferredRuntime; }
+        public void setPreferredRuntime(String preferredRuntime) { this.preferredRuntime = preferredRuntime; }
+    }
+    
+    public static class Recommendation {
+        private String safeBet;
+        private String adventurousChoice;
+        // Getters & Setters
+        public String getSafeBet() { return safeBet; }
+        public void setSafeBet(String safeBet) { this.safeBet = safeBet; }
+        public String getAdventurousChoice() { return adventurousChoice; }
+        public void setAdventurousChoice(String adventurousChoice) { this.adventurousChoice = adventurousChoice; }
+    }
+    
+    // --- 최상위 DTO의 생성자, Getters & Setters ---
+    
+    public TasteReportDTO() {
+        this.keywords = new Keywords();
+        this.analysis = new Analysis();
+        this.frequentPersons = new FrequentPersons();
+        this.preferences = new Preferences();
+        this.recommendation = new Recommendation();
+    }
+    
+    // 최상위 필드에 대한 Getters & Setters
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public Keywords getKeywords() { return keywords; }
+    public void setKeywords(Keywords keywords) { this.keywords = keywords; }
+    public Analysis getAnalysis() { return analysis; }
+    public void setAnalysis(Analysis analysis) { this.analysis = analysis; }
+    public FrequentPersons getFrequentPersons() { return frequentPersons; }
+    public void setFrequentPersons(FrequentPersons frequentPersons) { this.frequentPersons = frequentPersons; }
+    public Preferences getPreferences() { return preferences; }
+    public void setPreferences(Preferences preferences) { this.preferences = preferences; }
+    public String getActivityPattern() { return activityPattern; }
+    public void setActivityPattern(String activityPattern) { this.activityPattern = activityPattern; }
+    public Recommendation getRecommendation() { return recommendation; }
+    public void setRecommendation(Recommendation recommendation) { this.recommendation = recommendation; }
+    public boolean isInitialReport() { return isInitialReport; }
+    public void setInitialReport(boolean isInitialReport) { this.isInitialReport = isInitialReport; }
+    public String getInitialMessage() { return initialMessage; }
+    public void setInitialMessage(String initialMessage) { this.initialMessage = initialMessage; }
 }

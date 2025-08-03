@@ -173,38 +173,17 @@ public class MemberController {
             return "redirect:/accessDenied"; 
         }
     }
-    
- // MemberController.java
+   
 
     @GetMapping("/mypage_taste")
     public String showTasteReport(HttpSession session, Model model) {
-        System.out.println("GET /mypage_taste - 취향 분석 리포트 페이지 요청");
-        
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember == null) {
-            return "redirect:/login"; // 로그인 안했으면 로그인 페이지로
+            return "redirect:/login";
         }
         String memberId = loginMember.getId();
-
-        // 1. tasteProfileService를 단 한 번만 호출합니다.
-        //    이 메소드는 내부적으로 DB 업데이트를 수행하고, 분석 결과를 DTO로 반환합니다.
         TasteReportDTO reportDTO = tasteProfileService.updateUserTasteProfile(memberId);
-
-        // 2. 서비스 호출 결과를 모델에 담습니다.
-        if (reportDTO != null) {
-            // 분석이 완료된 경우 (리뷰 5개 이상)
-            System.out.println("  > " + memberId + " 님의 정밀 분석 리포트를 생성했습니다.");
-            model.addAttribute("analysisComplete", true);
-            model.addAttribute("tasteReport", reportDTO);
-        } else {
-            // 분석 전인 경우 (리뷰 5개 미만)
-            System.out.println("  > " + memberId + " 님은 아직 리뷰가 부족하여 초기 안내를 표시합니다.");
-            // member 테이블에 저장된 초기 안내 메시지를 가져옵니다.
-            Member memberInfo = memberService.findById(memberId);
-            model.addAttribute("analysisComplete", false);
-            model.addAttribute("memberInfo", memberInfo);
-        }
-        
+        model.addAttribute("tasteReport", reportDTO);
         return "mypage_taste"; 
     }
 }

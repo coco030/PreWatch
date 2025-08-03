@@ -14,6 +14,10 @@ import org.springframework.stereotype.Repository;
 public class ActorRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    
+
+    // 8점 이상을 "높은 평점"의 기준으로 삼겠습니다.
+    private static final int HIGH_RATING_THRESHOLD = 8; 
 
     // 배우 이름(혹은 tmdb_id)로 이미 존재하는지 확인
     public Long findByNameOrInsert(String name, String profileImageUrl, Integer tmdbId) {
@@ -133,4 +137,85 @@ public class ActorRepository {
 
         System.out.println("[SUCCESS] 배우 정보 업데이트 완료: actorId=" + actorId);
     }
+
+
+
+
+    /**
+     * [취향 분석용] 특정 사용자가 평가한 영화에 가장 자주 등장한 '배우'의 정보를 조회합니다.
+     */
+    public Map<String, Object> findMostFrequentActorForMember(String memberId) {
+        String sql = "SELECT a.id, a.name, a.profile_image_url " +
+                     "FROM user_reviews ur " +
+                     "JOIN movie_actors ma ON ur.movie_id = ma.movie_id " +
+                     "JOIN actors a ON ma.actor_id = a.id " +
+                     "WHERE ur.member_id = ? AND ma.role_type = 'ACTOR' " +
+                     "GROUP BY a.id, a.name, a.profile_image_url " +
+                     "ORDER BY COUNT(ur.id) DESC, a.name ASC " +
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForMap(sql, memberId);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * [취향 분석용] 특정 사용자가 평가한 영화 중 가장 자주 등장한 '감독'의 정보를 조회합니다.
+     */
+    public Map<String, Object> findMostFrequentDirectorForMember(String memberId) {
+        String sql = "SELECT a.id, a.name, a.profile_image_url " +
+                     "FROM user_reviews ur " +
+                     "JOIN movie_actors ma ON ur.movie_id = ma.movie_id " +
+                     "JOIN actors a ON ma.actor_id = a.id " +
+                     "WHERE ur.member_id = ? AND (ma.role_type = 'DIRECTOR' OR ma.role_type = '감독') " +
+                     "GROUP BY a.id, a.name, a.profile_image_url " +
+                     "ORDER BY COUNT(ur.id) DESC, a.name ASC " +
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForMap(sql, memberId);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * [취향 분석용] 특정 사용자가 '높게 평가한' 영화에 가장 자주 등장한 '배우'의 정보를 조회합니다.
+     */
+    public Map<String, Object> findHighlyRatedActorForMember(String memberId) {
+        String sql = "SELECT a.id, a.name, a.profile_image_url " +
+                     "FROM user_reviews ur " +
+                     "JOIN movie_actors ma ON ur.movie_id = ma.movie_id " +
+                     "JOIN actors a ON ma.actor_id = a.id " +
+                     "WHERE ur.member_id = ? AND ur.user_rating >= ? AND ma.role_type = 'ACTOR' " +
+                     "GROUP BY a.id, a.name, a.profile_image_url " +
+                     "ORDER BY COUNT(ur.id) DESC, a.name ASC " +
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForMap(sql, memberId, HIGH_RATING_THRESHOLD);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * [취향 분석용] 특정 사용자가 '높게 평가한' 영화 중 가장 자주 등장한 '감독'의 정보를 조회합니다.
+     */
+    public Map<String, Object> findHighlyRatedDirectorForMember(String memberId) {
+        String sql = "SELECT a.id, a.name, a.profile_image_url " +
+                     "FROM user_reviews ur " +
+                     "JOIN movie_actors ma ON ur.movie_id = ma.movie_id " +
+                     "JOIN actors a ON ma.actor_id = a.id " +
+                     "WHERE ur.member_id = ? AND ur.user_rating >= ? AND (ma.role_type = 'DIRECTOR' OR ma.role_type = '감독') " +
+                     "GROUP BY a.id, a.name, a.profile_image_url " +
+                     "ORDER BY COUNT(ur.id) DESC, a.name ASC " +
+                     "LIMIT 1";
+        try {
+            return jdbcTemplate.queryForMap(sql, memberId, HIGH_RATING_THRESHOLD);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+
 }
