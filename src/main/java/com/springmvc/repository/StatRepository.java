@@ -123,7 +123,7 @@ public class StatRepository {
     // 유저 상세 프로필 
     public List<TasteAnalysisDataDTO> findTasteAnalysisData(String memberId) {
         String sql = "SELECT " +
-                     "    ur.movie_id AS movieId, " + // 이 부분이 DTO의 movieId 필드와 매핑됩니다.
+                     "    ur.movie_id AS movieId, " + // 이 부분이 DTO의 movieId 필드와 매핑
                      "    ur.user_rating AS myUserRating, " +
                      "    ur.violence_score AS myViolenceScore, " +
                      "    ur.horror_score AS myHorrorScore, " +
@@ -138,12 +138,9 @@ public class StatRepository {
                      "WHERE ur.member_id = :memberId AND ur.user_rating IS NOT NULL";
         
         Map<String, String> params = Collections.singletonMap("memberId", memberId);
-        
-        // BeanPropertyRowMapper가 DTO의 setter를 이용해 자동으로 값을 채워줍니다.
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
     }
-    
-    
+
     public List<StatDTO> findSimilarMoviesWithGenres(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -201,9 +198,6 @@ public class StatRepository {
         });
     }
 
-
-    
-    
     // 로그인 사용자를 위한 개선된 추천 쿼리 (가중치 반영)
     public List<StatDTO> findSimilarMoviesForLoggedInUser(
             double userRatingAvg,
@@ -286,10 +280,7 @@ public class StatRepository {
        });
     }
     
-    
-    
- // StatRepository.java 에 추가
-
+  
     public Map<String, Double> findGlobalAverageScores() {
         String sql = "SELECT " +
                      "  COALESCE(AVG(m.rating), 5.0) as avg_rating, " +
@@ -311,6 +302,134 @@ public class StatRepository {
             return averages;
         });
     }
+    
+    // 찜기능과 연계
+    public Map<Long, List<String>> findGenresByMovieIds(List<Long> movieIds) {
+        if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
+        
+        String sql = "SELECT movie_id, genre FROM movie_genres WHERE movie_id IN (:movieIds)";
+        Map<String, Object> params = Collections.singletonMap("movieIds", movieIds);
+
+        // ResultSetExtractor를 사용해 Map<MovieID, List<Genre>> 형태로 변환
+        return namedParameterJdbcTemplate.query(sql, params, rs -> {
+            Map<Long, List<String>> resultMap = new HashMap<>();
+            while (rs.next()) {
+                long movieId = rs.getLong("movie_id");
+                String genre = rs.getString("genre");
+                resultMap.computeIfAbsent(movieId, k -> new ArrayList<>()).add(genre);
+            }
+            return resultMap;
+        });
+               
+    }
+    
+//영화 ID 리스트를 받아, runtime의 평균을 계산
+    public Double findAverageRuntimeByMovieIds(List<Long> movieIds) {
+        if (movieIds == null || movieIds.isEmpty()) return 0.0;
+        
+        // DB에서는 runtime 문자열을 그대로 가져옵니다.
+        String sql = "SELECT runtime FROM movies WHERE id IN (:movieIds)";
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("movieIds", movieIds);
+        
+        // runtime 문자열 리스트를 가져옵니다.
+        List<String> runtimeStrings = namedParameterJdbcTemplate.queryForList(sql, params, String.class);
+        
+        if (runtimeStrings.isEmpty()) return 0.0;
+        
+        // Java 코드 내에서 숫자만 추출하여 평균을 계산합니다.
+        List<Integer> runtimes = new ArrayList<Integer>();
+        for (String runtimeStr : runtimeStrings) {
+            if (runtimeStr != null && !runtimeStr.isEmpty()) {
+                try {
+                    // 문자열에서 숫자 아닌 것을 모두 제거
+                    String numericStr = runtimeStr.replaceAll("[^0-9]", "");
+                    if (!numericStr.isEmpty()) {
+                        runtimes.add(Integer.parseInt(numericStr));
+                    }
+                } catch (NumberFormatException e) {
+                    // 숫자로 변환할 수 없는 경우, 로그를 남기고 무시
+                    System.out.println("[WARN] Runtime 포맷 변환 실패: " + runtimeStr);
+                }
+            }
+        }
+        
+        if (runtimes.isEmpty()) return 0.0;        
+        // 평균 계산
+        double sum = 0;
+        for (Integer time : runtimes) {
+            sum += time;
+        }        
+        return sum / runtimes.size();
+    }
+    
+//영화 ID 리스트를 받아, 등장하는 감독별로 영화 수를 카운트하여 맵으로 반환
+ public Map<String, Long> findDirectorCountsByMovieIds(List<Long> movieIds) {
+     if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
+
+     String sql = "SELECT a.name, COUNT(ma.movie_id) as count " +
+                  "FROM movie_actors ma JOIN actors a ON ma.actor_id = a.id " +
+                  "WHERE ma.movie_id IN (:movieIds) AND (ma.role_type = 'DIRECTOR' OR ma.role_type = '감독') " +
+                  "GROUP BY a.id, a.name";
+     Map<String, Object> params = new HashMap<String, Object>();
+     params.put("movieIds", movieIds);
+
+     return namedParameterJdbcTemplate.query(sql, params, new ResultSetExtractor<Map<String, Long>>() {
+         @Override
+         public Map<String, Long> extractData(ResultSet rs) throws SQLException {
+             Map<String, Long> directorCounts = new HashMap<String, Long>();
+             while (rs.next()) {
+                 directorCounts.put(rs.getString("name"), rs.getLong("count"));
+             }
+             return directorCounts;
+         }
+     });
+ }
+
+//영화 ID 리스트를 받아, 전체 평점(movies.rating)의 평균을 계산
+ public Double findAverageRatingByMovieIds(List<Long> movieIds) {
+     if (movieIds == null || movieIds.isEmpty()) return 0.0;
+     
+     String sql = "SELECT AVG(rating) FROM movies WHERE id IN (:movieIds)";
+     Map<String, Object> params = new HashMap<String, Object>();
+     params.put("movieIds", movieIds);
+     Double avg = namedParameterJdbcTemplate.queryForObject(sql, params, Double.class);
+     return avg == null ? 0.0 : avg;
+ }
+ 
+
+/**
+ * 영화 ID 리스트를 받아, 각 영화의 평점을 맵으로 반환합니다.
+ * @param movieIds 영화 ID 리스트
+ * @return Map<영화ID, 평점>
+ */
+public Map<Long, Double> findRatingsByMovieIds(List<Long> movieIds) {
+    if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
+    
+    String sql = "SELECT id, rating FROM movies WHERE id IN (:movieIds)";
+    Map<String, Object> params = new HashMap<String, Object>();
+    params.put("movieIds", movieIds);
+
+    return namedParameterJdbcTemplate.query(sql, params, new ResultSetExtractor<Map<Long, Double>>() {
+        @Override
+        public Map<Long, Double> extractData(ResultSet rs) throws SQLException {
+            Map<Long, Double> movieRatings = new HashMap<Long, Double>();
+            while (rs.next()) {
+                movieRatings.put(rs.getLong("id"), rs.getDouble("rating"));
+            }
+            return movieRatings;
+        }
+    });
+    
+    
+}
+
+public double findAverageActorBirthYearByMovieIds(List<Long> cartMovieIds) {
+	// TODO Auto-generated method stub
+	return 0;
+}
+
+
     
 }
 

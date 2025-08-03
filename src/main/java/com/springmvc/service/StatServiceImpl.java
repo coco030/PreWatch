@@ -198,7 +198,6 @@ public class StatServiceImpl implements StatService {
                     break;
             }
         }
-
         allFacts.sort(Comparator.comparingDouble(AnalyzedFact::getDifferenceScore).reversed());
         List<InsightMessage> finalInsights = new ArrayList<>();
         int max = 3;
@@ -227,15 +226,12 @@ public class StatServiceImpl implements StatService {
             double totalDiff = ratingDiff * 0.3 + violenceDiff * 0.3 + horrorDiff * 0.2 + sexualDiff * 0.2;
             totalDiffs.put(genre, totalDiff);
         }
-
         if (totalDiffs.isEmpty()) return facts;
-
         // 편차가 가장 큰 장르 찾기
         String outlierGenre = totalDiffs.entrySet().stream()
             .max(Map.Entry.comparingByValue())
             .map(Map.Entry::getKey)
             .orElse(null);
-
         double diffScore = totalDiffs.get(outlierGenre);
         if (outlierGenre != null && diffScore > 0.4) {
             String msg = String.format("이 영화는 '%s' 장르로 분류되었지만, 주요 평가 지표에서 평균과 큰 차이를 보입니다. 전형적인 %s 장르와는 다른 독특한 작품입니다.", outlierGenre, outlierGenre);
@@ -279,16 +275,14 @@ public class StatServiceImpl implements StatService {
             allowedRatings,
             movieId
         );
-
-        // ★★★★★★★★★★ 핵심 수정 부분 ★★★★★★★★★★
-        // 추천된 각 영화에 대해 장르 정보를 조회하고 DTO에 설정합니다.
+        // 추천된 각 영화에 대해 장르 정보를 조회하고 DTO에 설정
         for (StatDTO recommendedMovie : recommendedMovies) {
             List<String> movieGenres = statRepository.findGenresByMovieId(recommendedMovie.getMovieId());
             recommendedMovie.setGenres(movieGenres);
         }
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
-        return recommendedMovies; // 장르가 채워진 리스트를 반환
+
+        return recommendedMovies;
     }
     
     
@@ -364,21 +358,21 @@ public class StatServiceImpl implements StatService {
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
         
-        // 장르가 없다면 바로 종료 (기존 로직 유지)
+        // 장르가 없다면 바로 종료
         if (genres == null || genres.isEmpty()) {
             System.out.println("[DEBUG] 기준 영화의 장르 정보가 없습니다. 영화 추천을 종료합니다.");
             return Collections.emptyList();
         }
         stat.setGenres(genres);
 
-        // 유저의 취향과 편차를 반영한 점수 계산 (기존 로직 유지)
+        // 유저의 취향과 편차를 반영한 점수 계산
         Map<String, Double> userDeviationScores = calculateUserDeviationScores(memberId);
         double adjustedRating = stat.getUserRatingAvg() + userDeviationScores.getOrDefault("작품성", 0.0) * 0.5;
         double adjustedViolence = stat.getViolenceScoreAvg() + userDeviationScores.getOrDefault("액션", 0.0) * 0.5;
         double adjustedHorror = stat.getHorrorScoreAvg() + userDeviationScores.getOrDefault("스릴", 0.0) * 0.5;
         double adjustedSexual = stat.getSexualScoreAvg() + userDeviationScores.getOrDefault("감성", 0.0) * 0.5;
 
-        // 0~10 범위 제한 (기존 로직 유지)
+        // 0~10 범위 제한 
         adjustedRating = Math.max(0, Math.min(10, adjustedRating));
         adjustedViolence = Math.max(0, Math.min(10, adjustedViolence));
         adjustedHorror = Math.max(0, Math.min(10, adjustedHorror));
@@ -398,27 +392,15 @@ public class StatServiceImpl implements StatService {
             userDeviationScores
         );
 
-        // ★★★★★★★★★★ 핵심 수정 부분 ★★★★★★★★★★
-        // 추천된 각 영화에 대해 장르 정보를 조회하고 DTO에 설정합니다.
         for (StatDTO recommendedMovie : recommendedMovies) {
-            // 추천된 영화의 ID를 사용하여 장르 목록을 조회합니다.
             List<String> movieGenres = statRepository.findGenresByMovieId(recommendedMovie.getMovieId());
-            // 조회된 장르 목록을 DTO에 설정합니다.
             recommendedMovie.setGenres(movieGenres);
         }
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-
-
-        // 이제 장르가 포함된 추천 영화 리스트가 완성되었습니다.
         System.out.println("[DEBUG] 최종 추천된 영화 (장르 포함): " + recommendedMovies);
-
-        // 각 추천 영화의 장르를 확인하고 출력
         for (StatDTO recommendedMovie : recommendedMovies) {
-            // 이제 장르가 정상적으로 출력됩니다.
             System.out.println("[DEBUG] 추천 영화 ID: " + recommendedMovie.getMovieId() + " 장르: " + recommendedMovie.getGenres());
         }
-
-        return recommendedMovies; // 장르가 채워진 리스트를 반환
+        return recommendedMovies; 
     }
 
 
@@ -444,7 +426,7 @@ public class StatServiceImpl implements StatService {
         List<Double> sexualDeviations = new ArrayList<>();
 
         System.out.println("\n[STEP 2] 각 영화별 '개인 점수 - 장르 평균 점수' 편차 계산 시작...");
-        // 2. 사용자가 리뷰한 각 영화를 순회하며 편차를 계산합니다.
+        // 2. 사용자가 리뷰한 각 영화를 순회하며 편차를 계산
         for (TasteAnalysisDataDTO review : reviewedMovies) {
             Long movieId = review.getMovieId();
             List<String> genres = statRepository.findGenresByMovieId(movieId);
@@ -482,7 +464,7 @@ public class StatServiceImpl implements StatService {
             }
         }
 
-        // 4. 계산된 편차들의 평균을 내어 사용자의 최종 취향 점수로 확정합니다.
+        // 4. 계산된 편차들의 평균을 내어 사용자의 최종 취향 점수로 확정
         Map<String, Double> finalDeviationScores = new HashMap<>();
         finalDeviationScores.put("작품성", calculateAverage(ratingDeviations, "작품성"));
         finalDeviationScores.put("액션", calculateAverage(violenceDeviations, "액션"));

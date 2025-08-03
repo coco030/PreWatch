@@ -1,22 +1,27 @@
 package com.springmvc.repository;
 
 import java.sql.PreparedStatement;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class ActorRepository {
+	@Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     @Autowired
     private JdbcTemplate jdbcTemplate;
     
 
-    // 8점 이상을 "높은 평점"의 기준으로 삼겠습니다.
+    // 8점 이상을 "높은 평점"의 기준
     private static final int HIGH_RATING_THRESHOLD = 8; 
 
     // 배우 이름(혹은 tmdb_id)로 이미 존재하는지 확인
@@ -141,9 +146,7 @@ public class ActorRepository {
 
 
 
-    /**
-     * [취향 분석용] 특정 사용자가 평가한 영화에 가장 자주 등장한 '배우'의 정보를 조회합니다.
-     */
+  //[취향 분석용] 특정 사용자가 평가한 영화에 가장 자주 등장한 '배우'의 정보를 조회
     public Map<String, Object> findMostFrequentActorForMember(String memberId) {
         String sql = "SELECT a.id, a.name, a.profile_image_url " +
                      "FROM user_reviews ur " +
@@ -160,9 +163,7 @@ public class ActorRepository {
         }
     }
 
-    /**
-     * [취향 분석용] 특정 사용자가 평가한 영화 중 가장 자주 등장한 '감독'의 정보를 조회합니다.
-     */
+//[취향 분석용] 특정 사용자가 평가한 영화 중 가장 자주 등장한 '감독'의 정보를 조회
     public Map<String, Object> findMostFrequentDirectorForMember(String memberId) {
         String sql = "SELECT a.id, a.name, a.profile_image_url " +
                      "FROM user_reviews ur " +
@@ -179,9 +180,7 @@ public class ActorRepository {
         }
     }
 
-    /**
-     * [취향 분석용] 특정 사용자가 '높게 평가한' 영화에 가장 자주 등장한 '배우'의 정보를 조회합니다.
-     */
+//[취향 분석용] 특정 사용자가 '높게 평가한' 영화에 가장 자주 등장한 '배우'의 정보를 조회
     public Map<String, Object> findHighlyRatedActorForMember(String memberId) {
         String sql = "SELECT a.id, a.name, a.profile_image_url " +
                      "FROM user_reviews ur " +
@@ -216,6 +215,25 @@ public class ActorRepository {
             return null;
         }
     }
+    
+    //찜기능과 연계
+    public Map<String, Long> findDirectorCountsByMovieIds(List<Long> movieIds) {
+        if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
 
+        String sql = "SELECT a.name, COUNT(ma.movie_id) as count " +
+                     "FROM movie_actors ma JOIN actors a ON ma.actor_id = a.id " +
+                     "WHERE ma.movie_id IN (:movieIds) AND (ma.role_type = 'DIRECTOR' OR ma.role_type = '감독') " +
+                     "GROUP BY a.id, a.name";
+        Map<String, Object> params = Collections.singletonMap("movieIds", movieIds);
 
+        // 결과는 Map<감독이름, 출연횟수>
+        return namedParameterJdbcTemplate.query(sql, params, rs -> {
+            Map<String, Long> directorCounts = new HashMap<>();
+            while (rs.next()) {
+                directorCounts.put(rs.getString("name"), rs.getLong("count"));
+            }
+            return directorCounts;
+        });
+
+    }
 }

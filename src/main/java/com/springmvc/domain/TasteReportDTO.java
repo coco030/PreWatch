@@ -2,10 +2,8 @@ package com.springmvc.domain;
 
 import java.util.List;
 
-/**
- * 사용자의 취향 분석 리포트 전체를 담는 최상위 DTO입니다.
- * 리포트의 각 섹션은 내부 클래스로 구조화되어 있습니다.
- */
+//사용자의 취향 분석 리포트 전체를 담는 최상위 DTO
+
 public class TasteReportDTO {
 
     // --- 리포트의 주요 섹션들 ---
@@ -16,6 +14,7 @@ public class TasteReportDTO {
     private Preferences preferences;
     private String activityPattern;
     private Recommendation recommendation;
+    private PotentialDesire potentialDesire;
 
     // --- 분석 전/후 상태를 관리하는 필드 ---
     private boolean isInitialReport = false;
@@ -26,12 +25,20 @@ public class TasteReportDTO {
     public static class Keywords {
         private List<String> topGenres;
         private String style;
-        // Getters & Setters
+
         public List<String> getTopGenres() { return topGenres; }
         public void setTopGenres(List<String> topGenres) { this.topGenres = topGenres; }
+
         public String getStyle() { return style; }
         public void setStyle(String style) { this.style = style; }
+
+
+   
     }
+
+    private String styleDescription;
+    public String getStyleDescription() { return styleDescription; }
+    public void setStyleDescription(String styleDescription) { this.styleDescription = styleDescription; }
 
     public static class Analysis {
         private List<String> strengths;
@@ -63,7 +70,7 @@ public class TasteReportDTO {
         private Person mostReviewedDirector;
         private Person highlyRatedDirector;
         
-        // --- 모든 필드에 대한 Getter & Setter ---
+
         public Person getMostReviewedActor() { return mostReviewedActor; }
         public void setMostReviewedActor(Person mostReviewedActor) { this.mostReviewedActor = mostReviewedActor; }
         public Person getHighlyRatedActor() { return highlyRatedActor; }
@@ -77,7 +84,7 @@ public class TasteReportDTO {
     public static class Preferences {
         private String preferredYear;
         private String preferredRuntime;
-        // Getters & Setters
+
         public String getPreferredYear() { return preferredYear; }
         public void setPreferredYear(String preferredYear) { this.preferredYear = preferredYear; }
         public String getPreferredRuntime() { return preferredRuntime; }
@@ -123,4 +130,36 @@ public class TasteReportDTO {
     public void setInitialReport(boolean isInitialReport) { this.isInitialReport = isInitialReport; }
     public String getInitialMessage() { return initialMessage; }
     public void setInitialMessage(String initialMessage) { this.initialMessage = initialMessage; }
-}
+    
+    
+
+   
+
+    // 찜 기능과 연관된 분석 
+    public PotentialDesire getPotentialDesire() { return potentialDesire; }
+    public void setPotentialDesire(PotentialDesire potentialDesire) { this.potentialDesire = potentialDesire; }
+
+    public static class PotentialDesire {
+        private String title;
+        private String message;
+        private int priority;
+        
+        public PotentialDesire(String title, String message, int priority) {
+            this.title = title;
+            this.message = message;
+            this.priority = priority;
+        }
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        
+        public int getPriority() { return priority; }
+		public void setPriority(int priority) {
+			this.priority = priority;
+		  }
+
+		}
+        
+        
+    }

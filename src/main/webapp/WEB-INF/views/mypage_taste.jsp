@@ -292,88 +292,110 @@
                         <div class="taste-title-section">
                             <h2 class="taste-title">"${tasteReport.title}"</h2>
                         </div>
-
-                        <div class="row g-4 p-4">
-                            <!-- Keywords Section -->
-                            <div class="col-12">
-                                <div class="section-card fade-in">
-                                    <div class="section-header">
-                                        <h3 class="section-title">
-                                            <i class="bi bi-tags-fill text-primary"></i>
-                                            당신의 취향 키워드
-                                        </h3>
+                        <!-- ✨ 종합 분석 카드 START ✨ -->
+                        <div class="col-12">
+                            <div class="section-card fade-in">
+                                <div class="section-header">
+                                    <h3 class="section-title">
+                                        <i class="bi bi-clipboard-data text-success"></i>
+                                        종합 취향 분석
+                                    </h3>
+                                </div>
+                                <div class="section-content">
+                                    
+                                    <!-- 1. 취향 키워드 (내부 섹션) -->
+                                    <h5 class="gradient-text mb-3">
+                                        <i class="bi bi-tags-fill me-2"></i>당신의 취향 키워드
+                                    </h5>
+                                    <p class="mb-3 text-muted">가장 자주 선택하고 높은 평점을 준 장르와 스타일입니다.</p>
+                                    <div class="keyword-container">
+                                        <c:forEach var="genre" items="${tasteReport.keywords.topGenres}">
+                                            <span class="keyword">#${genre}</span>
+                                        </c:forEach>
+                                        <span class="keyword">${tasteReport.keywords.style}</span>
                                     </div>
-                                    <div class="section-content">
-                                        <p class="mb-3 text-muted">가장 자주 선택하고 높은 평점을 준 장르와 스타일입니다.</p>
-                                        <div class="keyword-container">
-                                            <c:forEach var="genre" items="${tasteReport.keywords.topGenres}">
-                                                <span class="keyword">#${genre}</span>
+                                    <c:if test="${not empty tasteReport.styleDescription}">
+						                <p class="mt-3 text-muted fst-italic">
+						                    ${tasteReport.styleDescription}
+						                </p>
+						            </c:if>
+
+                                    <hr class="my-4">
+
+                                    <!-- 2. 상세 취향 분석 (내부 섹션) -->
+                                    <h5 class="gradient-text mb-3">
+                                        <i class="bi bi-graph-up me-2"></i>상세 분석
+                                    </h5>
+                                    <c:if test="${not empty tasteReport.analysis.strengths}">
+                                        <p class="fs-6"><i class="bi bi-check-circle-fill text-primary me-2"></i>당신은 일반 관객보다 
+                                            <c:forEach var="s" items="${tasteReport.analysis.strengths}" varStatus="status">
+                                                <span class="badge-custom">${s}</span><c:if test="${not status.last}">, </c:if>
                                             </c:forEach>
-                                            <span class="keyword">${tasteReport.keywords.style}</span>
+                                            요소가 강한 영화에서 큰 만족감을 얻습니다.
+                                        </p>
+                                    </c:if>
+                                    
+                                    <c:if test="${not empty tasteReport.analysis.weaknesses}">
+                                        <p class="fs-6 mt-2"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> 
+                                            <c:forEach var="w" items="${tasteReport.analysis.weaknesses}" varStatus="status">
+                                                <span class="badge text-bg-warning">${w}</span><c:if test="${not status.last}">, </c:if>
+                                            </c:forEach>
+                                            요소가 두드러지는 영화는 불편하게 느낄 수 있으니 참고하세요.
+                                        </p>
+                                    </c:if>
+                                    
+                                    <c:if test="${empty tasteReport.analysis.strengths and empty tasteReport.analysis.weaknesses}">
+                                        <p class="fs-6"><i class="bi bi-balance-scale text-info me-2"></i>모든 요소를 고르게 즐기는 균형잡힌 시각을 가졌습니다. 뚜렷한 호불호보다는 영화의 전체적인 완성도를 중요하게 생각합니다.</p>
+                                    </c:if>
+                                    
+                                    <c:if test="${not empty tasteReport.analysis.specialInsight}">
+                                        <div class="alert alert-info border-0 mt-4" style="background: linear-gradient(135deg, #17a2b810 0%, #17a2b820 100%);">
+                                            <h5 class="alert-heading fs-6 fw-bold">
+                                                <i class="bi bi-lightbulb-fill me-2"></i>특별한 발견
+                                            </h5>
+                                            <p class="mb-0">${tasteReport.analysis.specialInsight}</p>
                                         </div>
-                                    </div>
+                                    </c:if>
                                 </div>
                             </div>
-
-                            <!-- Analysis Section -->
+                        </div>
+                        <!-- ✨ 종합 분석 카드 END ✨ -->
+                            
+                            <!-- Preferences Section -->
                             <div class="col-12">
                                 <div class="section-card fade-in">
                                     <div class="section-header">
                                         <h3 class="section-title">
-                                            <i class="bi bi-graph-up text-success"></i>
-                                            상세 취향 분석
+                                            <i class="bi bi-gear-fill text-warning"></i>
+                                            당신의 영화 선택 패턴
                                         </h3>
                                     </div>
                                     <div class="section-content">
-                                        <c:if test="${not empty tasteReport.analysis.strengths}">
-                                            <div class="mb-4">
-                                                <h5 class="gradient-text mb-3">
-                                                    <i class="bi bi-check-circle-fill me-2"></i>강점
-                                                </h5>
-                                                <p class="fs-6">당신은 일반 관객보다 
-                                                    <c:forEach var="s" items="${tasteReport.analysis.strengths}" varStatus="status">
-                                                        <span class="badge-custom">${s}</span><c:if test="${not status.last}">, </c:if>
-                                                    </c:forEach>
-                                                    요소가 강한 영화에서 큰 만족감을 얻습니다.
-                                                </p>
-                                            </div>
-                                        </c:if>
-                                        
-                                        <c:if test="${not empty tasteReport.analysis.weaknesses}">
-                                            <div class="mb-4">
-                                                <h5 class="text-warning mb-3">
-                                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>주의
-                                                </h5>
-                                                <p class="fs-6">
-                                                    <c:forEach var="w" items="${tasteReport.analysis.weaknesses}" varStatus="status">
-                                                        <span class="badge text-bg-warning">${w}</span><c:if test="${not status.last}">, </c:if>
-                                                    </c:forEach>
-                                                    요소가 두드러지는 영화는 불편하게 느낄 수 있으니 참고하세요.
-                                                </p>
-                                            </div>
-                                        </c:if>
-                                        
-                                        <c:if test="${empty tasteReport.analysis.strengths and empty tasteReport.analysis.weaknesses}">
-                                            <div class="mb-4">
-                                                <h5 class="text-info mb-3">
-                                                    <i class="bi bi-balance-scale me-2"></i>균형잡힌 취향
-                                                </h5>
-                                                <p class="fs-6">모든 요소를 고르게 즐기는 균형잡힌 시각을 가졌습니다. 뚜렷한 호불호보다는 영화의 전체적인 완성도를 중요하게 생각합니다.</p>
-                                            </div>
-                                        </c:if>
-                                        
-                                        <c:if test="${not empty tasteReport.analysis.specialInsight}">
-                                            <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #17a2b810 0%, #17a2b820 100%);">
-                                                <h5 class="alert-heading">
-                                                    <i class="bi bi-lightbulb-fill me-2"></i>특별한 발견
-                                                </h5>
-                                                <p class="mb-0">${tasteReport.analysis.specialInsight}</p>
-                                            </div>
-                                        </c:if>
+                                        <p class="mb-4 text-muted">평점과 선택 빈도를 바탕으로 분석한 선호 패턴입니다.</p>
+                                        <ul class="preference-list">
+                                            <c:if test="${not empty tasteReport.preferences.preferredYear}">
+                                                <li class="preference-item">
+                                                    <i class="bi bi-calendar-event me-3 text-primary"></i>
+                                                    <strong>선호 시대:</strong> <span class="gradient-text">${tasteReport.preferences.preferredYear}</span>
+                                                </li>
+                                            </c:if>
+                                            <c:if test="${not empty tasteReport.preferences.preferredRuntime}">
+                                                <li class="preference-item">
+                                                    <i class="bi bi-clock me-3 text-primary"></i>
+                                                    <strong>선호 길이:</strong> <span class="gradient-text">${tasteReport.preferences.preferredRuntime}</span>
+                                                </li>
+                                            </c:if>
+                                            <c:if test="${not empty tasteReport.activityPattern}">
+                                                <li class="preference-item">
+                                                    <i class="bi bi-graph-up me-3 text-primary"></i>
+                                                    <strong>감상 패턴:</strong> ${tasteReport.activityPattern}.
+                                                </li>
+                                            </c:if>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <!-- Frequent Persons Section -->
                             <div class="col-12">
                                 <div class="section-card fade-in">
@@ -495,40 +517,25 @@
                                 </div>
                             </div>
 
-                            <!-- Preferences Section -->
-                            <div class="col-12">
-                                <div class="section-card fade-in">
-                                    <div class="section-header">
-                                        <h3 class="section-title">
-                                            <i class="bi bi-gear-fill text-warning"></i>
-                                            당신의 영화 선택 패턴
-                                        </h3>
-                                    </div>
-                                    <div class="section-content">
-                                        <p class="mb-4 text-muted">평점과 선택 빈도를 바탕으로 분석한 선호 패턴입니다.</p>
-                                        <ul class="preference-list">
-                                            <c:if test="${not empty tasteReport.preferences.preferredYear}">
-                                                <li class="preference-item">
-                                                    <i class="bi bi-calendar-event me-3 text-primary"></i>
-                                                    <strong>선호 시대:</strong> <span class="gradient-text">${tasteReport.preferences.preferredYear}</span>에 대한 선호도가 높습니다.
-                                                </li>
-                                            </c:if>
-                                            <c:if test="${not empty tasteReport.preferences.preferredRuntime}">
-                                                <li class="preference-item">
-                                                    <i class="bi bi-clock me-3 text-primary"></i>
-                                                    <strong>선호 길이:</strong> <span class="gradient-text">${tasteReport.preferences.preferredRuntime}</span>에 깊게 몰입하는 경향이 있습니다.
-                                                </li>
-                                            </c:if>
-                                            <c:if test="${not empty tasteReport.activityPattern}">
-                                                <li class="preference-item">
-                                                    <i class="bi bi-graph-up me-3 text-primary"></i>
-                                                    <strong>감상 패턴:</strong> ${tasteReport.activityPattern}.
-                                                </li>
-                                            </c:if>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
+                            
+                            <!-- Wishlist 활용한 분석 -->
+                         <c:if test="${not empty tasteReport.potentialDesire}">
+						    <div class="col-12">
+						        <a href="${pageContext.request.contextPath}/member/wishlist" style="text-decoration: none; color: inherit;">
+						            <div class="section-card fade-in">
+						                <div class="section-header" style="background: linear-gradient(135deg, #f0f3ff 0%, #e6e9f0 100%);">
+						                    <h3 class="section-title">
+						                        <i class="bi bi-compass text-primary"></i>
+						                        당신의 숨겨진 취향 나침반
+						                    </h3>
+						                </div>
+						                <div class="section-content">
+						                    <c:out value="${tasteReport.potentialDesire.message}" escapeXml="false" />
+						                </div>
+						            </div>
+						        </a>
+						    </div>
+						</c:if>
 
                             <!-- Recommendations Section -->
                             <div class="col-12">
@@ -564,9 +571,9 @@
                                 </div>
                             </div>
                         </div>
-
                     </c:when>
                     <c:otherwise>
+                    
                         <!-- Initial State -->
                         <div class="taste-title-section">
                             <h2 class="taste-title">"${tasteReport.title}"</h2>

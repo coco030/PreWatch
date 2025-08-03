@@ -536,4 +536,9 @@ public class UserReviewRepository {
             }, memberId, HIGH_RATING_THRESHOLD);
         } catch (org.springframework.dao.EmptyResultDataAccessException e) { return new HashMap<>(); }
     }
+    
+    public List<Long> findMovieIdsByMemberId(String memberId) {
+        String sql = "SELECT movie_id FROM user_reviews WHERE member_id = ?";
+        return jdbcTemplate.queryForList(sql, Long.class, memberId);
+    }
 }
