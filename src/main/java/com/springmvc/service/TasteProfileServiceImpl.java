@@ -1,9 +1,11 @@
 package com.springmvc.service;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,184 +23,172 @@ public class TasteProfileServiceImpl implements TasteProfileService {
     @Autowired
     private MemberRepository memberRepository;
     
+    @Autowired
+    private StatService statService;
+    
     @Override
     public void updateUserTasteProfile(String memberId) {
         List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
-        if (reviewedMovies.isEmpty()) {
-            memberRepository.updateTasteProfile(memberId, "취향 탐색 중", "아직 평가한 영화가 없네요. 첫 평가를 남겨 당신의 취향을 알려주세요!", 0.0);
+        
+        if (reviewedMovies == null || reviewedMovies.size() < 5) {
+            memberRepository.updateTasteProfile(memberId, "취향 탐색 중...", "아직 평가가 부족해요. 5편 이상의 영화를 평가하면 당신만의 취향 리포트가 생성됩니다.", 0.0);
             return;
         }
 
-        // 평균 계산
-        double ratingAvg = calculateWeightedAverage(reviewedMovies, "rating");
-        double violenceAvg = calculateWeightedAverage(reviewedMovies, "violence");
-        double horrorAvg = calculateWeightedAverage(reviewedMovies, "horror");
-        double sexualAvg = calculateWeightedAverage(reviewedMovies, "sexual");
-
-        double violenceStdDev = calculateWeightedStandardDeviation(reviewedMovies, "violence", violenceAvg);
-        double horrorStdDev = calculateWeightedStandardDeviation(reviewedMovies, "horror", horrorAvg);
-        double sexualStdDev = calculateWeightedStandardDeviation(reviewedMovies, "sexual", sexualAvg);
-
-        double anomalyScore = calculateInternalAnomalyScore(
-            ratingAvg, violenceAvg, horrorAvg, sexualAvg,
-            violenceStdDev, horrorStdDev, sexualStdDev
-        );
-
-        String keywordAlias = createKeywordAlias(
-            ratingAvg, violenceAvg, horrorAvg, sexualAvg,
-            violenceStdDev, horrorStdDev, sexualStdDev
-        );
-
-        String finalTitle = "";
-        String finalReport = "";
-
-        if (reviewedMovies.size() < 5) {
-            finalTitle = "취향을 알아가는 중인 감상가";
-            String base = "정확한 결과를 위해 당신의 취향을 파악 중입니다. 더 많은 평가를 남겨 주세요.";
-            String encouragement = createInitialComment(reviewedMovies);
-            finalReport = encouragement + " " + base;
-        } else {
-            finalTitle = createFinalTitle(keywordAlias, anomalyScore);
-            finalReport = createFinalReport(keywordAlias, anomalyScore);
-        }
-
+        Map<String, Double> deviationScores = statService.calculateUserDeviationScores(memberId);
+        List<String> topGenres = findTopGenres(reviewedMovies, 1); // Top 1 장르만 사용
+        
+        String finalTitle = createCoreTitle(deviationScores, topGenres);
+        String finalReport = createCoreReport(deviationScores, topGenres);
+        
+        double anomalyScore = deviationScores.values().stream().mapToDouble(Math::abs).sum();
         memberRepository.updateTasteProfile(memberId, finalTitle, finalReport, anomalyScore);
     }
 
-
     @Override
     public Map<String, Double> getTasteScores(String memberId) {
-        List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
+        return statService.calculateUserDeviationScores(memberId);
+    }
+
+    /**
+     * [최종 단순화 버전] 가장 핵심적인 키워드만으로 타이틀을 생성합니다.
+     */
+    private String createCoreTitle(Map<String, Double> deviationScores, List<String> topGenres) {
+        // 1. 가장 편차가 큰 '핵심 취향'을 찾습니다.
+        Map.Entry<String, Double> coreTasteEntry = deviationScores.entrySet().stream()
+                .max(Comparator.comparing(entry -> Math.abs(entry.getValue())))
+                .filter(entry -> Math.abs(entry.getValue()) > 1.2) // 편차가 1.2 이상일 때만 의미있다고 판단
+                .orElse(null);
+
+        String topGenre = topGenres.isEmpty() ? "다양한 장르의" : topGenres.get(0);
+
+        // 2. '핵심 취향'이 있다면, 그것이 가장 중요한 정체성입니다.
+        if (coreTasteEntry != null) {
+            String coreTaste = coreTasteEntry.getKey();
+            // 예시: "작품성 중심의 감상가", "액션을 선호하는 시네필"
+            return String.format("%s 중심의 %s 전문가", coreTaste, topGenre);
+        }
         
-        if (reviewedMovies.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, Double> scores = new HashMap<>();
-        scores.put("작품성", calculateWeightedAverage(reviewedMovies, "rating"));
-        scores.put("액션", calculateWeightedAverage(reviewedMovies, "violence"));
-        scores.put("스릴", calculateWeightedAverage(reviewedMovies, "horror"));
-        scores.put("감성", calculateWeightedAverage(reviewedMovies, "sexual"));
-        return scores;
-    }
-    
-    // --- 이하 모든 헬퍼(private) 메소드들은 수정 없이 그대로 유지 ---
-    private double calculateWeightedAverage(List<TasteAnalysisDataDTO> reviewedMovies, String scoreType) {
-        double weightedSum = 0.0;
-        double totalWeight = 0.0;
-        for (TasteAnalysisDataDTO movie : reviewedMovies) {
-            Double movieScore = getScoreByType(movie, scoreType);
-            Integer myRating = movie.getMyUserRating();
-            if (movieScore == null || myRating == null) continue;
-            double myRatingWeight = myRating / 10.0;
-            weightedSum += movieScore * myRatingWeight;
-            totalWeight += myRatingWeight;
-        }
-        return (totalWeight > 0) ? (weightedSum / totalWeight) : 0.0;
+        // 3. '핵심 취향'이 없다면, 대표 장르가 정체성입니다.
+        // 예시: "스릴러 장르의 애호가"
+        return String.format("%s 장르의 애호가", topGenre);
     }
 
-    private double calculateWeightedStandardDeviation(List<TasteAnalysisDataDTO> reviewedMovies, String scoreType, double weightedMean) {
-        double weightedVarianceSum = 0.0;
-        double totalWeight = 0.0;
-        for (TasteAnalysisDataDTO movie : reviewedMovies) {
-            Double movieScore = getScoreByType(movie, scoreType);
-            Integer myRating = movie.getMyUserRating();
-            if (movieScore == null || myRating == null) continue;
-            double myRatingWeight = myRating / 10.0;
-            weightedVarianceSum += myRatingWeight * Math.pow(movieScore - weightedMean, 2);
-            totalWeight += myRatingWeight;
-        }
-        return (totalWeight > 0) ? Math.sqrt(weightedVarianceSum / totalWeight) : 0.0;
-    }
-    
-    private Double getScoreByType(TasteAnalysisDataDTO movie, String scoreType) {
-        switch (scoreType) {
-            case "rating":   return movie.getMovieAvgRating();
-            case "violence": return movie.getMovieAvgViolence();
-            case "horror":   return movie.getMovieAvgHorror();
-            case "sexual":   return movie.getMovieAvgSexual();
-            default:         return 0.0;
-        }
-    }
-    
-    private double calculateInternalAnomalyScore(double rAvg, double vAvg, double hAvg, double sAvg,
-                                                   double vStd, double hStd, double sStd) {
-        double extremity = Math.abs(rAvg - 5.0) + Math.abs(vAvg - 5.0) + Math.abs(hAvg - 5.0) + Math.abs(sAvg - 5.0);
-        double diversity = vStd + hStd + sStd;
-        return extremity + diversity;
-    }
 
-    private String createKeywordAlias(double rating, double violence, double horror, double sexual,
-            double stdDevV, double stdDevH, double stdDevS) {
-			Map<String, Double> coreTastes = Map.of("작품성", rating, "액션", violence, "스릴", horror, "감성", sexual);
-			String coreTaste = coreTastes.entrySet().stream()
-			       .max(Map.Entry.comparingByValue())
-			       .map(Map.Entry::getKey)
-			       .orElse("드라마");
-			String userType = "애호가";
-			double totalStdDev = stdDevV + stdDevH + stdDevS;
-			if (totalStdDev > 7.0) userType = "탐험가";
-			else if (totalStdDev < 3.0) userType = "수집가";
-			else if (rating > 7.5) userType = "감식가";
-			String modifier = "균형잡힌";
-			if (rating > 8.0) modifier = "확고한 작품성의";
-			else if (violence > 6.0 && sexual < 3.0) modifier = "절제된 카타르시스의";
-			else if (totalStdDev > 7.0) modifier = "경계를 넘나드는";
-			
-			// coreTaste가 '작품성'이면, '작품성의'로 시작하지 않도록 수정
-			if ("작품성".equals(coreTaste)) {
-			return modifier + " " + userType;
-			} else {
-			return modifier + " " + coreTaste + " " + userType;
-			}
-}
+    /**
+     * [최종 단순화 버전] 사용자가 이해하기 쉬운 실용적인 정보만으로 리포트를 구성합니다.
+     */
+    private String createCoreReport(Map<String, Double> deviationScores, List<String> topGenres) {
+        StringBuilder report = new StringBuilder();
 
+        // 1. 강점: 당신이 남들보다 더 좋아하는 것
+        report.append("<p><strong>👍 당신의 강점</strong><br>");
+        List<String> strengths = deviationScores.entrySet().stream()
+                .filter(e -> e.getValue() > 1.0)
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
 
-    private String createFinalTitle(String keywordAlias, double anomalyScore) {
-        String rarityModifier = "균형잡힌 시각의";
-        if (anomalyScore > 20) rarityModifier = "극소수만이 공유하는";
-        else if (anomalyScore > 15) rarityModifier = "희소성 있는 취향의";
-        else if (anomalyScore > 10) rarityModifier = "뚜렷한 개성을 지닌";
-        return rarityModifier + " " + keywordAlias;
-    }
-    
-    private String createFinalReport(String keywordAlias, double anomalyScore) {
-        String rarityDescription;
-        if (anomalyScore > 20) {
-            rarityDescription = "당신의 취향은 매우 뚜렷한 개성을 가지고 있어, 다른 사람들과는 확연히 구분되는 자신만의 영화 세계를 구축하셨습니다.";
-        } else if (anomalyScore > 10) {
-            rarityDescription = "선호하는 장르와 스타일에 대한 자신만의 기준이 명확하여, 꾸준히 만족스러운 영화적 경험을 쌓아가고 있습니다.";
+        if (strengths.isEmpty()) {
+            report.append("• 특정 요소에 치우치지 않는 균형 잡힌 시각을 가졌습니다.");
         } else {
-            rarityDescription = "다양한 장르와 스타일에 열려 있어, 폭넓은 영화 세계를 편견 없이 즐기는 경향이 있습니다.";
+            report.append(String.format("• 당신은 특히 <strong>%s</strong> 요소가 강한 영화에서 큰 만족을 느낍니다.", String.join(", ", strengths)));
         }
-        return String.format("당신은 '%s'입니다. %s", keywordAlias, rarityDescription);
+        report.append("</p>");
+
+        // 2. 주의점: 당신이 남들보다 더 싫어할 수 있는 것
+        report.append("<p><strong>⚠️ 주의할 점</strong><br>");
+        List<String> weaknesses = deviationScores.entrySet().stream()
+                .filter(e -> e.getValue() < -1.0)
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        if (weaknesses.isEmpty()) {
+            report.append("• 특별히 기피하는 요소는 없으며, 다양한 영화를 편견 없이 즐길 수 있습니다.");
+        } else {
+            report.append(String.format("• <strong>%s</strong> 요소가 두드러지는 영화는 다른 사람들보다 불편하게 느낄 수 있으니 참고하세요.", String.join(", ", weaknesses)));
+        }
+        report.append("</p>");
+
+        // 3. 추천 가이드: 그래서 다음 영화는?
+        report.append("<p><strong>💡 다음 영화 선택 가이드</strong><br>");
+        if (!topGenres.isEmpty()) {
+            String topGenre = topGenres.get(0);
+            if (!strengths.isEmpty()) {
+                report.append(String.format("• <strong>%s</strong> 장르 중에서 <strong>%s</strong>(이)가 뛰어난 작품을 찾아보세요. 최고의 선택이 될 겁니다.", topGenre, strengths.get(0)));
+            } else {
+                report.append(String.format("• <strong>%s</strong> 장르의 높은 평점을 받은 명작들을 감상하며 당신의 다음 '강점'을 발견해보는 건 어떨까요?", topGenre));
+            }
+        } else {
+            report.append("• 아직 당신의 대표 장르를 찾고 있습니다. 다양한 장르의 명작들을 감상하며 취향의 지도를 넓혀보세요.");
+        }
+        report.append("</p>");
+        
+        return report.toString();
+    }
+    
+
+    /**
+     * [추가된 헬퍼 메소드] 사용자가 리뷰한 영화들을 기반으로 가장 많이 본 장르 Top N을 찾습니다.
+     */
+    private List<String> findTopGenres(List<TasteAnalysisDataDTO> reviews, int limit) {
+        Map<String, Integer> genreCounts = new HashMap<>();
+        for (TasteAnalysisDataDTO review : reviews) {
+            // review 객체에서 movieId를 가져와야 합니다.
+            if(review.getMovieId() == null) continue;
+            List<String> genres = statRepository.findGenresByMovieId(review.getMovieId());
+            for (String genre : genres) {
+                genreCounts.put(genre, genreCounts.getOrDefault(genre, 0) + 1);
+            }
+        }
+        return genreCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(limit)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
-    private String createInitialComment(List<TasteAnalysisDataDTO> reviewedMovies) {
-        int size = reviewedMovies.size();
-        String stageMessage = "";
-        switch (size) {
-            case 1:
-                stageMessage = "첫 평가를 남기셨어요.";
-                break;
-            case 2:
-                stageMessage = "두 번째 평가도 완료!";
-                break;
-            case 3:
-                stageMessage = "세 번째 영화까지 평가 완료!";
-                break;
-            case 4:
-                stageMessage = "네 편의 영화에서 취향의 힌트가 보이기 시작했어요.";
-                break;
-            default:
-                return "";
-        }
+    private double calculateConsistency(List<TasteAnalysisDataDTO> reviewedMovies) {
+        if (reviewedMovies.size() < 2) return 5.0;
+        
+        List<Integer> myRatings = reviewedMovies.stream()
+            .map(TasteAnalysisDataDTO::getMyUserRating)
+            .filter(r -> r != null)
+            .collect(Collectors.toList());
+            
+        double mean = myRatings.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+        double stdDev = Math.sqrt(myRatings.stream().mapToDouble(r -> Math.pow(r - mean, 2)).average().orElse(0.0));
+        
+        return Math.max(0, 10 - (stdDev * 3.33));
+    }
 
-        // 마지막 평가한 영화 기준으로 인상 포인트 도출
+    private String findSpecialInsight(Map<String, Double> deviationScores) {
+        boolean lovesThriller = deviationScores.getOrDefault("스릴", 0.0) > 1.0;
+        boolean hatesViolence = deviationScores.getOrDefault("액션", 0.0) < -1.0;
+        boolean lovesAction = deviationScores.getOrDefault("액션", 0.0) > 1.0;
+        boolean lovesRomance = deviationScores.getOrDefault("감성", 0.0) > 1.0;
+        
+        if (lovesThriller && hatesViolence) {
+            return "잔인한 장면 없이 심리적으로 옥죄는 스릴러에 깊이 매료되는, 고도의 집중력을 가진 감상가입니다.";
+        }
+        if (lovesAction && lovesRomance) {
+            return "화려한 액션 속에서 피어나는 주인공들의 애틋한 감정선에 유독 깊게 몰입하는 특별한 감수성을 지니셨네요.";
+        }
+        return "";
+    }
+    
+    private String createInitialComment(List<TasteAnalysisDataDTO> reviewedMovies) {
+        if (reviewedMovies == null || reviewedMovies.isEmpty()) {
+            return "아직 평가한 영화가 없네요. 첫 평가를 남겨 당신의 취향을 알려주세요!";
+        }
+        String stageMessage = "현재 " + reviewedMovies.size() + "편의 영화에 대한 평가가 쌓였습니다. ";
+        String base = "정확한 분석을 위해 5편 이상의 평가가 필요합니다. 당신의 다음 선택이 궁금하네요!";
+        
         TasteAnalysisDataDTO latestReview = reviewedMovies.get(reviewedMovies.size() - 1);
         String firstImpression = createFirstImpression(latestReview);
 
-        return stageMessage + firstImpression;
+        return stageMessage + firstImpression + " " + base;
     }
     
     private String createFirstImpression(TasteAnalysisDataDTO latestReview) {
@@ -207,19 +197,10 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         Integer sexual = latestReview.getMySexualScore();
         Integer rating = latestReview.getMyUserRating();
 
-        if (violence != null && violence > 6) {
-            return " 강렬한 액션으로 영화 여정을 시작하셨군요.";
-        } else if (horror != null && horror > 6) {
-            return " 짜릿한 스릴과 함께 당신의 취향을 찾아가고 있네요.";
-        } else if (sexual != null && sexual > 6) {
-            return " 감성적이면서도 선정적인 영화로 시작하셨네요.";
-        } else if (rating != null && rating > 8) {
-            return " 작품성 높은 영화를 인상 깊게 보셨네요.";
-        } else {
-            return "";
-        }
+        if (violence != null && violence > 6) return "강렬한 액션으로 영화 여정을 시작하셨군요.";
+        else if (horror != null && horror > 6) return "짜릿한 스릴과 함께 당신의 취향을 찾아가고 있네요.";
+        else if (sexual != null && sexual > 6) return "감성적이면서도 선정적인 영화로 시작하셨네요.";
+        else if (rating != null && rating > 8) return "작품성 높은 영화를 인상 깊게 보셨네요.";
+        else return "차분하게 당신의 취향을 탐색하고 계시네요.";
     }
-    
-    
-
 }
