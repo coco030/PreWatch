@@ -28,9 +28,11 @@
 
 <!-- 헤더 -->
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
-	   <a href="<c:url value='/member/mypage_taste'/>" class="btn btn-primary">
-            📊 나의 취향 분석 리포트 보기
-        </a>
+	  		 <div class="container pt-2 mt-2">
+	  		 <a href="<c:url value='/member/mypage_taste'/>" class="btn btn-outline-primary">
+	        📊 나의 취향 분석 리포트
+	    	</a>
+	    	</div>
 <div class="container pt-2 mt-2">
 	<div class="bg-light p-3 rounded d-flex align-items-center mb-3">
 	  <i class="fas fa-film me-2 text-secondary"></i>

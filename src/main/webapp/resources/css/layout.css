@@ -51,28 +51,35 @@
   font-weight: bold;
   font-size: 14px;
 }
-
-.banner-section {
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 30px 20px;
-  margin: 40px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  text-decoration: none;
-}
 .section-title {
   font-size: 1.5rem;
   margin: 40px 0 20px;
   border-bottom: 2px solid #eee;
   padding-bottom: 10px;
 }
+
+.banner-section {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 30px 20px;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  text-decoration: none;
+  gap: 0.75rem;
+}
+
+:root {
+    --primary-color: #667eea;
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .banner-button {
-  background-color: #E2E2E2;
-  color: white;
+  background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+  color: var(--primary-color); 
   padding: 12px 25px;
   border: none;
-  margin: 8px 16px; /* 위아래 8px, 좌우 16px */
+  margin: 8px 16px;
   border-radius: 25px;
   font-size: 16px;
   font-weight: bold;
@@ -81,8 +88,11 @@
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 .banner-button:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
+    background: var(--primary-gradient); 
+    color: white; 
+    transform: translateY(-3px); 
+    box-shadow: 0 4px 12px rgba(118, 75, 162, 0.25); 
+    border-color: transparent; 
 }
 .no-movie-box {
   background-color: #fff;
