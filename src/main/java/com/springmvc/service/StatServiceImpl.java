@@ -354,8 +354,6 @@ public class StatServiceImpl implements StatService {
         List<String> genres = statRepository.findGenresByMovieId(movieId);
         stat.setGenres(genres);
         System.out.println("[DEBUG] stat 객체에 설정된 장르: " + stat.getGenres());
-        // 장르 정보 출력
-        System.out.println("[DEBUG] 추천 영화 장르: " + genres);
 
         // 장르가 없다면 바로 종료
         if (genres == null || genres.isEmpty()) {
@@ -403,6 +401,11 @@ public class StatServiceImpl implements StatService {
 
         // 추천된 영화 출력
         System.out.println("[DEBUG] 추천된 영화: " + recommendedMovies);
+
+        // 각 추천 영화의 장르를 확인하고 출력
+        for (StatDTO recommendedMovie : recommendedMovies) {
+            System.out.println("[DEBUG] 추천 영화 ID: " + recommendedMovie.getMovieId() + " 장르: " + recommendedMovie.getGenres());
+        }
 
         return recommendedMovies;
     }
