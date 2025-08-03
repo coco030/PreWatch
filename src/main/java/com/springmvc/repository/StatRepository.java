@@ -201,7 +201,7 @@ public class StatRepository {
 
     
     
- // 로그인 사용자를 위한 개선된 추천 쿼리 (가중치 반영)
+    // 로그인 사용자를 위한 개선된 추천 쿼리 (가중치 반영)
     public List<StatDTO> findSimilarMoviesForLoggedInUser(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -216,7 +216,10 @@ public class StatRepository {
        if (genres.isEmpty()) {
            return Collections.emptyList();
        }
-
+    // 장르 정보와 쿼리 매개변수 로그 출력
+       System.out.println("[DEBUG] 장르 정보: " + genres);
+       System.out.println("[DEBUG] 추천 쿼리 실행 - 기준 영화 ID: " + baseMovieId);
+       
        // IN 절을 위한 placeholder 생성
        String genrePlaceholders = String.join(",", Collections.nCopies(genres.size(), "?"));
        String ratedPlaceholders = String.join(",", Collections.nCopies(allowedRatings.size(), "?"));
@@ -243,6 +246,7 @@ public class StatRepository {
                "HAVING genre_match_count >= 1 " +
                "ORDER BY genre_match_count DESC, weighted_score_diff ASC " +
                "LIMIT 10";
+       System.out.println("[DEBUG] 실행된 쿼리: " + sql);
 
        List<Object> params = new ArrayList<>();
 

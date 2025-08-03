@@ -347,13 +347,13 @@ public class StatServiceImpl implements StatService {
     }
     
     // 08.02
-    
     @Override
     public List<StatDTO> recommendForLoggedInUser(long movieId, String memberId) {
         System.out.println("[DEBUG] 편차 계산 시작 - memberId: " + memberId);
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
-
+        stat.setGenres(genres);
+        System.out.println("[DEBUG] stat 객체에 설정된 장르: " + stat.getGenres());
         // 장르 정보 출력
         System.out.println("[DEBUG] 추천 영화 장르: " + genres);
 
