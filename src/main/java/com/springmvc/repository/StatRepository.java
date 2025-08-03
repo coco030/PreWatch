@@ -4,12 +4,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -121,6 +123,7 @@ public class StatRepository {
     // 유저 상세 프로필 
     public List<TasteAnalysisDataDTO> findTasteAnalysisData(String memberId) {
         String sql = "SELECT " +
+                     "    ur.movie_id AS movieId, " + // 이 부분이 DTO의 movieId 필드와 매핑됩니다.
                      "    ur.user_rating AS myUserRating, " +
                      "    ur.violence_score AS myViolenceScore, " +
                      "    ur.horror_score AS myHorrorScore, " +
@@ -135,10 +138,10 @@ public class StatRepository {
                      "WHERE ur.member_id = :memberId AND ur.user_rating IS NOT NULL";
         
         Map<String, String> params = Collections.singletonMap("memberId", memberId);
+        
+        // BeanPropertyRowMapper가 DTO의 setter를 이용해 자동으로 값을 채워줍니다.
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
-
     }
-    
     
     
     public List<StatDTO> findSimilarMoviesWithGenres(
@@ -283,6 +286,31 @@ public class StatRepository {
        });
     }
     
+    
+    
+ // StatRepository.java 에 추가
+
+    public Map<String, Double> findGlobalAverageScores() {
+        String sql = "SELECT " +
+                     "  COALESCE(AVG(m.rating), 5.0) as avg_rating, " +
+                     "  COALESCE(AVG(m.violence_score_avg), 5.0) as avg_violence, " +
+                     "  COALESCE(AVG(ms.horror_score_avg), 5.0) as avg_horror, " +
+                     "  COALESCE(AVG(ms.sexual_score_avg), 5.0) as avg_sexual " +
+                     "FROM movies m " +
+                     "LEFT JOIN movie_stats ms ON m.id = ms.movie_id";
+
+        // queryForObject 대신 query 메소드와 ResultSetExtractor를 사용해 더 안전하게 처리합니다.
+        return jdbcTemplate.query(sql, (ResultSetExtractor<Map<String, Double>>) rs -> {
+            Map<String, Double> averages = new HashMap<>();
+            if (rs.next()) {
+                averages.put("rating", rs.getDouble("avg_rating"));
+                averages.put("violence", rs.getDouble("avg_violence"));
+                averages.put("horror", rs.getDouble("avg_horror"));
+                averages.put("sexual", rs.getDouble("avg_sexual"));
+            }
+            return averages;
+        });
+    }
     
 }
 
