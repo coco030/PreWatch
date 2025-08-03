@@ -18,8 +18,9 @@
 }
 .movie-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-}
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); 
+    }
+   
 </style>
 </head> 
 <body>
@@ -146,7 +147,7 @@
       </c:choose>
     </p>
 
-    <!-- 점수 입력 모듈 (기존 col-md-3 내부 내용) -->
+    <!-- 점수 입력 모듈-->
     <div class="d-flex flex-column gap-2 my-3" style="font-size: 0.92rem;">
       <!-- 1. 만족도 -->
       <div class="d-flex align-items-center">

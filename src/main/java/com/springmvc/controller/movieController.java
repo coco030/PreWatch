@@ -255,13 +255,22 @@ public class movieController {
     public String detail(@PathVariable Long id, Model model, HttpSession session) {
         logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
         movie movie = movieService.findById(id); 
-        Member loginMember = (Member) session.getAttribute("loginMember");
-
+       
         if (movie == null) {
             logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
             return "redirect:/movies?error=notFound";
         }
         
+         // 찜 상태
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+            boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+            movie.setIsLiked(isLiked); // ✅ isLiked만 넣어줌
+            logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
+        } else {
+            movie.setIsLiked(false);
+        }
+	     
         double avgHorror = userReviewService.getAverageHorrorScore(id);
         double avgSexual = userReviewService.getAverageSexualScore(id);     
         model.addAttribute("avgHorrorScore", avgHorror);
@@ -345,15 +354,7 @@ public class movieController {
 
         logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
                 movie.getId(), movie.getTitle(), movie.getLikeCount());
-        // 찜 상태
-
-        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-            boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-            movie.setIsLiked(isLiked);
-            logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
-        } else {
-            movie.setIsLiked(false);
-        }
+      
 
         return "movie/detailPage";
     }

@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root {
+       * {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --primary-color: #667eea;
             --secondary-color: #764ba2;
@@ -383,107 +383,115 @@
                                             영화 속 인물과의 인연
                                         </h3>
                                     </div>
-                                    <div class="section-content">
-                                        <c:set var="mrd" value="${tasteReport.frequentPersons.mostReviewedDirector}" />
-                                        <c:set var="hrd" value="${tasteReport.frequentPersons.highlyRatedDirector}" />
-                                        <c:set var="mra" value="${tasteReport.frequentPersons.mostReviewedActor}" />
-                                        <c:set var="hra" value="${tasteReport.frequentPersons.highlyRatedActor}" />
-                                        
-                                        <!-- Director Info -->
-                                        <c:if test="${not empty mrd}">
-                                            <div class="person-card">
-                                                <div class="person-info">
-                                                    <c:if test="${not empty mrd.imageUrl}">
-                                                        <img src="https://image.tmdb.org/t/p/w300${mrd.imageUrl}" 
-                                                             alt="${mrd.name}" class="person-avatar">
-                                                    </c:if>
-                                                    <div class="flex-grow-1">
-                                                        <h5 class="mb-2">
-                                                            <i class="bi bi-camera-reels me-2 text-primary"></i>
-                                                            <span class="gradient-text">${mrd.name}</span> 감독
-                                                        </h5>
-                                                        <p class="mb-2">당신이 평가한 영화들 중 이 감독의 작품이 가장 많았습니다.</p>
-                                                        <c:if test="${not empty hrd and mrd.id == hrd.id}">
-                                                            <p class="insight-highlight mb-0">
-                                                                <i class="bi bi-star-fill me-1"></i>
-                                                                실제로도 이 감독의 작품들에 8점 이상의 높은 점수를 가장 많이 부여했습니다.
-                                                            </p>
-                                                        </c:if>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:if>
+                                   <div class="section-content">
+									    <c:set var="mrd" value="${tasteReport.frequentPersons.mostReviewedDirector}" />
+									    <c:set var="hrd" value="${tasteReport.frequentPersons.highlyRatedDirector}" />
+									    <c:set var="mra" value="${tasteReport.frequentPersons.mostReviewedActor}" />
+									    <c:set var="hra" value="${tasteReport.frequentPersons.highlyRatedActor}" />
+									
+									    <!-- Most Reviewed Director -->
+									    <c:if test="${not empty mrd}">
+									        <a href="${pageContext.request.contextPath}/directors/${mrd.id}" class="text-decoration-none text-reset d-block">
+									            <div class="person-card">
+									                <div class="person-info">
+									                    <c:if test="${not empty mrd.imageUrl}">
+									                        <img src="https://image.tmdb.org/t/p/w300${mrd.imageUrl}" 
+									                             alt="${mrd.name}" class="person-avatar">
+									                    </c:if>
+									                    <div class="flex-grow-1">
+									                        <h5 class="mb-2">
+									                            <i class="bi bi-camera-reels me-2 text-primary"></i>
+									                            <span class="gradient-text">${mrd.name}</span> 감독
+									                        </h5>
+									                        <p class="mb-2">당신이 평가한 영화들 중 이 감독의 작품이 가장 많았습니다.</p>
+									                        <c:if test="${not empty hrd and mrd.id == hrd.id}">
+									                            <p class="insight-highlight mb-0">
+									                                <i class="bi bi-star-fill me-1"></i>
+									                                실제로도 이 감독의 작품들에 8점 이상의 높은 점수를 가장 많이 부여했습니다.
+									                            </p>
+									                        </c:if>
+									                    </div>
+									                </div>
+									            </div>
+									        </a>
+									    </c:if>
+									
+									    <!-- Highly Rated Director (if different) -->
+									    <c:if test="${not empty hrd and (empty mrd or mrd.id != hrd.id)}">
+									        <a href="${pageContext.request.contextPath}/directors/${hrd.id}" class="text-decoration-none text-reset d-block">
+									            <div class="person-card">
+									                <div class="person-info">
+									                    <c:if test="${not empty hrd.imageUrl}">
+									                        <img src="https://image.tmdb.org/t/p/w300${hrd.imageUrl}" 
+									                             alt="${hrd.name}" class="person-avatar">
+									                    </c:if>
+									                    <div class="flex-grow-1">
+									                        <h5 class="mb-2">
+									                            <i class="bi bi-camera-reels me-2 text-warning"></i>
+									                            <span class="gradient-text">${hrd.name}</span> 감독
+									                        </h5>
+									                        <p class="insight-highlight mb-0">
+									                            <i class="bi bi-star-fill me-1"></i>
+									                            이 감독의 작품들에 높은 만족도를 보였습니다.
+									                        </p>
+									                    </div>
+									                </div>
+									            </div>
+									        </a>
+									    </c:if>
+									
+									    <!-- Most Reviewed Actor -->
+									    <c:if test="${not empty mra}">
+									        <a href="${pageContext.request.contextPath}/actors/${mra.id}" class="text-decoration-none text-reset d-block">
+									            <div class="person-card">
+									                <div class="person-info">
+									                    <c:if test="${not empty mra.imageUrl}">
+									                        <img src="https://image.tmdb.org/t/p/w300${mra.imageUrl}" 
+									                             alt="${mra.name}" class="person-avatar">
+									                    </c:if>
+									                    <div class="flex-grow-1">
+									                        <h5 class="mb-2">
+									                            <i class="bi bi-person-fill me-2 text-primary"></i>
+									                            <span class="gradient-text">${mra.name}</span>
+									                        </h5>
+									                        <p class="mb-2">평가해주신 작품에서 가장 자주 등장한 배우입니다.</p>
+									                        <c:if test="${not empty hra and mra.id == hra.id}">
+									                            <p class="insight-highlight mb-0">
+									                                <i class="bi bi-star-fill me-1"></i>
+									                                이 배우가 출연한 영화들에 8점 이상의 점수를 가장 많이 주셨네요.
+									                            </p>
+									                        </c:if>
+									                    </div>
+									                </div>
+									            </div>
+									        </a>
+									    </c:if>
+									
+									    <!-- Highly Rated Actor (if different) -->
+									    <c:if test="${not empty hra and (empty mra or mra.id != hra.id)}">
+									        <a href="${pageContext.request.contextPath}/actors/${hra.id}" class="text-decoration-none text-reset d-block">
+									            <div class="person-card">
+									                <div class="person-info">
+									                    <c:if test="${not empty hra.imageUrl}">
+									                        <img src="https://image.tmdb.org/t/p/w300${hra.imageUrl}" 
+									                             alt="${hra.name}" class="person-avatar">
+									                    </c:if>
+									                    <div class="flex-grow-1">
+									                        <h5 class="mb-2">
+									                            <i class="bi bi-person-fill me-2 text-warning"></i>
+									                            <span class="gradient-text">${hra.name}</span>
+									                        </h5>
+									                        <p class="insight-highlight mb-0">
+									                            <i class="bi bi-star-fill me-1"></i>
+									                            평가해주신 작품에서 이 배우가 출연한 영화들에 높은 만족도를 보였습니다.
+									                        </p>
+									                    </div>
+									                </div>
+									            </div>
+									        </a>
+									    </c:if>
+									</div>
 
-                                        <!-- Highly Rated Director (if different from most reviewed) -->
-                                        <c:if test="${not empty hrd and (empty mrd or mrd.id != hrd.id)}">
-                                            <div class="person-card">
-                                                <div class="person-info">
-                                                    <c:if test="${not empty hrd.imageUrl}">
-                                                        <img src="https://image.tmdb.org/t/p/w300${hrd.imageUrl}" 
-                                                             alt="${hrd.name}" class="person-avatar">
-                                                    </c:if>
-                                                    <div class="flex-grow-1">
-                                                        <h5 class="mb-2">
-                                                            <i class="bi bi-camera-reels me-2 text-warning"></i>
-                                                            <span class="gradient-text">${hrd.name}</span> 감독
-                                                        </h5>
-                                                        <p class="insight-highlight mb-0">
-                                                            <i class="bi bi-star-fill me-1"></i>
-                                                            이 감독의 작품들에 높은 만족도를 보였습니다.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:if>
-
-                                        <!-- Actor Info -->
-                                        <c:if test="${not empty mra}">
-                                            <div class="person-card">
-                                                <div class="person-info">
-                                                    <c:if test="${not empty mra.imageUrl}">
-                                                        <img src="https://image.tmdb.org/t/p/w300${mra.imageUrl}" 
-                                                             alt="${mra.name}" class="person-avatar">
-                                                    </c:if>
-                                                    <div class="flex-grow-1">
-                                                        <h5 class="mb-2">
-                                                            <i class="bi bi-person-fill me-2 text-primary"></i>
-                                                            <span class="gradient-text">${mra.name}</span>
-                                                        </h5>
-                                                        <p class="mb-2">평가해주신 작품에서 가장 자주 등장한 배우입니다.</p>
-                                                        <c:if test="${not empty hra and mra.id == hra.id}">
-                                                            <p class="insight-highlight mb-0">
-                                                                <i class="bi bi-star-fill me-1"></i>
-                                                                이 배우가 출연한 영화들에 8점 이상의 점수를 가장 많이 주셨네요.
-                                                            </p>
-                                                        </c:if>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:if>
-
-                                        <!-- Highly Rated Actor (if different from most reviewed) -->
-                                        <c:if test="${not empty hra and (empty mra or mra.id != hra.id)}">
-                                            <div class="person-card">
-                                                <div class="person-info">
-                                                    <c:if test="${not empty hra.imageUrl}">
-                                                        <img src="https://image.tmdb.org/t/p/w300${hra.imageUrl}" 
-                                                             alt="${hra.name}" class="person-avatar">
-                                                    </c:if>
-                                                    <div class="flex-grow-1">
-                                                        <h5 class="mb-2">
-                                                            <i class="bi bi-person-fill me-2 text-warning"></i>
-                                                            <span class="gradient-text">${hra.name}</span>
-                                                        </h5>
-                                                        <p class="insight-highlight mb-0">
-                                                            <i class="bi bi-star-fill me-1"></i>
-                                                            평가해주신 작품에서 이 배우가 출연한 영화들에 높은 만족도를 보였습니다.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:if>
-
-                                    </div>
                                 </div>
                             </div>
 
