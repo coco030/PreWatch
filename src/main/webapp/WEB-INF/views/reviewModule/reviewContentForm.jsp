@@ -11,23 +11,44 @@
     <input type="hidden" id="memberId" value="${loginMember.id}" />
 </c:if>
 
-<!-- 로그인한 경우에만 보여줄 리뷰 작성/출력창 -->
-<c:if test="${not empty loginMember}">
-  <!-- 리뷰 작성창 -->
-   <h6 class="mb-2 fw-bold"><i class="fas fa-pen me-1"></i>나의 리뷰</h6>
-  <div id="reviewWriteBox" class="mb-3" <c:if test="${not empty myReview.reviewContent}">style="display:none;"</c:if>>
-    <textarea id="reviewContentInput"
-              class="form-control border-0 border-bottom rounded-0 px-1 py-2 auto-expand"
-              rows="1"
-              placeholder="아직 리뷰를 남기지 않으셨어요."
-              style="resize: vertical; overflow-y: hidden; background-color: transparent;"></textarea>
-    <div class="text-end mt-2">
-      <button class="btn btn-dark btn-sm" id="saveReviewContentBtn">리뷰 저장</button>
-    </div>
-  </div>
+<h6 class="mb-2 fw-bold"><i class="fas fa-pen me-1"></i>나의 리뷰</h6>
 
-  <!-- 리뷰 출력창 -->
-  <div id="reviewDisplayBox" class="mb-3" <c:if test="${empty myReview.reviewContent}">style="display:none;"</c:if>>
+<!-- ✅ style 중복 방지용 분리 처리 -->
+<c:set var="writeBoxStyle" value="max-width: 600px; width: 100%;" />
+<c:if test="${not empty loginMember && not empty myReview.reviewContent}">
+    <c:set var="writeBoxStyle" value="display: none; max-width: 600px; width: 100%;" />
+</c:if>
+
+<!-- ✅ 리뷰 작성창 -->
+<div id="reviewWriteBox"
+     class="mb-3"
+     style="${writeBoxStyle}"
+     <c:if test="${empty loginMember}">
+         data-bs-toggle="modal"
+         data-message="리뷰 작성은 로그인 후 이용하실 수 있어요"
+         data-bs-target="#loginModal"
+         style="max-width: 600px; width: 100%; cursor: pointer;"
+     </c:if>>
+  
+  <textarea id="reviewContentInput"
+            class="form-control border-0 border-bottom rounded-0 px-1 py-2 auto-expand"
+            rows="1"
+            placeholder="<c:choose>
+                            <c:when test='${empty loginMember}'>로그인 후 리뷰를 작성하실 수 있어요.</c:when>
+                            <c:otherwise>아직 리뷰를 남기지 않으셨어요.</c:otherwise>
+                         </c:choose>"
+            style="width: 100%; resize: vertical; overflow-y: hidden; background-color: transparent;"
+            <c:if test="${empty loginMember}">readonly</c:if>></textarea>
+
+  <div class="text-end mt-2">
+    <button class="btn btn-dark btn-sm" id="saveReviewContentBtn"
+            <c:if test="${empty loginMember}">disabled</c:if>>리뷰 저장</button>
+  </div>
+</div>
+
+<!-- ✅ 로그인한 경우에만 리뷰 출력창 보이기 -->
+<c:if test="${not empty loginMember && not empty myReview.reviewContent}">
+  <div id="reviewDisplayBox" class="mb-3">
     <div id="reviewContentBox" class="mb-2" style="white-space: pre-wrap;">
       ${fn:escapeXml(myReview.reviewContent)}
     </div>
@@ -38,18 +59,16 @@
   </div>
 </c:if>
 
-<!-- 로그인하지 않은 경우에만 알림 -->
-<c:if test="${empty loginMember}">
-<a href="${pageContext.request.contextPath}/auth/login" style="text-decoration: none;">
-  <div class="alert alert-light text-secondary mb-3 mt-2 small" role="alert">
-      리뷰를 작성하시려면 로그인해주세요.
-  </div>
-</a>
-</c:if>
+<!-- 로그인 모달 -->
+<jsp:include page="/WEB-INF/views/loginModal.jsp" />
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("reviewContentInput");
+    const saveBtn = document.getElementById("saveReviewContentBtn");
     const content = "${fn:escapeXml(myReview.reviewContent)}";
 
     // textarea 자동 높이 확장
@@ -62,10 +81,17 @@ document.addEventListener("DOMContentLoaded", function () {
             this.style.height = "auto";
             this.style.height = this.scrollHeight + "px";
         });
+
+        // ⬇️ Enter 키 입력 시 저장 (단, Shift+Enter는 줄바꿈 유지)
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault(); // 줄바꿈 방지
+                if (saveBtn) saveBtn.click(); // 저장 처리
+            }
+        });
     }
 
     // 저장 버튼
-    const saveBtn = document.getElementById("saveReviewContentBtn");
     if (saveBtn) {
         saveBtn.addEventListener("click", function () {
             const content = input.value.trim();

@@ -58,6 +58,16 @@
     .fa-regular.fa-circle { color: #ccc; }
     .fa-solid.fa-circle,
     .fa-solid.fa-circle-half-stroke { color: #e54b4b; }
+    
+    /* 반응형 지원 */
+    @media (max-width: 576px) {
+        #violence-score-rating {
+            font-size: 1.5rem;
+        }
+        
+        #violence-label {
+            font-size: 0.8rem;
+        }
 </style>
 
 <!-- ⭐ 점수 저장 로직 -->

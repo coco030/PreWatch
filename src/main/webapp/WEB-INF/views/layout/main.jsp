@@ -57,7 +57,7 @@
         <a href="#calendar-section" class="banner-button">캘린더</a>
         <c:choose>
           <c:when test="${not empty loginMember}">
-            <a href="<c:url value='/review/myreviewSummary'/>" class="banner-button">나의 취향 분석</a>
+            <a href="<c:url value='/member/mypage_taste'/>" class="banner-button">나의 취향 분석</a>
           </c:when>
           <c:otherwise>
             <!-- id="iframeLoginModal"인 모달. -->
@@ -66,7 +66,7 @@
                   data-message="이 기능은 로그인 후 이용하실 수 있어요"
                   data-bs-target="#loginModal"
                   style="cursor: pointer;">
-              나의 취향 분석
+              나의 영화 취향 분석
             </span>
           </c:otherwise>
         </c:choose>

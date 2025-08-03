@@ -26,7 +26,7 @@
 
 <!-- 출력된 유효 코멘트가 없으면 안내 문구 출력 -->
 <c:if test="${validReviewCount == 0}">
-    <div class="text-muted small mt-2">아직 코멘트가 없어요.</div>
+    <div class="text-muted small mt-2"></div>
 </c:if>
 
 <script>

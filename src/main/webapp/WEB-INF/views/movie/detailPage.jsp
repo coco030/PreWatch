@@ -10,6 +10,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+<style>
+.movie-card {
+    border: none;
+    background: transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.movie-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+</style>
 </head> 
 <body>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
@@ -19,53 +30,6 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>   
 
-
-<c:if test="${not empty recommended}">
-    <div class="recommended-box">
-        <p>
-            <c:choose>
-                <c:when test="${empty sessionScope.loginMember}">
-                    이 영화와 비슷한 영화를 추천해드릴게요. 평가를 해주시면 취향에 맞는 비슷한 영화를 추천드릴 수 있습니다.
-                </c:when>
-                <c:otherwise>
-                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
-                </c:otherwise>
-            </c:choose>
-        </p>
-			<ul>
-            <c:forEach var="rec" items="${recommended}">
-		    		<li>
-				        <!-- 추천 영화 제목과 포스터 -->
-				   		 <a href="${pageContext.request.contextPath}/movies/${rec.movieId}">
-				            <div class="flex-shrink-0">
-				                <c:choose>
-				                    <c:when test="${not empty rec.posterPath and fn:startsWith(rec.posterPath, 'http')}">
-		                    <img src="${rec.posterPath}" width="70" class="rounded shadow-sm"/>
-				                    </c:when>
-				                    <c:when test="${not empty rec.posterPath}">
-				                        <img src="https://image.tmdb.org/t/p/w185/${rec.posterPath}" width="70" class="rounded shadow-sm"/>
-				                    </c:when>
-				                    <c:otherwise>
-				                        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" width="70" class="rounded shadow-sm"/>
-				                    </c:otherwise> 
-				                </c:choose>
-				            </div>
-				            ${rec.title} (관람등급: ${rec.rated})
-				            
-				            <!-- 장르 출력 -->
-				            <!-- 장르 출력 -->
-			                <div>장르: 
-			                    <c:forEach var="genre" items="${rec.genres}">
-			                        ${genre}
-			                    </c:forEach>
-			                </div>
-				             <!-- 장르 출력 -->
-				      </a>
-				    </li>
-				</c:forEach>
-		        </ul>
-		    </div>
-		</c:if>
 
 
 
@@ -448,40 +412,6 @@
 </c:if>
 
 
-	<!-- 리뷰 작성 -->
-	<div class="container mt-3">
-	  <div class="bg-body-bg rounded-3 p-3">
-	    <c:import url="/review/content">
-	      <c:param name="movieId" value="${movie.id}" />
-	    </c:import>
-	  </div>
-	</div>
-	
-	<!-- 태그 작성 -->
-	<c:if test="${not empty sessionScope.loginMember}">
-	<div class="container mt-3">
-	  <div class="bg-body-bg rounded-3 p-3">
-	            <c:import url="/review/tag">
-	                <c:param name="movieId" value="${movie.id}" />
-	            </c:import>
-	 </div>
-	</div>
-	</c:if>
-
-<!-- 다른 유저의 리뷰 리스트 -->
-<c:if test="${not empty reviewList}">
-	<div class="container mt-4 mb-5">
-	    <div class="p-3">
-	        <h5 class="fw-bold mb-3">
-	            <i class="fas fa-comments text-primary me-1"></i>코멘트
-	        </h5>
-	       <jsp:include page="/WEB-INF/views/reviewModule/reviewList.jsp">
-			    <jsp:param name="movieId" value="${movie.id}" />
-			</jsp:include>
-	    </div>
-	</div>
-</c:if>
-
 <div class="container mt-4 mb-5">
   <c:if test="${not empty movieImages}">
     <div class="gallery-section mt-4">
@@ -509,6 +439,87 @@
     </div>
   </c:if>
 </div>
+<div>
+	<!-- 리뷰 작성 -->
+	<div class="container mt-3">
+	  <div class="bg-body-bg rounded-3 p-3">
+	    <c:import url="/review/content">
+	      <c:param name="movieId" value="${movie.id}" />
+	    </c:import>
+	  </div>
+	</div>
+	
+	<!-- 태그 작성 -->
+	<c:if test="${not empty sessionScope.loginMember}">
+	<div class="container mt-3">
+	  <div class="bg-body-bg rounded-3 p-3">
+	            <c:import url="/review/tag">
+	                <c:param name="movieId" value="${movie.id}" />
+	            </c:import>
+	 </div>
+	</div>
+	</c:if>
+
+<!-- 다른 유저의 리뷰 리스트 -->
+<c:if test="${not empty reviewList}">
+	<div class="container mt-4 mb-5">
+	    <div class="p-3">
+	       <jsp:include page="/WEB-INF/views/reviewModule/reviewList.jsp">
+			    <jsp:param name="movieId" value="${movie.id}" />
+			</jsp:include>
+	    </div>
+	</div>
+</c:if>
+
+<c:if test="${not empty recommended}">
+    <div class="container mt-4 mb-5">
+        <p>
+            <c:choose>
+                <c:when test="${empty sessionScope.loginMember}">
+                    이 영화와 비슷한 영화를 추천해드릴게요. 평가를 해주시면 취향에 맞는 비슷한 영화를 추천드릴 수 있습니다.
+                </c:when>
+                <c:otherwise>
+                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
+                </c:otherwise>
+            </c:choose>
+        </p>
+
+        <!-- 카드 목록 -->
+        <div class="d-flex flex-wrap gap-3">
+            <c:forEach var="rec" items="${recommended}">
+                <div class="movie-card" style="width: 120px; font-size: 0.8rem;">
+                    <a href="${pageContext.request.contextPath}/movies/${rec.movieId}" class="text-decoration-none text-dark">
+                        <div class="rounded overflow-hidden">
+                            <c:choose>
+                                <c:when test="${not empty rec.posterPath and fn:startsWith(rec.posterPath, 'http')}">
+                                    <img src="${rec.posterPath}" class="w-100" style="height: 160px; object-fit: cover;">
+                                </c:when>
+                                <c:when test="${not empty rec.posterPath}">
+                                    <img src="https://image.tmdb.org/t/p/w185/${rec.posterPath}" class="w-100" style="height: 160px; object-fit: cover;">
+                                </c:when>
+                                <c:otherwise>
+                                    <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" class="w-100" style="height: 160px; object-fit: cover;">
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                        <div class="mt-1">
+                            <div class="text-truncate fw-semibold" title="${rec.title}">${rec.title}</div>
+                            <div class="text-muted small">${rec.rated}</div>
+                            <div class="text-muted small">
+                                <c:forEach var="genre" items="${rec.genres}">
+                                    <span>${genre} </span>
+                                </c:forEach>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </c:forEach>
+        </div>
+    </div>
+</c:if>
+
+
+
 
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>
