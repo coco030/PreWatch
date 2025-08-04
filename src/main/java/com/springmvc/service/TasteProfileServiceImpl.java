@@ -92,10 +92,10 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         }
         reportDTO.setActivityPattern(activityPattern != null ? String.format("%s에 주로 활동", activityPattern) : null);
         
-        createRecommendation(reportDTO);
+        createRecommendation(reportDTO, deviationScores);
         
         // 5. DB에 일부 정보 업데이트
-        memberRepository.updateTasteProfile(memberId, reportDTO.getTitle(), "상세 리포트 생성", 0.0);
+        memberRepository.updateTasteProfile(memberId, reportDTO.getTitle(), reportDTO.getKeywords().getStyle(), 0.0);
         return reportDTO;
     }
 
@@ -230,33 +230,41 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 	}
 
 
-    private void createRecommendation(TasteReportDTO reportDTO) {
-        Recommendation rec = reportDTO.getRecommendation();
-        List<String> topGenres = reportDTO.getKeywords().getTopGenres();
-        List<String> strengths = reportDTO.getAnalysis().getStrengths();
-        List<String> weaknesses = reportDTO.getAnalysis().getWeaknesses();
-        
-        if (topGenres.isEmpty()) {
-            rec.setSafeBet("다양한 장르의 명작들을 감상하며 당신의 대표 장르를 찾아보세요.");
-            rec.setAdventurousChoice("평점이 높은 영화부터 시작하는 것이 좋은 방법입니다.");
-            return;
-        }
-        String topGenre = topGenres.get(0);
-        
-        if (!strengths.isEmpty()) {
-            rec.setSafeBet(String.format("<strong>%s</strong> 장르 중 <strong>%s</strong>이(가) 돋보이는 작품은 당신에게 최고의 만족을 줄 것입니다.", topGenre, strengths.get(0)));
-        } else {
-            rec.setSafeBet(String.format("<strong>%s</strong> 장르의 인기작들을 감상하며 당신의 다음 '강점'을 발견해보세요.", topGenre));
-        }
+	private void createRecommendation(TasteReportDTO reportDTO, Map<String, Double> deviationScores) { // <-- 파라미터 추가
+	    Recommendation rec = reportDTO.getRecommendation();
+	    List<String> topGenres = reportDTO.getKeywords().getTopGenres();
+	    // 이제 DTO에서 가져오는 대신, 파라미터로 받은 deviationScores를 직접 사용합니다.
+	    
+	    // 만족도 편차
+	    double qualityPref = deviationScores.getOrDefault("작품성", 0.0);
+	    
+	    if (topGenres.isEmpty()) {
+	        rec.setSafeBet("다양한 장르의 명작들을 감상하며 당신의 대표 장르를 찾아보세요.");
+	        rec.setAdventurousChoice("평점이 높은 영화부터 시작하는 것이 좋은 방법입니다.");
+	        return;
+	    }
+	    String topGenre = topGenres.get(0);
+	 
+	 // [안전한 추천]: 나의 '성공 공식'에 기반한 추천
+	    if (qualityPref > 1.0) {
+	        rec.setSafeBet(String.format("당신은 대중의 평가를 넘어 자신만의 보석을 찾아내는 안목을 가졌습니다. <strong>%s</strong> 장르의 숨겨진 명작들이나, 평론가들의 극찬을 받은 작품들이 좋은 선택이 될 겁니다.", topGenre));
+	    } else {
+	        rec.setSafeBet(String.format("안정적인 재미를 추구하는 당신에게, <strong>%s</strong> 장르에서 대중적으로 가장 높은 평가를 받은 영화는 이번에도 만족스러운 경험을 선사할 것입니다.", topGenre));
+	    }
 
-        if (!weaknesses.isEmpty()) {
-            rec.setAdventurousChoice(String.format("당신이 민감한 '<strong>%s</strong>' 요소가 없는, 순수한 <strong>드라마</strong>나 <strong>코미디</strong> 장르는 어떠신가요?", weaknesses.get(0)));
-        } else if (topGenres.size() > 1) {
-            rec.setAdventurousChoice(String.format("당신의 또 다른 관심 장르인 <strong>%s</strong>에 도전하여 취향의 지도를 넓혀보세요.", topGenres.get(1)));
-        } else {
-            rec.setAdventurousChoice("지금까지와는 다른 새로운 장르의 대표작을 감상하며 신선한 자극을 느껴보는 것을 추천합니다.");
-        }
-    }
+	    // [모험적인 추천]: 나의 '대표 장르'가 아닌 다른 장르 추천
+	    String adventurousGenre = findOppositeGenre(topGenre);
+	    rec.setAdventurousChoice(String.format("가끔은 익숙한 <strong>%s</strong> 장르에서 벗어나, 정반대의 매력을 가진 <strong>%s</strong> 장르의 대표작을 감상하며 새로운 자극을 느껴보는 것은 어떨까요?", topGenre, adventurousGenre));
+	}
+
+	// createRecommendation을 위한 헬퍼 메서드 추가 (이건 그대로 두시면 됩니다)
+	private String findOppositeGenre(String genre) {
+	    if (List.of("Action", "War", "Crime").contains(genre)) return "Romance";
+	    if (List.of("Romance", "Drama", "Family").contains(genre)) return "Thriller";
+	    if (List.of("Horror", "Thriller").contains(genre)) return "Comedy";
+	    if (List.of("Comedy", "Musical").contains(genre)) return "Documentary";
+	    return "Fantasy";
+	}
 
     private List<String> getKeysByCondition(Map<String, Double> map, java.util.function.Predicate<Double> condition) {
         return map.entrySet().stream().filter(entry -> condition.test(entry.getValue())).map(Map.Entry::getKey).sorted().collect(Collectors.toList());
@@ -320,26 +328,28 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         boolean lovesThriller = deviationScores.getOrDefault("스릴", 0.0) > 1.0;
         boolean hatesViolence = deviationScores.getOrDefault("액션", 0.0) < -1.0;
         boolean lovesAction = deviationScores.getOrDefault("액션", 0.0) > 1.0;
-        boolean lovesRomance = deviationScores.getOrDefault("감성", 0.0) > 1.0;
-        boolean lovesEmotion = deviationScores.getOrDefault("감성", 0.0) > 1.0;
+        // '감성'(=선정성)을 좋아하는지 확인
+        boolean lovesProvocativeness = deviationScores.getOrDefault("감성", 0.0) > 1.0;
         boolean lovesArt = deviationScores.getOrDefault("작품성", 0.0) > 1.0;
+        // '스릴'을 싫어하는지 확인
         boolean hatesThrill = deviationScores.getOrDefault("스릴", 0.0) < -1.0;
-        boolean hatesHorror = deviationScores.getOrDefault("공포", 0.0) < -1.0;
 
         if (lovesThriller && hatesViolence)
             return "잔인한 장면 없이 심리적으로 옥죄는 스릴러에 깊이 몰입하는 경향이 있습니다.";
-        if (lovesAction && lovesRomance)
-            return "화려한 액션 속에서도 인물 간 감정선에 주목하는 감상 스타일이 돋보입니다.";
-        if (lovesEmotion && lovesArt)
+        if (lovesAction && lovesProvocativeness) // lovesRomance -> lovesProvocativeness 로 의미 명확화
+            return "화려한 액션 속에서도 인물 간 자극적인 관계나 감정선에 주목하는 스타일이 돋보입니다.";
+        if (lovesProvocativeness && lovesArt) // lovesEmotion -> lovesProvocativeness 로 의미 명확화
             return "감정의 흐름과 작품성 모두에 민감하게 반응하는 섬세한 감상 성향입니다.";
         if (lovesArt && hatesThrill)
             return "긴장감보다는 구조와 메시지에 집중하는 차분한 감상을 선호합니다.";
-        if (lovesEmotion && hatesHorror)
-            return "감성 중심 영화는 좋아하지만 자극적인 공포 요소는 기피하는 편입니다.";
+        
+        // "공포"를 "스릴"로 수정
+        if (lovesProvocativeness && hatesThrill) // hatesHorror -> hatesThrill
+            return "감성(선정성) 중심 영화는 좋아하지만, 긴장감 넘치는 스릴러 요소는 기피하는 편입니다.";
 
         // 단일 강한 편차도 커버 가능
-        if (deviationScores.getOrDefault("공포", 0.0) > 1.5)
-            return "공포 장르에 대한 뚜렷한 선호가 감상 경향에 드러납니다.";
+        if (deviationScores.getOrDefault("스릴", 0.0) > 1.5) // "공포" -> "스릴"
+            return "스릴러/공포 장르에 대한 뚜렷한 선호가 감상 경향에 드러납니다.";
         if (deviationScores.getOrDefault("작품성", 0.0) < -1.5)
             return "작품의 완성도보다는 즉각적인 재미를 더 중시하는 경향이 있습니다.";
 
@@ -352,39 +362,35 @@ public class TasteProfileServiceImpl implements TasteProfileService {
     }
     
     private Map<String, String> analyzeUserStyle(double consistency, Map<String, Double> deviation, List<String> topGenres) {
-        // 1. 스타일 유형 분류
-        String styleType = "균형잡힌 시선"; // 기본값
-        
-        boolean isEmotional = deviation.getOrDefault("감성", 0.0) > 1.2;
-        boolean isAnalytic = deviation.getOrDefault("작품성", 0.0) > 1.2;
-        boolean isExploratory = topGenres.size() >= 3 && consistency < 5.0; 
+        String styleType = "균형잡힌 시선";
+        String styleDescription = "뚜렷한 호불호 없이 여러 요소를 균형 있게 즐기며, 영화의 전체적인 조화를 중요하게 생각합니다.";
 
-        if (consistency >= 7.5 && isAnalytic) {
-            styleType = "냉철한 분석가";
-        } else if (consistency >= 7.5 && topGenres.size() == 1) {
+        // 사용자의 '만족도' 편차
+        double qualityPref = deviation.getOrDefault("작품성", 0.0);
+
+        // [유형 1] 한 우물 장인: 일관성이 높고, 뚜렷한 대표 장르가 1~2개로 좁혀짐
+        if (consistency >= 7.0 && topGenres.size() <= 2 && !topGenres.isEmpty()) {
             styleType = "한 우물 장인";
-        } else if (isEmotional) {
-            styleType = "몰입하는 공감가";
-        } else if (isExploratory) {
-            styleType = "자유로운 탐험가";
+            styleDescription = String.format("하나의 장르('%s')에 깊이 몰두하여 자신만의 확고한 기준을 구축한 전문가 유형입니다. 당신의 평가는 높은 일관성을 보입니다.", topGenres.get(0));
         }
-
-        // 2. 스타일에 대한 설명 매핑
-        String styleDescription;
-        if ("몰입하는 공감가".equals(styleType)) {
-            styleDescription = "감성에 민감하게 반응하며, 분위기나 캐릭터의 감정선에 깊이 이입하는 감상 스타일을 가졌습니다.";
-        } else if ("냉철한 분석가".equals(styleType)) {
-            styleDescription = "구성이나 메시지를 논리적으로 해석하며, 영화의 구조적 완성도에 집중하는 편입니다.";
-        } else if ("한 우물 장인".equals(styleType)) {
-            styleDescription = "하나의 장르나 스타일에 깊이 몰두하여 자신만의 확고한 기준을 가진 전문가 유형입니다.";
-        } else if ("자유로운 탐험가".equals(styleType)) {
-            styleDescription = "다양한 장르와 스타일을 끊임없이 탐험하며 새로운 자극을 추구하는 모험가와 같습니다.";
-        } else { // 균형잡힌 시선
-            styleDescription = "뚜렷한 호불호 없이 여러 요소를 균형 있게 즐기며, 영화의 전체적인 조화를 중요하게 생각합니다.";
+        // [유형 2] 마이웨이 비평가: 대중의 평가와 내 평가가 확연히 다름 (만족도 편차가 큼)
+        else if (qualityPref < -1.5 || qualityPref > 1.5) {
+            styleType = "마이웨이 비평가";
+            styleDescription = "대중적인 평가나 흥행 여부에 휩쓸리지 않고, 자신만의 뚜렷한 기준으로 영화를 평가하는 독립적인 시선을 가졌습니다.";
+        }
+        // [유형 3] 자유로운 탐험가: 다양한 장르를 보고, 평가의 일관성은 낮음 (점수를 후하게 주거나 짜게 주는 등)
+        else if (topGenres.size() >= 3 && consistency < 5.0) {
+            styleType = "자유로운 탐험가";
+            styleDescription = "다양한 장르와 스타일을 끊임없이 탐험하며 새로운 자극을 추구하는 모험가와 같습니다. 당신의 평가는 작품에 따라 유연하게 변합니다.";
+        }
+        // [유형 4] 냉철한 분석가: 평가의 일관성이 매우 높고, 대중의 평가와도 비슷함
+        else if (consistency >= 8.0) {
+            styleType = "냉철한 분석가";
+            styleDescription = "영화의 구조적 완성도나 객관적인 지표를 기준으로, 매우 일관성 있는 평가를 내리는 냉철한 시선을 가지고 있습니다.";
         }
         
-        Map<String, String> result = new HashMap<String, String>();
-        result.put("style", "#" + styleType); // JSP에서 바로 사용할 수 있도록 '#' 추가
+        Map<String, String> result = new HashMap<>();
+        result.put("style", "#" + styleType);
         result.put("description", styleDescription);
         return result;
     }

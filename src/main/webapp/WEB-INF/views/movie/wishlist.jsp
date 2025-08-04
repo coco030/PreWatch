@@ -1,19 +1,3 @@
-<%--
-    파일명: wishlist.jsp
-    설명:
-        이 JSP 파일은 로그인한 사용자가 찜한 영화 목록을 표시하는 페이지입니다.
-        `MemberController`의 `showWishlistPage` 메서드로부터 `likedMovies` 리스트를 받아와,
-        `main.jsp`와 유사한 그리드 형태로 영화 정보를 표시합니다.
-
-    목적:
-        - 사용자가 찜한 영화들을 한눈에 볼 수 있도록 개인화된 찜 목록을 제공합니다.
-        - 찜한 영화의 포스터, 제목, 평점 등을 표시합니다. (찜 개수는 표시하지 않습니다.)
-
-    연결 관계:
-        - `MemberController.java`: `showWishlistPage` (GET /member/wishlist) 메서드에서 `likedMovies` 리스트를 모델에 담아 이 JSP로 전달합니다.
-        - `movie.java` 도메인 객체: `likedMovies` 리스트의 각 요소인 `movie` 객체의 필드를 사용하여 정보를 표시합니다.
-        - `layout/header.jsp`, `layout/footer.jsp`: 웹사이트의 공통 헤더와 푸터를 포함합니다.
---%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
@@ -24,339 +8,132 @@
 <head>
 <title>나의 찜 영화 목록</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 <style>
-/* 메인 콘텐츠와 추천 랭킹을 감싸는 wrapper */
-.main-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    align-items: center;
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 0;
-    background-color: transparent;
-    box-shadow: none;
-    border-radius: 0;
-}
-
-/* wishlist (기존과 동일) */
-.wishlist.container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-    margin-bottom: 20px;
-}
-
-/* wishlist 컨테이너 영화 카드 레이아웃 (기존과 동일) */
-.wishlist .movie-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(350px, 1fr));
-    gap: 20px;
-    max-width: 1090px;
-    width: 100%;
-    margin: 0 auto;
-    justify-content: center;
-}
-
-/* 개별 섹션 컨테이너 스타일 (main.container와 second_container에 공통 적용) */
-.main.container, .second_container, .third_container { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-}
-
-/* 마진 조정: main.container 하단 마진 제거 */
-.main.container {
-    margin-bottom: 0;
-}
-
-/* 마진 조정: second_container 상단 마진 제거 */
-.second_container {
-    margin-top: 0;
-}
-
-/* ⭐ third_container 상단 마진 조정 (7-24 오후12:41 추가 된 코드) */
-.third_container {
-    margin-top: 0; /* (7-24 오후12:41 추가 된 코드) */
-}
-
-
-/* 섹션 제목 스타일 - 아래줄 포함 */
-.section-title {
-    font-size: 20px;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    width: 100%;
-    text-align: left;
-    box-sizing: border-box;
-}
-
-/* 메인 컨테이너 영화 카드 레이아웃: 반응형 그리드 */
-.main .movie-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(350px, 1fr));
-    gap: 20px;
-    max-width: 1090px;
-    width: 100%;
-    margin: 0 auto;
-    justify-content: center;
-}
-
-/* 추천 랭킹 컨테이너 영화 카드 레이아웃: 반응형 그리드 */
-.second_container .movie-grid, .third_container .movie-grid { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
-    display: grid;
-    grid-template-columns: repeat(5, minmax(180px, 1fr));
-    gap: 20px;
-    max-width: 980px;
-    width: 100%;
-    margin: 0 auto;
-    justify-content: center;
-}
-
-/* 개별 영화 카드 스타일 */
-.movie-card {
-    background-color: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    padding-bottom: 15px;
-    position: relative; /* 자식 요소의 절대 위치 지정을 위해 추가 */
-}
-
-/* **순위 배지 스타일** */
-.movie-card .rank-badge {
-    position: absolute;
-    top: 10px; /* 상단에서 10px 떨어진 위치 */
-    left: 10px; /* 좌측에서 10px 떨어진 위치 */
-    background-color: rgba(100, 100, 100, 0.8); /* 어두운 회색 배경 (반투명) */
-    color: white; /* 흰색 글자 */
-    font-size: 1.1em; /* 글자 크기 */
-    font-weight: bold; /* 글자 굵게 */
-    padding: 5px 8px; /* 내부 여백 */
-    border-radius: 5px; /* 모서리 둥글게 */
-    z-index: 10; /* 포스터 위에 표시되도록 z-index 설정 */
-    min-width: 25px; /* 한 자리 숫자, 두 자리 숫자 모두 보기 좋게 최소 너비 설정 */
-    text-align: center; /* 숫자 중앙 정렬 */
-}
-
-
-/* 메인 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 */
-.main .movie-card img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
-}
-
-/* 추천 랭킹 컨테이너 영화 포스터 이미지 크기 고정 + 비율 유지 */
-.second_container .movie-card img, .third_container .movie-card img { /* ⭐ third_container 추가 (7-24 오후12:41 추가 된 코드) */
-    width: 100%;
-    height: 270px;
-    object-fit: cover;
-}
-
-/* 영화 제목 스타일 */
-.movie-card h3 {
-    font-size: 16px;
-    margin: 10px 0 5px;
-    padding: 0 10px;
-}
-
-/* 영화 정보 텍스트 (장르, 연도 등) */
-.movie-card p {
-    font-size: 14px;
-    color: #666;
-    margin: 0;
-    padding: 0 10px;
-}
-
-/* 카드 전체 링크 스타일 초기화 */
-.movie-card a {
-    text-decoration: none;
-    color: inherit;
-}
-
-/* 링크에 마우스 올렸을 때 제목만 색 강조 */
-.movie-card a:hover h3 {
-    color: #007bff;
-}
-
-
-.favorite-button-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    margin-top: 20px;
-}
-.favorite-button {
-    background-color: #f44336;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-bottom: 10px;
-}
-.favorite-button:hover {
-    background-color: #d32f2f;
-}
-.favorite-button.disabled,
-.favorite-button.processing {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-.like-count-detail {
-    font-size: 1.2em;
-    color: #555;
-    font-weight: bold;
-}
-
-/* 배너 섹션 스타일 */
-.banner-section {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 15px 60px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 80px;
-    box-sizing: border-box;
-}
-
-/* **배너 섹션 스타일 업데이트** */
-.banner-section {
-    width: 100%;
-    /* max-width는 main-content-wrapper와 동일하게 유지 */
-    max-width: 1200px;
-    /* 상하 마진을 0으로 설정하여 위아래 요소에 딱 붙게 함 */
-    margin: 0 auto;
-    /* 좌우 패딩을 더 넓게 설정하여 거의 끝까지 닿도록 함 */
-    padding: 15px 60px; /* 기존 40px에서 60px로 늘림 */
-    background-color: white; /* 배경색 흰색 유지 */
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 80px;
-    box-sizing: border-box;
-}
-
-/* 배너 내부 콘텐츠 및 버튼 스타일은 이전과 동일 */
-.banner-content {
-    display: flex;
-    gap: 20px;
-}
-
-.banner-button {
-    background-color: #E2E2E2;
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-left:50px;
-    margin-right:50px;
-}
-
-.banner-button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-}
-
-.banner-button:active {
-    background-color: #004085;
-    transform: translateY(0); }
-
+    /* 이전과 동일한 CSS 스타일 */
+    body { background-color: #f8f9fa; }
+    .page-title { font-weight: bold; color: #343a40; border-bottom: 3px solid #dee2e6; padding-bottom: 0.5rem; }
+    .movie-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; border: 1px solid #e9ecef; position: relative; }
+    .movie-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
+    .movie-card .card-img-top { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
+    .movie-card .card-body { display: flex; flex-direction: column; padding: 0.8rem; }
+    .movie-card .card-title { font-size: 0.9rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .movie-card .card-text { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.25rem; }
+    .card-link { text-decoration: none; color: inherit; }
+    .heart-info-container { position: absolute; top: 8px; right: 8px; z-index: 10; background-color: rgba(255, 255, 255, 0.8); border-radius: 50%; padding: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .heart-icon { font-size: 1.1rem; color: #dc3545; }
+    .heart-icon.disabled { color: #adb5bd; cursor: not-allowed; }
+    .no-movies-message a { font-weight: bold; color: #0d6efd; }
 </style>
 </head>
 <body>
     <%-- 헤더 --%>
     <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
-    <main class="second_container">
-        <h2 class="section-title">나의 찜 영화 목록</h2>
+    <main class="container my-5">
+        <h2 class="page-title mb-4">나의 찜 영화 목록</h2>
 
-        <c:choose>
-            <c:when test="${not empty likedMovies}">
-                <div class="movie-grid">
-                    <c:forEach var="movie" items="${likedMovies}">
-                        <div class="movie-card">
-                            <%-- 찜 아이콘 컨테이너 --%>
-                            <div class="heart-info-container">
-                                <i class="heart-icon
-                                    <c:choose>
-                                        <c:when test="${movie.isLiked()}">fas fa-heart</c:when>
-                                        <c:otherwise>far fa-heart</c:otherwise>
-                                    </c:choose>
-                                    <c:if test="${empty sessionScope.loginMember || sessionScope.userRole == 'ADMIN'}">disabled</c:if>
-                                "
-                                   data-movie-id="${movie.id}"
-                                   onclick="toggleCart(this)"></i>
-                                <%-- 찜 개수 span 제거 ⭐ --%>
+        <div id="wishlist-container">
+            <c:choose>
+                <c:when test="${not empty likedMovies}">
+                    <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-3" id="movie-grid-row">
+                        <c:forEach var="movie" items="${likedMovies}">
+                            <div class="col" id="movie-card-${movie.id}">
+                                <div class="card h-100 movie-card shadow-sm">
+                                    <div class="heart-info-container">
+                                        <%-- 상세 페이지와 달리, 이 페이지의 하트는 항상 '찜 취소' 기능만 수행 --%>
+                                        <i class="heart-icon fas fa-heart <c:if test='${empty sessionScope.loginMember}'>disabled</c:if>"
+                                           data-movie-id="${movie.id}"
+                                           onclick="toggleCart(this)"></i>
+                                    </div>
+                                    <a href="<c:url value='/movies/${movie.id}'/>" class="card-link">
+                                        <c:set var="posterSrc">
+                                            <c:choose>
+                                                <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                                                    <c:if test="${fn:startsWith(movie.posterPath, 'http')}">${movie.posterPath}</c:if>
+                                                    <c:if test="${not fn:startsWith(movie.posterPath, 'http')}">${pageContext.request.contextPath}${movie.posterPath}</c:if>
+                                                </c:when>
+                                                <c:otherwise>${pageContext.request.contextPath}/resources/images/default_poster.jpg</c:otherwise>
+                                            </c:choose>
+                                        </c:set>
+                                        <img src="${posterSrc}" class="card-img-top" alt="${movie.title} 포스터" />
+                                    </a>
+                                    <div class="card-body">
+                                        <a href="<c:url value='/movies/${movie.id}'/>" class="card-link">
+                                            <h5 class="card-title" title="${movie.title}">${movie.title}</h5>
+                                        </a>
+                                        <p class="card-text">${movie.year} | ${movie.genre}</p>
+                                        <p class="card-text">⭐ <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>
+                                        <p class="card-text">🩸 <fmt:formatNumber value="${movie.violence_score_avg}" pattern="#0.0" /></p>
+                                    </div>
+                                </div>
                             </div>
-                            <a href="<c:url value='/movies/${movie.id}'/>">
-                                <c:set var="posterSrc">
-                                    <c:choose>
-                                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                                            <c:if test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                                                ${movie.posterPath}
-                                            </c:if>
-                                            <c:if test="${not (fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://'))}">
-                                                ${pageContext.request.contextPath}${movie.posterPath}
-                                            </c:if>
-                                        </c:when>
-                                        <c:otherwise>
-                                            ${pageContext.request.contextPath}/resources/images/default_poster.jpg
-                                        </c:otherwise>
-                                    </c:choose>
-                                </c:set>
-                                <img src="${posterSrc}" alt="${movie.title} 포스터" />
-                                <h3>${movie.title}</h3>
-                                <p>${movie.year} | ${movie.genre}</p>
-                                <p>평점: <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>
-                                <p>폭력성 지수: <fmt:formatNumber value="${movie.violence_score_avg}" pattern="#0.0" /></p>
-                            </a>
-                        </div>
-                    </c:forEach>
-                </div>
-            </c:when>
-            <c:otherwise>
-                <p class="no-movies-message">찜한 영화가 없습니다. <a href="<c:url value='/'/>">홈으로 돌아가</a> 새로운 영화를 탐색해보세요!</p>
-            </c:otherwise>
-        </c:choose>
+                        </c:forEach>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="alert alert-info text-center no-movies-message" role="alert">
+                        찜한 영화가 없습니다. <a href="<c:url value='/'/>" class="alert-link">홈으로 돌아가</a> 새로운 영화를 탐색해보세요!
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
     </main>
 
     <%-- 푸터 --%>
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // ⭐ 기존 AJAX 로직을 재사용하여 찜 목록 제거 기능을 구현한 toggleCart 함수
+    function toggleCart(element) {
+        if (element.classList.contains('disabled')) {
+            alert('로그인한 사용자만 이용할 수 있습니다.');
+            return;
+        }
+
+        const movieId = element.dataset.movieId;
+        const cardToRemove = $('#movie-card-' + movieId); // jQuery로 제거할 카드 요소 선택
+        const icon = $(element);
+        
+        // 아이콘을 즉시 비활성화하여 중복 클릭 방지
+        icon.css('pointer-events', 'none');
+
+        // 팀의 기존 AJAX 엔드포인트 사용
+        $.ajax({
+            url: '${pageContext.request.contextPath}/movies/' + movieId + '/toggleCart',
+            type: 'POST',
+            success: function(response) {
+                // 서버로부터 '제거됨' 상태를 받으면 카드를 화면에서 제거
+                if (response.status === 'removed') {
+                    cardToRemove.fadeOut(400, function() {
+                        $(this).remove(); // 애니메이션 후 DOM에서 완전히 제거
+                        
+                        // 모든 카드가 제거되었는지 확인하고 메시지 표시
+                        if ($('#movie-grid-row .col').length === 0) {
+                            $('#wishlist-container').html(
+                                `<div class="alert alert-info text-center no-movies-message" role="alert">
+                                    찜한 영화가 없습니다. <a href="<c:url value='/'/>" class="alert-link">홈으로 돌아가</a> 새로운 영화를 탐색해보세요!
+                                </div>`
+                            );
+                        }
+                    });
+                } else {
+                    // 이 페이지에서는 'added' 상태가 오면 안되지만, 예외 상황에 대비해 아이콘 상태를 원상 복구
+                    alert("예상치 못한 응답입니다. 페이지를 새로고침합니다.");
+                    location.reload();
+                }
+            },
+            error: function(xhr) {
+                alert("찜 취소 중 오류가 발생했습니다: " + (xhr.responseJSON ? xhr.responseJSON.message : "서버 오류"));
+                // 실패 시 아이콘 다시 활성화
+                icon.css('pointer-events', 'auto');
+            }
+        });
+    }
+    </script>
 </body>
 </html>

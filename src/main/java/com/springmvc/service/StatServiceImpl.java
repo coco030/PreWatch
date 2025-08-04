@@ -413,129 +413,101 @@ public class StatServiceImpl implements StatService {
     public Map<String, Double> calculateUserDeviationScores(String memberId) {
         System.out.println("\n===== [START] 사용자 취향 편차 계산 (MEMBER ID: " + memberId + ") =====");
 
-        // 1. 사용자가 리뷰를 남긴 모든 영화의 상세 데이터를 가져옵니다.
         List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);
 
-        // 최소 n개 이상 리뷰
-        if (reviewedMovies == null || reviewedMovies.size() < 0) {
-            System.out.println("[INFO] 리뷰 개수가 " + (reviewedMovies == null ? 0 : reviewedMovies.size()) + "개로 분석 기준(3개)에 미치지 못하여 기본 추천을 제공합니다.");
-            System.out.println("===== [END] 사용자 취향 편차 계산 =====\n");
+        if (reviewedMovies == null || reviewedMovies.size() < 3) { // 포트폴리오 설명을 위해 '3'으로 유지
+            System.out.println("[INFO] 리뷰 개수가 부족하여 기본 추천을 제공합니다.");
             return Collections.emptyMap();
         }
-        System.out.println("[STEP 1] 사용자가 리뷰한 영화 " + reviewedMovies.size() + "건 조회 완료.");
 
-        // 각 항목(작품성, 액션 등)에 대한 '편차'들을 저장할 리스트
         List<Double> ratingDeviations = new ArrayList<>();
         List<Double> violenceDeviations = new ArrayList<>();
         List<Double> horrorDeviations = new ArrayList<>();
         List<Double> sexualDeviations = new ArrayList<>();
 
-        System.out.println("\n[STEP 2] 각 영화별 '개인 점수 - 장르 평균 점수' 편차 계산 시작...");
-        // 2. 사용자가 리뷰한 각 영화를 순회하며 편차를 계산
         for (TasteAnalysisDataDTO review : reviewedMovies) {
             Long movieId = review.getMovieId();
+            if (movieId == null) continue;
+
             List<String> genres = statRepository.findGenresByMovieId(movieId);
+            if (genres.isEmpty()) continue;
+
+            // 작품성 편차 계산을 위해, 해당 영화의 전체 평균 만족도를 직접 조회
+            StatDTO movieStats = statRepository.findMovieStatsById(movieId);
             
-            if (genres.isEmpty()) {
-                System.out.println("  - MOVIE ID " + movieId + ": 장르 정보가 없어 분석에서 제외합니다.");
-                continue;
-            }
-
-            String primaryGenre = genres.get(0); // 대표 장르로 분석
-            StatDTO genreAverage = statRepository.getGenreAverageScores(primaryGenre);
-
-            System.out.println("  - MOVIE ID " + movieId + " (장르: " + genres + ")");
-
-            // 작품성 편차: 모든 영화에 대해 계산
-            if (review.getMyUserRating() != null) {
-                double deviation = review.getMyUserRating() - genreAverage.getGenreRatingAvg();
+            if (review.getMyUserRating() != null && movieStats != null && movieStats.getUserRatingAvg() > 0) {
+                // (내가 준 점수) - (이 영화의 전체 평균 점수)
+                double deviation = (double)review.getMyUserRating() - movieStats.getUserRatingAvg();
                 ratingDeviations.add(deviation);
-                System.out.printf("    > 작품성 편차: (내 점수 %.1f) - (장르 평균 %.1f) = %.1f%n", (double)review.getMyUserRating(), genreAverage.getGenreRatingAvg(), deviation);
+                System.out.printf("    > (영화 평균 기준) 작품성 편차 계산됨: %.1f%n", deviation);
+            }
+            // ★★★★★★★★★★★★★★★★★★★★★★
+
+            // 폭력성, 공포성, 선정성 편차는 기존 방식(장르 평균 비교)을 그대로 유지
+            // (이 부분은 이전의 정확도 개선 코드를 그대로 사용)
+            Map<String, StatDTO> genreAverages = new HashMap<>();
+            for (String genre : genres) {
+                genreAverages.put(genre, statRepository.getGenreAverageScores(genre));
             }
 
-            // 
-            // 폭력성 편차: VIOLENCE_EXPECTED_GENRES 에 포함된 장르일 경우에만 계산합니다.
-            if (review.getMyViolenceScore() != null && genres.stream().anyMatch(VIOLENCE_EXPECTED_GENRES::contains)) {
-                double deviation = review.getMyViolenceScore() - genreAverage.getGenreViolenceScoreAvg();
-                violenceDeviations.add(deviation);
-                System.out.printf("    > (폭력성 관련 장르) 편차 계산: (내 점수 %.1f) - (장르 평균 %.1f) = %.1f%n", (double)review.getMyViolenceScore(), genreAverage.getGenreViolenceScoreAvg(), deviation);
+            if (review.getMyViolenceScore() != null) {
+                genres.stream()
+                    .filter(VIOLENCE_EXPECTED_GENRES::contains)
+                    .findFirst()
+                    .ifPresent(matchedGenre -> {
+                        StatDTO avg = genreAverages.get(matchedGenre);
+                        if (avg != null) {
+                            violenceDeviations.add(review.getMyViolenceScore() - avg.getGenreViolenceScoreAvg());
+                        }
+                    });
             }
-
-            // 공포성 편차: HORROR_EXPECTED_GENRES 에 포함된 장르일 경우에만 계산합니다.
-            if (review.getMyHorrorScore() != null && genres.stream().anyMatch(HORROR_EXPECTED_GENRES::contains)) {
-                double deviation = review.getMyHorrorScore() - genreAverage.getGenreHorrorScoreAvg();
-                horrorDeviations.add(deviation);
-                System.out.printf("    > (공포성 관련 장르) 편차 계산: (내 점수 %.1f) - (장르 평균 %.1f) = %.1f%n", (double)review.getMyHorrorScore(), genreAverage.getGenreHorrorScoreAvg(), deviation);
+            if (review.getMyHorrorScore() != null) {
+                genres.stream()
+                    .filter(HORROR_EXPECTED_GENRES::contains)
+                    .findFirst()
+                    .ifPresent(matchedGenre -> {
+                        StatDTO avg = genreAverages.get(matchedGenre);
+                        if (avg != null) {
+                            horrorDeviations.add(review.getMyHorrorScore() - avg.getGenreHorrorScoreAvg());
+                        }
+                    });
             }
-
-            // 선정성 편차: SEXUAL_EXPECTED_GENRES 에 포함된 장르일 경우에만 계산합니다.
-            if (review.getMySexualScore() != null && genres.stream().anyMatch(SEXUAL_EXPECTED_GENRES::contains)) {
-                double deviation = review.getMySexualScore() - genreAverage.getGenreSexualScoreAvg();
-                sexualDeviations.add(deviation);
-                System.out.printf("    > (선정성 관련 장르) 편차 계산: (내 점수 %.1f) - (장르 평균 %.1f) = %.1f%n", (double)review.getMySexualScore(), genreAverage.getGenreSexualScoreAvg(), deviation);
+            if (review.getMySexualScore() != null) {
+                 genres.stream()
+                    .filter(SEXUAL_EXPECTED_GENRES::contains)
+                    .findFirst()
+                    .ifPresent(matchedGenre -> {
+                        StatDTO avg = genreAverages.get(matchedGenre);
+                        if (avg != null) {
+                            sexualDeviations.add(review.getMySexualScore() - avg.getGenreSexualScoreAvg());
+                        }
+                    });
             }
-            // =======================================================================
         }
 
-        // 4. 계산된 편차들의 평균을 내어 사용자의 최종 취향 점수로 확정
+        // 최종 평균 계산 부분은 그대로
         Map<String, Double> finalDeviationScores = new HashMap<>();
-        finalDeviationScores.put("작품성", calculateAverage(ratingDeviations, "작품성"));
-        finalDeviationScores.put("액션", calculateAverage(violenceDeviations, "액션"));
-        finalDeviationScores.put("스릴", calculateAverage(horrorDeviations, "스릴"));
-        finalDeviationScores.put("감성", calculateAverage(sexualDeviations, "감성"));
-
-        System.out.println("\n[STEP 3] 최종 사용자 취향 편차 점수 도출 완료.");
-        System.out.println("  " + finalDeviationScores);
-        System.out.println("===== [END] 사용자 취향 편차 계산 =====\n");
+        finalDeviationScores.put("작품성", ratingDeviations.stream().mapToDouble(d -> d).average().orElse(0.0));
+        finalDeviationScores.put("액션", violenceDeviations.stream().mapToDouble(d -> d).average().orElse(0.0));
+        finalDeviationScores.put("스릴", horrorDeviations.stream().mapToDouble(d -> d).average().orElse(0.0));
+        finalDeviationScores.put("감성", sexualDeviations.stream().mapToDouble(d -> d).average().orElse(0.0));
 
         return finalDeviationScores;
     }
 
-    // 편차 리스트의 평균을 계산하는 헬퍼 메소드 (디버깅 로그 추가)
-    private double calculateAverage(List<Double> numbers, String type) {
+    private double calculateAverage(List<Double> numbers) {
+        // 1. 리스트가 null이거나 비어 있는지 먼저 확인하여 오류를 방지합니다.
         if (numbers == null || numbers.isEmpty()) {
-            System.out.println("  - 최종 '" + type + "' 편차: 계산할 데이터 없음. [0.0]");
             return 0.0;
         }
-        double average = numbers.stream().mapToDouble(d -> d).average().orElse(0.0);
-        System.out.printf("  - 최종 '%s' 편차: %s -> 평균 [%.2f]%n", type, numbers, average);
-        return average;
-    }
-	
-	// 편차 리스트의 평균을 계산하는 헬퍼 메소드
-	private double calculateAverage(List<Double> numbers) {
-	    if (numbers == null || numbers.isEmpty()) {
-	        return 0.0;
-	    }
-	    return numbers.stream().mapToDouble(d -> d).average().orElse(0.0);
-	}
-    
-    public double calculateWeightedAverage(List<TasteAnalysisDataDTO> reviewedMovies, String type) {
+        // 2. 리스트에 있는 모든 숫자의 합을 저장할 변수를 선언합니다.
         double sum = 0.0;
-        int count = 0;
 
-        System.out.println("[DEBUG] 유저 리뷰 조회 결과 - 개수: " + reviewedMovies.size());
-
-        for (TasteAnalysisDataDTO dto : reviewedMovies) {
-
-            Double value = switch (type) {
-                case "rating" -> dto.getMyUserRating() != null ? dto.getMyUserRating().doubleValue() : null;
-                case "violence" -> dto.getMyViolenceScore() != null ? dto.getMyViolenceScore().doubleValue() : null;
-                case "horror" -> dto.getMyHorrorScore() != null ? dto.getMyHorrorScore().doubleValue() : null;
-                case "sexual" -> dto.getMySexualScore() != null ? dto.getMySexualScore().doubleValue() : null;
-                default -> null;
-            };
-
-            if (value != null) {
-                sum += value;
-                count++;
-
-                System.out.println("[DEBUG] [" + type + "] 유저 점수: " + value);
-            }
+        // 3. for 루프를 사용하여 리스트의 각 숫자를 sum 변수에 더합니다.
+        for (Double number : numbers) {
+            sum = sum + number;
         }
-
-        double result = (count == 0) ? 0.0 : sum / count;
-        System.out.println("[DEBUG] [" + type + "] 평균 점수 계산 완료 → 평균: " + result);
-        return result;
-    }    
+        // 4. 계산된 총합을 리스트의 개수로 나누어 최종 평균을 반환합니다.
+        return sum / numbers.size();
+    }
 }
