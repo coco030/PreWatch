@@ -176,10 +176,9 @@
     
   <!-- 중앙 + 오른쪽: 영화 정보 + 점수 입력란 통합 -->
   <div class="col-md-8">
-    <!-- 영화 기본 정보 -->
     <h2 class="mb-3">${movie.title}</h2>
     <p><strong>감독:</strong> ${movie.director}</p>
-    <p><strong>연도:</strong> ${movie.year}</p>
+     <!--<p><strong>연도:</strong> ${movie.year}</p> 개봉일이 있으므로 25.08.04 -->
     <p><strong>장르:</strong> ${movie.genre}</p>
     <p><strong>연령 등급:</strong>
       <c:choose>
