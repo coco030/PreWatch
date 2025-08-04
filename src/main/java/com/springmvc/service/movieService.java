@@ -50,6 +50,12 @@ public class movieService {
         return movie;
     }
 
+    // 25.08.04 coco030
+    public boolean existsByApiId(String apiId) {
+        return findByApiId(apiId) != null;
+    }
+    
+    
     public movie findByApiId(String apiId) {
         logger.debug("movieService.findByApiId({}) 호출.", apiId);
         movie movie = movieRepository.findByApiId(apiId);

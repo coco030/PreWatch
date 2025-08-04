@@ -133,6 +133,14 @@ public class movieController {
         }
 
         logger.info("[POST /movies] 영화 등록 요청: 제목 = {}, IMDb ID = {}", movie.getTitle(), movie.getApiId());
+        
+     // 중복 등록 방지 25.08.04 coco030
+        if (movie.getApiId() != null && movieService.existsByApiId(movie.getApiId())) {
+            model.addAttribute("movie", movie);
+            model.addAttribute("userRole", session.getAttribute("userRole"));
+            model.addAttribute("errorMessage", "이미 등록된 영화입니다.");
+            return "movie/form";
+        }
 
         // 1. api_id가 입력된 경우: TMDB/OMDb에서 정보 자동 불러오기
         Integer tmdbId = null;

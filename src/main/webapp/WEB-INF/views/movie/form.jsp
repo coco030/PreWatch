@@ -26,6 +26,13 @@
 <body>
 <h1>${movie.id == null ? '영화 등록' : '영화 수정'}</h1>
 
+<%-- 25.08.04 coco030 추가 : 중복 코드 등록 방지 알림 --%>
+<c:if test="${not empty errorMessage}">
+    <div class="alert alert-danger" style="margin-bottom: 15px;">
+        ${errorMessage}
+    </div>
+</c:if>
+
 <c:set var="formActionUrl">
     <c:choose>
         <c:when test="${movie.id == null}">
@@ -36,6 +43,7 @@
         </c:otherwise>
     </c:choose>
 </c:set>
+
 <form action="${formActionUrl}" method="post" enctype="multipart/form-data">
  	<%-- 25.07.30 coco030 추가 : 기능 이걸 넣으면  TMDB api를 써서 배우 매핑하고 출연진도 동시 저장 --%>
     <label for="apiId">IMDb 코드:</label>
