@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 <style>
-    /* 이전과 동일한 CSS 스타일 */
     body { background-color: #f8f9fa; }
     .page-title { font-weight: bold; color: #343a40; border-bottom: 3px solid #dee2e6; padding-bottom: 0.5rem; }
     .movie-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; border: 1px solid #e9ecef; position: relative; }
@@ -24,7 +23,15 @@
     .movie-card .card-text { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.25rem; }
     .card-link { text-decoration: none; color: inherit; }
     .heart-info-container { position: absolute; top: 8px; right: 8px; z-index: 10; background-color: rgba(255, 255, 255, 0.8); border-radius: 50%; padding: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .heart-icon { font-size: 1.1rem; color: #dc3545; }
+    .heart-icon { 
+        font-size: 1.1rem; 
+        color: #dc3545;
+        /* ⭐ 하트 아이콘 색상 변경 시 부드러운 전환 효과 추가 */
+        transition: color 0.2s ease-in-out;
+    }
+    .heart-icon.far { 
+        color: #6c757d; 
+    }
     .heart-icon.disabled { color: #adb5bd; cursor: not-allowed; }
     .no-movies-message a { font-weight: bold; color: #0d6efd; }
 </style>
@@ -35,7 +42,6 @@
 
     <main class="container my-5">
         <h2 class="page-title mb-4">나의 찜 영화 목록</h2>
-
         <div id="wishlist-container">
             <c:choose>
                 <c:when test="${not empty likedMovies}">
@@ -44,7 +50,6 @@
                             <div class="col" id="movie-card-${movie.id}">
                                 <div class="card h-100 movie-card shadow-sm">
                                     <div class="heart-info-container">
-                                        <%-- 상세 페이지와 달리, 이 페이지의 하트는 항상 '찜 취소' 기능만 수행 --%>
                                         <i class="heart-icon fas fa-heart <c:if test='${empty sessionScope.loginMember}'>disabled</c:if>"
                                            data-movie-id="${movie.id}"
                                            onclick="toggleCart(this)"></i>
@@ -88,7 +93,26 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // ⭐ 기존 AJAX 로직을 재사용하여 찜 목록 제거 기능을 구현한 toggleCart 함수
+    // ⭐ 페이지 로드 완료 후 스크립트 실행
+    $(document).ready(function() {
+        
+        // ⭐ 사용자가 찜 취소 동작을 직관적으로 이해하도록 돕는 UI 개선 로직
+        // .heart-info-container에 마우스를 올리거나 뗄 때 이벤트 처리
+        $('#wishlist-container').on({
+            mouseenter: function() {
+                // 마우스를 올리면, 내부의 채워진 하트를 빈 하트로 변경
+                $(this).find('.heart-icon.fas').removeClass('fas').addClass('far');
+            },
+            mouseleave: function() {
+                // 마우스를 떼면, 내부의 빈 하트를 다시 채워진 하트로 복원
+                $(this).find('.heart-icon.far').removeClass('far').addClass('fas');
+            }
+        }, '.heart-info-container'); // 이벤트 위임: 동적으로 추가/제거되는 요소에도 이벤트가 적용되도록 함
+
+    });
+
+
+    // ⭐ 기존 찜 제거 기능 함수 (변경 없음)
     function toggleCart(element) {
         if (element.classList.contains('disabled')) {
             alert('로그인한 사용자만 이용할 수 있습니다.');
@@ -96,23 +120,20 @@
         }
 
         const movieId = element.dataset.movieId;
-        const cardToRemove = $('#movie-card-' + movieId); // jQuery로 제거할 카드 요소 선택
-        const icon = $(element);
+        const cardToRemove = $('#movie-card-' + movieId);
+        const iconContainer = $(element).closest('.heart-info-container');
         
-        // 아이콘을 즉시 비활성화하여 중복 클릭 방지
-        icon.css('pointer-events', 'none');
+        // 중복 클릭을 막기 위해 컨테이너의 이벤트를 즉시 비활성화
+        iconContainer.css('pointer-events', 'none');
 
         // 팀의 기존 AJAX 엔드포인트 사용
         $.ajax({
             url: '${pageContext.request.contextPath}/movies/' + movieId + '/toggleCart',
             type: 'POST',
             success: function(response) {
-                // 서버로부터 '제거됨' 상태를 받으면 카드를 화면에서 제거
                 if (response.status === 'removed') {
                     cardToRemove.fadeOut(400, function() {
-                        $(this).remove(); // 애니메이션 후 DOM에서 완전히 제거
-                        
-                        // 모든 카드가 제거되었는지 확인하고 메시지 표시
+                        $(this).remove();
                         if ($('#movie-grid-row .col').length === 0) {
                             $('#wishlist-container').html(
                                 `<div class="alert alert-info text-center no-movies-message" role="alert">
@@ -122,15 +143,14 @@
                         }
                     });
                 } else {
-                    // 이 페이지에서는 'added' 상태가 오면 안되지만, 예외 상황에 대비해 아이콘 상태를 원상 복구
                     alert("예상치 못한 응답입니다. 페이지를 새로고침합니다.");
                     location.reload();
                 }
             },
             error: function(xhr) {
                 alert("찜 취소 중 오류가 발생했습니다: " + (xhr.responseJSON ? xhr.responseJSON.message : "서버 오류"));
-                // 실패 시 아이콘 다시 활성화
-                icon.css('pointer-events', 'auto');
+                // 실패 시 이벤트 다시 활성화
+                iconContainer.css('pointer-events', 'auto');
             }
         });
     }
