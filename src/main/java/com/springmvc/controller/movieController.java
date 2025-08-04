@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,7 +213,7 @@ public class movieController {
         return value == null || value.trim().isEmpty();
     }
 
-    // coco030 추가 
+   
     // 외부 API에서 영화 상세 정보 가져와 등록 처리
     @PostMapping("/movies/import-api-detail")
     public String importApiMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session) {
@@ -224,6 +223,18 @@ public class movieController {
         }
         logger.info("[POST /movies/import-api-detail] API에서 영화 상세 정보 가져와 등록 요청: imdbID = {}", imdbId);
 
+        
+        // coco030 추가 25.08.04
+        if (movieService.existsByApiId(imdbId)) {
+            logger.warn("[POST /movies/import-api-detail] 이미 등록된 영화입니다. imdbID = {}", imdbId);
+
+            // 모델에 에러 메시지를 담는다. 주소창 피라미터로 보임
+            model.addAttribute("errorMessage", "이미 등록된 영화입니다.");
+            
+            return "redirect:/movies/search-api";
+        }
+
+        
         movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
@@ -257,7 +268,6 @@ public class movieController {
 
 
 	 // read-one: 특정 영화 상세 정보 조회
-    // 25.08.02 coco030 영화 상세 정보 조회
     @GetMapping("/movies/{id}")
     @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Model model, HttpSession session) {
