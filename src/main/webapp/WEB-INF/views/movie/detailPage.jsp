@@ -8,19 +8,70 @@
     <meta charset="UTF-8">
     <title>PreWatch: 상세</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
 <style>
-.movie-card {
-    border: none;
-    background: transparent;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.movie-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); 
+    .movie-card {
+        border: none;
+        background: transparent;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-   
+    .movie-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); 
+    }
+    
+/* 찜(좋아요) */
+    .like-component {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border: 1px solid #dee2e6;
+        border-radius: 50px;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+    }
+    
+    /* 활성화된 컴포넌트 (로그인 회원용) */
+    .like-component.active {
+        cursor: pointer;
+    }
+    .like-component.active:hover {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    
+    /* 비활성화된 컴포넌트 (관리자, DB 오류 등) */
+    .like-component.disabled {
+        cursor: not-allowed;
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    /* 비로그인 사용자용 컴포넌트 */
+    .like-component.login-required {
+        cursor: pointer;
+    }
+    .like-component.login-required:hover {
+         background-color: #f8f9fa;
+    }
+
+    .like-component .like-icon {
+        font-size: 1.4em;
+        transition: color 0.2s ease-in-out, transform 0.2s ease;
+    }
+    
+    .like-component .like-icon.fas { color: #dc3545; }
+    .like-component .like-icon.far { color: #6c757d; }
+    
+    .like-component .like-count {
+        font-size: 0.95em;
+        font-weight: 500;
+        color: #495057;
+    }
 </style>
 </head> 
 <body>
@@ -91,33 +142,35 @@
       </p>
       
 
-      <!-- 찜 버튼 -->
-      <div class="mt-3 favorite-button-wrapper">
-        <c:if test="${empty movie.id}">
-          <button class="favorite-button disabled" disabled>찜 기능 사용 불가 (DB에 없는 영화)</button>
-          <span class="like-count-detail">총 0명 찜</span>
-        </c:if>
-        <c:if test="${not empty sessionScope.loginMember && sessionScope.userRole == 'MEMBER' && not empty movie.id}">
-          <button class="favorite-button" id="toggleFavoriteBtn"
-                  data-movie-id="${movie.id}"
-                  data-is-liked="${movie.isLiked()}">
-            <c:choose>
-              <c:when test="${movie.isLiked()}">찜 목록에서 제거</c:when>
-              <c:otherwise>찜 목록에 추가</c:otherwise>
-            </c:choose>
-          </button>
-          <span class="like-count-detail" id="likeCountDetail">총 ${movie.likeCount}명 찜</span>
-        </c:if>
-        <c:if test="${empty sessionScope.loginMember || sessionScope.userRole == 'ADMIN'}">
-          <button class="favorite-button disabled" disabled>
-            <c:choose>
-              <c:when test="${empty sessionScope.loginMember}">로그인 후 찜 가능</c:when>
-              <c:otherwise>관리자 계정은 찜 기능 불가</c:otherwise>
-            </c:choose>
-          </button>
-          <span class="like-count-detail">총 ${movie.likeCount}명 찜</span>
-        </c:if>
+      <!-- 찜  -->
+      <div class="mt-4 d-flex justify-content-center">
+        <c:choose>
+          <c:when test="${not empty sessionScope.loginMember && sessionScope.userRole == 'MEMBER' && not empty movie.id}">
+            <div class="like-component active" id="likeComponent">
+              <i class="like-icon <c:choose><c:when test='${movie.isLiked()}'>fas fa-heart</c:when><c:otherwise>far fa-heart</c:otherwise></c:choose>"></i>
+              <span class="like-count" id="likeCountSpan">총 ${movie.likeCount}명 찜</span>
+            </div>
+          </c:when>
+          <c:when test="${empty sessionScope.loginMember && not empty movie.id}">
+            <div class="like-component login-required" id="loginRequiredLike">
+              <i class="like-icon far fa-heart"></i>
+              <span class="like-count">총 ${movie.likeCount}명 찜</span>
+            </div>
+          </c:when>
+          <c:otherwise>
+            <div class="like-component disabled">
+              <i class="like-icon far fa-heart"></i>
+              <span class="like-count">
+                <c:choose>
+                  <c:when test="${empty movie.id}">기능 사용 불가</c:when>
+                  <c:otherwise>관리자 찜 불가</c:otherwise>
+                </c:choose>
+              </span>
+            </div>
+          </c:otherwise>
+        </c:choose>
       </div>
+
     </div>
 
     
@@ -548,59 +601,112 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
 <script>
-    $(document).ready(function() {
-        $(document).off('click', '#toggleFavoriteBtn').on('click', '#toggleFavoriteBtn', function() {
-            const movieId = $(this).data('movie-id');
-            const button = $(this);
-            const likeCountDetailSpan = $('#likeCountDetail');
+$(document).ready(function() {
+    
+    // 로그인한 회원용
+    const likeComponent = $('#likeComponent');
+    if (likeComponent.length) {
+        
+        // 데이터 속성 추가
+        likeComponent.data('movie-id', '${movie.id}');
+        likeComponent.data('is-liked', ${movie.isLiked()});
+        
+        // 1. 마우스 호버
+        likeComponent.on({
+            mouseenter: function() {
+                const isLiked = $(this).data('is-liked');
+                const icon = $(this).find('.like-icon');
+                
+                if (isLiked) { // 찜한 상태 -> 빈 하트로
+                    icon.removeClass('fas').addClass('far');
+                } else { // 찜 안 한 상태 -> 채워진 하트로
+                    icon.removeClass('far').addClass('fas');
+                }
+            },
+            mouseleave: function() {
+                const isLiked = $(this).data('is-liked');
+                const icon = $(this).find('.like-icon');
 
-            if (button.hasClass('processing')) return;
+                if (isLiked) {
+                    icon.removeClass('far').addClass('fas');
+                } else {
+                    icon.removeClass('fas').addClass('far');
+                }
+            }
+        });
 
-            button.addClass('processing').prop('disabled', true);
+        // 2. 클릭 이벤트
+        likeComponent.on('click', function() {
+            const component = $(this);
+            const movieId = component.data('movie-id');
+            const icon = component.find('.like-icon');
+            const likeCountSpan = component.find('#likeCountSpan');
+
+            if (component.hasClass('processing')) return;
+            component.addClass('processing').css('pointer-events', 'none');
 
             $.ajax({
                 url: '${pageContext.request.contextPath}/movies/' + movieId + '/toggleCart',
                 type: 'POST',
                 success: function(response) {
+                    let isNowLiked;
                     if (response.status === 'added') {
-                        button.text('찜 목록에서 제거');
-                        button.data('is-liked', true);
+                        isNowLiked = true;
+                        icon.removeClass('far').addClass('fas');
                         alert("찜 목록에 추가되었습니다.");
                     } else if (response.status === 'removed') {
-                        button.text('찜 목록에 추가');
-                        button.data('is-liked', false);
+                        isNowLiked = false;
+                        icon.removeClass('fas').addClass('far');
                         alert("찜 목록에서 제거되었습니다.");
                     }
+                    component.data('is-liked', isNowLiked);
                     if (response.newLikeCount !== undefined) {
-                        likeCountDetailSpan.text(`총 ${response.newLikeCount}명 찜`);
+                        likeCountSpan.text(`총 ${response.newLikeCount}명 찜`);
                     }
                 },
                 error: function(xhr) {
-                    alert("찜 처리 중 오류가 발생했습니다: " + xhr.responseText);
+                    alert("찜 처리 중 오류가 발생했습니다: " + (xhr.responseJSON ? xhr.responseJSON.message : "서버 오류"));
                 },
                 complete: function() {
-                    button.removeClass('processing');
-                    if (button.data('is-liked') !== undefined) {
-                        button.prop('disabled', false);
-                    }
+                    component.removeClass('processing').css('pointer-events', 'auto');
                 }
             });
         });
-        // 스틸컷 '더 보기' 처리
-        $('#toggleGalleryBtn').on('click', function() {
-            const hiddenImages = $('.more-gallery');
-            const isHidden = hiddenImages.first().hasClass('d-none');
+    }
+     
+ // 비로그인 사용자용 찜 컴포넌트 로직
+    const loginRequiredComponent = $('#loginRequiredLike');
+    if (loginRequiredComponent.length) {
+        loginRequiredComponent.on({
+            // 1. 마우스를 올렸을 때: 채워진 하트로 변경
+            mouseenter: function() {
+                $(this).find('.like-icon').removeClass('far').addClass('fas');
+            },
+            // 2. 마우스를 뗐을 때: 원래의 빈 하트로 복원
+            mouseleave: function() {
+                $(this).find('.like-icon').removeClass('fas').addClass('far');
+            },
+            // 3. 클릭했을 때: 로그인 안내
+            click: function() {
+                alert('로그인해야 찜을 할 수 있어요.');
+            }
+        });
+    }
+    // 스틸컷 '더 보기' 처리
+    $('#toggleGalleryBtn').on('click', function() {
+        const hiddenImages = $('.more-gallery');
+        const isHidden = hiddenImages.first().hasClass('d-none');
 
-            hiddenImages.toggleClass('d-none');
-            $(this).text(isHidden ? '간단히 보기' : '더 보기');
-        });
-        
-        // 스틸컷 이미지 클릭 시 모달에 크게 보여주기
-        $('[data-bs-toggle="modal"]').on('click', function() {
-            const imgSrc = $(this).data('bs-image');
-            $('#modalImage').attr('src', imgSrc);
-        });
+        hiddenImages.toggleClass('d-none');
+        $(this).text(isHidden ? '간단히 보기' : '더 보기');
     });
+    
+    // 스틸컷 이미지 클릭 시 모달에 크게 보여주기
+    $('[data-bs-toggle="modal"]').on('click', function() {
+        const imgSrc = $(this).data('bs-image');
+        $('#modalImage').attr('src', imgSrc);
+    });
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
