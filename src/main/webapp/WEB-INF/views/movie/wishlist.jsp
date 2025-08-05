@@ -34,6 +34,39 @@
     }
     .heart-icon.disabled { color: #adb5bd; cursor: not-allowed; }
     .no-movies-message a { font-weight: bold; color: #0d6efd; }
+    
+        /* ✅ 페이지네이션 강제 정렬 */
+    .pagination {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        gap: 4px;
+    }
+    .page-link {
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 6px 12px;
+    }
+    .page-item.active .page-link {
+        background-color: #6f42c1;
+        border-color: #6f42c1;
+        color: #fff;
+    }
+    .page-item.disabled .page-link {
+        color: #adb5bd;
+        pointer-events: none;
+    }
+
+    /* ✅ 모바일에서 최대 6개 카드만 보여주기 */
+    #movie-grid-row .col:nth-child(n+7) {
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        #movie-grid-row .col {
+            display: block !important;
+        }
+    }
 </style>
 </head>
 <body>
@@ -87,11 +120,31 @@
             </c:choose>
         </div>
     </main>
+        <!-- 페이지네이션 -->
+    <nav aria-label="페이지 이동">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <c:if test='${currentPage == 1}'>disabled</c:if>">
+                <a class="page-link" href="?page=${currentPage - 1}">이전</a>
+            </li>
+
+            <c:forEach var="i" begin="1" end="${totalPages}">
+                <li class="page-item <c:if test='${i == currentPage}'>active</c:if>">
+                    <a class="page-link" href="?page=${i}">${i}</a>
+                </li>
+            </c:forEach>
+
+            <li class="page-item <c:if test='${currentPage == totalPages}'>disabled</c:if>">
+                <a class="page-link" href="?page=${currentPage + 1}">다음</a>
+            </li>
+        </ul>
+    </nav>
 
     <%-- 푸터 --%>
     <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+
     <script>
     // ⭐ 페이지 로드 완료 후 스크립트 실행
     $(document).ready(function() {

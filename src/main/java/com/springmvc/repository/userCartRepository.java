@@ -19,4 +19,10 @@ public interface userCartRepository {
     // findMovieIdsInCartByMemberId 메서드: 특정 회원이 찜한 모든 영화의 ID 목록을 조회합니다. (R - Read Some)
     // 목적: 마이페이지 등에서 찜 목록에 있는 영화들을 효율적으로 가져오기 위함.
     List<Long> findMovieIdsInCartByMemberId(String memberId);
+
+    // 25.08.05 coco030
+    int countLikedMovies(String memberId);
+    //25.08.05 coco030 
+    List<Long> findLikedMovieIdsPaged(String memberId, int limit, int offset);
+
 }

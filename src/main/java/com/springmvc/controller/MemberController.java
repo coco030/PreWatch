@@ -158,20 +158,30 @@ public class MemberController {
         return "mypage";
     }
 
-    // 25.07.23. wishlist 뷰 만들고 경로 수정 coco030
- 
+    //25.08.05 coco030 
     @GetMapping("/wishlist")
-    public String showMyPage(HttpSession session, Model model) { // ⭐ Model 추가: 찜 목록을 JSP로 전달하기 위함
-    	System.out.println("wishlist 뷰 이동");
-        Member loginMember = (Member) session.getAttribute("loginMember"); // 세션에서 로그인 멤버 가져옴
-        if (loginMember != null && "MEMBER".equals(loginMember.getRole())) { // 로그인했고 일반 회원인 경우
-            List<movie> likedMovies = userCartService.getLikedMovies(loginMember.getId()); // 찜한 영화 목록 조회 (Read - some)
-            model.addAttribute("likedMovies", likedMovies); // 모델에 찜한 영화 목록 추가
-            return "movie/wishlist";
-        } else {
-            System.out.println("비로그인 또는 관리자 계정으로 마이페이지 접근 시도.");
-            return "redirect:/accessDenied"; 
+    public String showMyPage(
+        @RequestParam(value = "page", defaultValue = "1") int page,
+        @RequestParam(value = "size", defaultValue = "8") int size,
+        HttpSession session,
+        Model model
+    ) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null || !"MEMBER".equals(loginMember.getRole())) {
+            return "redirect:/accessDenied";
         }
+
+        int totalCount = userCartService.countLikedMovies(loginMember.getId());
+        int totalPages = (int) Math.ceil((double) totalCount / size);
+        int offset = (page - 1) * size;
+
+        List<movie> likedMovies = userCartService.getLikedMoviesPaged(loginMember.getId(), size, offset);
+
+        model.addAttribute("likedMovies", likedMovies);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+
+        return "movie/wishlist";
     }
    
 

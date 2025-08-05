@@ -1,18 +1,19 @@
 package com.springmvc.service;
 
-import com.springmvc.domain.movie;
-import com.springmvc.repository.userCartRepository;
-import com.springmvc.repository.movieRepository; // movieRepository를 통해 like_count를 업데이트 (but 직접 호출 제거)
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.springmvc.domain.movie;
+import com.springmvc.repository.movieRepository; // movieRepository를 통해 like_count를 업데이트 (but 직접 호출 제거)
+import com.springmvc.repository.userCartRepository;
 
 // UserCartService 클래스: 찜(User Cart)과 관련된 비즈니스 로직을 구현합니다.
 // 목적: 찜 추가/제거, 찜 상태 확인, 찜 목록 조회 등의 기능을 제공하고, Repository에 데이터베이스 작업을 위임합니다.
@@ -104,4 +105,26 @@ public class userCartService {
         logger.info("회원 {}이 찜한 영화 {}개 상세 정보 가져옴.", memberId, likedMovies.size());
         return likedMovies;
     }
+
+    //25.08.05 coco030 기능 : 보고싶어요 페이지의 페이징
+    @Transactional(readOnly = true)
+    public int countLikedMovies(String memberId) {
+        return userCartRepository.countLikedMovies(memberId);
+    }
+   //25.08.05 coco030 기능 : 보고싶어요 페이지의 페이징
+    @Transactional(readOnly = true)
+    public List<movie> getLikedMoviesPaged(String memberId, int limit, int offset) {
+        List<Long> ids = userCartRepository.findLikedMovieIdsPaged(memberId, limit, offset);
+        List<movie> result = new ArrayList<>();
+        for (Long id : ids) {
+            movie m = movieRepository.findById(id);
+            if (m != null) {
+                m.setIsLiked(true);
+                result.add(m);
+            }
+        }
+        return result;
+    }
+   
+
 }

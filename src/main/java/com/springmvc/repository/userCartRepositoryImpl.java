@@ -88,4 +88,20 @@ public class userCartRepositoryImpl implements userCartRepository {
         logger.info("회원 {}이 찜한 영화 {}개 목록 가져옴.", memberId, movieIds.size());
         return movieIds;
     }
+    
+    //25.08.05 coco030 
+    // ⭐ 총 찜 개수 조회
+    @Override
+    public int countLikedMovies(String memberId) {
+        String sql = "SELECT COUNT(*) FROM user_carts WHERE member_id = ?";
+        return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
+    }
+
+    @Override
+    public List<Long> findLikedMovieIdsPaged(String memberId, int limit, int offset) {
+        String sql = "SELECT movie_id FROM user_carts WHERE member_id = ? ORDER BY movie_id DESC LIMIT ? OFFSET ?";
+        return jdbcTemplate.query(sql, new Object[]{memberId, limit, offset},
+            (rs, rowNum) -> rs.getLong("movie_id"));
+    }
+
 }
