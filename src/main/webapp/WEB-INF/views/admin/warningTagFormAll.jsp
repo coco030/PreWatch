@@ -4,87 +4,210 @@
 <html>
 <head>
     <title>전체 영화 주의 요소 관리</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; }
-        table { border-collapse: collapse; width: 100%; font-size: 12px; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; }
-        .movie-title { 
-            text-align: left; 
-            width: 200px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            position: sticky;
-            left: 0;
-            background-color: #f8f9fa;
-            z-index: 5;
+        body { font-family: sans-serif; margin: 0; background-color: #f4f4f4; }
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 15px; }
+        h1 { font-size: 1.8em; }
+        h1, .page-description { text-align: center; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .controls.bottom { border-bottom: none; border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px;}
+        .back-link { font-size: 1em; text-decoration: none; color: #007bff; }
+        .submit-button { padding: 8px 16px; font-size: 1em; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 5px; }
+        
+        /* --- 데스크탑용 카드 레이아웃 --- */
+        .movie-card { display: flex; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .poster-section { flex: 0 0 150px; }
+        .poster-section img { width: 100%; height: auto; display: block; }
+        .info-section { flex: 1; padding: 20px; display: flex; }
+        .movie-details { flex: 0 0 250px; border-right: 1px solid #eee; padding-right: 20px; }
+        .movie-title { font-weight: bold; font-size: 1.4em; margin-bottom: 10px; }
+        .movie-rating-badge { display: inline-block; padding: 4px 8px; background-color: #6c757d; color: white; border-radius: 4px; font-size: 0.9em; margin-top: 10px; }
+        .tags-section { flex: 1; padding-left: 20px; }
+        .tag-group { margin-bottom: 15px; }
+        .tag-group-title { font-weight: bold; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .checkbox-item { display: block; margin-bottom: 8px; }
+        
+        .pagination { text-align: center; margin-top: 30px; }
+        .pagination button { padding: 8px 12px; margin: 0 5px; cursor: pointer; border: 1px solid #ccc; background-color: white; }
+        .pagination button.active { background-color: #007bff; color: white; border-color: #007bff; }
+        .pagination button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+        /*모바일 반응형 */
+        /* 화면 너비가 768px 이하일 때 적용 */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            h1 { font-size: 1.5em; }
+            .page-description { font-size: 0.9em; }
+            
+            /* 카드 레이아웃을 세로로 변경 */
+            .movie-card, .info-section {
+                flex-direction: column;
+            }
+            .poster-section {
+                /* 포스터 영역을 카드 너비에 맞춤 */
+                flex-basis: auto; 
+                width: 100%;
+                text-align: center; /* 포스터 가운데 정렬 */
+            }
+            .poster-section img {
+                width: 50%; /* 포스터 너비를 절반으로 줄임 */
+                margin: 0 auto;
+            }
+            .info-section {
+                padding: 15px;
+            }
+            .movie-details {
+                flex-basis: auto;
+                border-right: none; /* 세로 구분선 제거 */
+                border-bottom: 1px solid #eee; /* 가로 구분선 추가 */
+                padding-right: 0;
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+            }
+            .tags-section {
+                padding-left: 0;
+            }
         }
-        form { margin-top: 20px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
+<div class="container">
     <h1>전체 영화 주의 요소 관리</h1>
-    <p>이 페이지에서 모든 영화의 주의 요소를 한 번에 설정하고 저장할 수 있습니다.</p>
+    <p class="page-description">영화 포스터와 등급 정보를 참고하여 주의 요소를 설정하고 저장할 수 있습니다.</p>
 
     <c:if test="${param.update == 'success'}">
-        <p style="color: green; font-weight: bold;">성공적으로 저장되었습니다!</p>
+        <p style="color: green; font-weight: bold; text-align: center;">성공적으로 저장되었습니다!</p>
     </c:if>
 
     <form action="<c:url value='/admin/warnings/all'/>" method="post">
-        <table>
-            <thead>
-                <tr>
-                    <%-- 왼쪽 상단 고정 컬럼 --%>
-                    <th class="movie-title">영화 제목</th> 
-                    
-                    <%-- 주의 요소 컬럼 헤더 (가로 스크롤) --%>
-                    <c:forEach items="${allTagsGrouped}" var="categoryEntry">
-                        <c:forEach items="${categoryEntry.value}" var="tag">
-                            <%-- 툴팁으로 전체 문장 보여주기 --%>
-                            <th title="${tag.sentence}"> 
-                                ${categoryEntry.key}
-                                <br/>
-                                (${fn:substring(tag.sentence, 0, 5)}...)
-                            </th>
-                        </c:forEach>
-                    </c:forEach>
-                </tr>
-            </thead>
-            <tbody>
-                <%-- 각 영화를 한 행으로 표시 --%>
-                <c:forEach items="${allMovies}" var="movie">
-                    <tr>
-                        <%-- 영화 제목 (세로 스크롤 시 고정) --%>
-                        <td class="movie-title" title="${movie.title}">
-                            <a href="<c:url value='/admin/warnings/${movie.id}'/>" target="_blank">
-                                ${movie.title}
-                            </a>
-                        </td>
+        <div class="controls">
+            <a href="<c:url value='/movies'/>" class="back-link">« 영화 목록으로</a>
+            <button type="submit" class="submit-button">변경사항 저장</button>
+        </div>
 
-                        <%-- 각 주의 요소에 해당하는 체크박스를 동적으로 생성 --%>
-                        <c:forEach items="${allTagsGrouped}" var="categoryEntry">
-                            <c:forEach items="${categoryEntry.value}" var="tag">
-                                <td>
-                                    <%-- 체크박스의 name을 "tags_{영화ID}" 형태로 만들어 서버에서 구분 --%>
-                                    <input type="checkbox" name="tags_${movie.id}" value="${tag.id}"
-                                        
-                                        <%-- Controller에서 넘겨준 Map에서 현재 영화의 선택된 태그 목록에 이 태그 ID가 있는지 확인 --%>
-                                        <c:if test="${movieToSelectedTagsMap[movie.id].contains(tag.id)}">
-                                            checked
-                                        </c:if>
-                                    >
-                                </td>
+        <div id="movie-list-container">
+            <%-- 영화 카드 --%>
+            <c:forEach items="${allMovies}" var="movie">
+                <div class="movie-card">
+                    <div class="poster-section">
+                        <c:set var="posterSrc">
+                            <c:choose>
+                                <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                                    <c:if test="${fn:startsWith(movie.posterPath, 'http')}">${movie.posterPath}</c:if>
+                                    <c:if test="${not fn:startsWith(movie.posterPath, 'http')}">${pageContext.request.contextPath}${movie.posterPath}</c:if>
+                                </c:when>
+                                <c:otherwise>${pageContext.request.contextPath}/resources/images/placeholder.png</c:otherwise>
+                            </c:choose>
+                        </c:set>
+                        <img src="${posterSrc}" alt="${movie.title} 포스터">
+                    </div>
+                    <div class="info-section">
+                        <div class="movie-details">
+                            <div class="movie-title">${movie.title} (${movie.year})</div>
+                            <c:if test="${not empty movie.rated and movie.rated ne 'N/A'}">
+                                <span class="movie-rating-badge">등급: ${movie.rated}</span>
+                            </c:if>
+                        </div>
+                        <div class="tags-section">
+                            <c:forEach items="${allTagsGrouped}" var="categoryEntry">
+                                <div class="tag-group">
+                                    <div class="tag-group-title">${categoryEntry.key}</div>
+                                    <c:forEach items="${categoryEntry.value}" var="tag">
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="tags_${movie.id}" value="${tag.id}"
+                                                <c:if test="${movieToSelectedTagsMap[movie.id].contains(tag.id)}">checked</c:if>
+                                            >
+                                            ${tag.sentence}
+                                        </label>
+                                    </c:forEach>
+                                </div>
                             </c:forEach>
-                        </c:forEach>
-                    </tr>
-                </c:forEach>
-            </tbody>
-        </table>
+                        </div>
+                    </div>
+                </div>
+            </c:forEach>
+        </div>
 
-        <br>
-        <button type="submit">전체 변경사항 저장</button>
+        <div class="pagination" id="pagination-controls"></div>
+        
+        <div class="controls bottom">
+            <a href="<c:url value='/movies'/>" class="back-link">« 영화 목록으로</a>
+            <button type="submit" class="submit-button">변경사항 저장</button>
+        </div>
     </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const rowsPerPage = 2; 
+        const container = document.getElementById('movie-list-container');
+        const cards = container.querySelectorAll('.movie-card');
+        const paginationControls = document.getElementById('pagination-controls');
+        
+        if (cards.length === 0) return;
+
+        const pageCount = Math.ceil(cards.length / rowsPerPage);
+
+        if (pageCount <= 1) {
+            paginationControls.style.display = 'none';
+            return;
+        }
+
+        let currentPage = 1;
+
+        function displayPage(page) {
+            currentPage = page;
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            // 모바일에서는 'block', 데스크탑에서는 'flex'
+            const displayStyle = window.innerWidth <= 768 ? 'block' : 'flex';
+            
+            cards.forEach((card, index) => {
+                card.style.display = (index >= start && index < end) ? displayStyle : 'none';
+            });
+            updatePaginationButtons();
+        }
+
+        function createPaginationButtons() {
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '이전';
+            prevButton.id = 'prev-button';
+            prevButton.addEventListener('click', () => { if (currentPage > 1) displayPage(currentPage - 1); });
+            paginationControls.appendChild(prevButton);
+
+            for (let i = 1; i <= pageCount; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('page-button');
+                button.dataset.page = i;
+                button.addEventListener('click', () => displayPage(i));
+                paginationControls.appendChild(button);
+            }
+            
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '다음';
+            nextButton.id = 'next-button';
+            nextButton.addEventListener('click', () => { if (currentPage < pageCount) displayPage(currentPage + 1); });
+            paginationControls.appendChild(nextButton);
+        }
+
+        function updatePaginationButtons() {
+            document.querySelectorAll('.page-button').forEach(button => {
+                button.classList.toggle('active', parseInt(button.dataset.page) === currentPage);
+            });
+            document.getElementById('prev-button').disabled = (currentPage === 1);
+            document.getElementById('next-button').disabled = (currentPage === pageCount);
+        }
+
+        createPaginationButtons();
+        displayPage(1);
+
+        // 창 크기가 변경될 때 레이아웃
+        window.addEventListener('resize', () => displayPage(currentPage));
+    });
+</script>
+
 </body>
 </html>

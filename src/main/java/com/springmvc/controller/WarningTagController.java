@@ -40,7 +40,7 @@ public class WarningTagController {
 //특정 영화의 주의 요소 관리 페이지(get)
     @GetMapping("/{movieId}")
     public String showWarningTagForm(@PathVariable("movieId") long movieId, Model model) {
-        // 이 부분은 기존 로직 그대로 완벽합니다. 수정할 필요 없습니다.
+        
         List<WarningTag> allTags = warningTagService.getAllWarningTags();
         Map<String, List<WarningTag>> allTagsGrouped = allTags.stream()
                 .collect(Collectors.groupingBy(WarningTag::getCategory, LinkedHashMap::new, Collectors.toList()));
@@ -60,7 +60,11 @@ public class WarningTagController {
     @PostMapping("/{movieId}")
     public String saveWarningTags(@PathVariable("movieId") long movieId,
                                   @RequestParam(value = "tagIds", required = false) List<Long> tagIds) {
-        // 이 부분도 기존 로직 그대로 완벽합니다. 수정할 필요 없습니다.
+
+    	 if (tagIds == null) {
+ 	        tagIds = new java.util.ArrayList<>();
+ 	    }
+    	
         warningTagService.updateMovieWarningTags(movieId, tagIds);
         return "redirect:/admin/warnings/" + movieId + "?update=success";
     }
@@ -68,17 +72,17 @@ public class WarningTagController {
 //모든 영화의 주의 요소를 한 페이지에서 관리하는 페이지 (GET)
     @GetMapping("/all")
     public String showAllMovieWarningsForm(Model model) {
-        // 1. movieRepository의 findAll() 메소드를 호출하여 모든 영화 목록을 가져옵니다.
+    
         List<movie> allMovies = movieRepository.findAll();
         model.addAttribute("allMovies", allMovies);
 
-        // 2. 전체 주의 요소 마스터 목록을 가져와서 그룹화합니다.
+  
         List<WarningTag> allTags = warningTagService.getAllWarningTags();
         Map<String, List<WarningTag>> allTagsGrouped = allTags.stream()
                 .collect(Collectors.groupingBy(WarningTag::getCategory, LinkedHashMap::new, Collectors.toList()));
         model.addAttribute("allTagsGrouped", allTagsGrouped);
 
-        // 3. 각 영화별로 선택된 태그 정보를 Map 형태로 가공합니다.
+
         Map<Long, List<Long>> movieToSelectedTagsMap = new HashMap<>();
         for (movie movie : allMovies) {
             List<Long> selectedIds = warningTagService.getWarningTagIdsByMovieId(movie.getId());

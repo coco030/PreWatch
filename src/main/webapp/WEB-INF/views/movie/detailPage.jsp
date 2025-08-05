@@ -6,7 +6,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>PreWatch: 상세</title>
+    <title>PreWatch: ${movie.title} 상세 정보</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
@@ -21,7 +21,7 @@
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); 
     }
     
-/* 찜(좋아요) */
+    /* 찜(좋아요) */
     .like-component {
         display: inline-flex;
         align-items: center;
@@ -33,10 +33,7 @@
         user-select: none;
     }
     
-    /* 활성화된 컴포넌트 (로그인 회원용) */
-    .like-component.active {
-        cursor: pointer;
-    }
+    .like-component.active { cursor: pointer; }
     .like-component.active:hover {
         background-color: #f8f9fa;
         border-color: #ced4da;
@@ -44,107 +41,112 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
     
-    /* 비활성화된 컴포넌트 (관리자, DB 오류 등) */
-    .like-component.disabled {
-        cursor: not-allowed;
-        background-color: #e9ecef;
-        color: #6c757d;
-    }
-
-    /* 비로그인 사용자용 컴포넌트 */
-    .like-component.login-required {
-        cursor: pointer;
-    }
-    .like-component.login-required:hover {
-         background-color: #f8f9fa;
-    }
-
-    .like-component .like-icon {
-        font-size: 1.4em;
-        transition: color 0.2s ease-in-out, transform 0.2s ease;
-    }
-    
+    .like-component.disabled { cursor: not-allowed; background-color: #e9ecef; color: #6c757d; }
+    .like-component.login-required { cursor: pointer; }
+    .like-component.login-required:hover { background-color: #f8f9fa; }
+    .like-component .like-icon { font-size: 1.4em; transition: color 0.2s ease-in-out, transform 0.2s ease; }
     .like-component .like-icon.fas { color: #dc3545; }
     .like-component .like-icon.far { color: #6c757d; }
+    .like-component .like-count { font-size: 0.95em; font-weight: 500; color: #495057; }
     
-    .like-component .like-count {
-        font-size: 0.95em;
-        font-weight: 500;
-        color: #495057;
+    /* 주의 요소 UI 스타일 */
+    .summary-header { 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        gap: 15px; 
+        cursor: pointer; 
+        padding: 10px;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
     }
+    .summary-header:hover {
+        background-color: #e9ecef;
+    }
+    .warning-title { font-size: 1.1em; font-weight: 500; color: #333; }
+    .icon-group { display: flex; gap: 5px; }
+    .icon-group img { 
+        width: 28px; /* 아이콘 크기 */
+        height: 28px; /* 아이콘 크기 */
+    }
+    .details-content { 
+        display: none; /* 기본적으로 숨김 */
+        margin-top: 15px; 
+        padding: 20px; 
+        background-color: #fff; 
+        border: 1px solid #e9ecef; 
+        border-radius: 8px; 
+    }
+    .category-block h5 { font-weight: bold; font-size: 1em; }
+    .category-block ul { padding-left: 20px; list-style-type: '✓ '; }
+    .category-block ul li { margin-bottom: 5px; }
 </style>
 </head> 
 <body>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
-<%-- 폭력성 주의문구 --%>
+<%-- 폭력성 주의문구 쓸모없어보여서 08.05 주석처리 coco030
 <c:import url="/review/sensitivity">
     <c:param name="movieId" value="${movie.id}" />
-</c:import>   
+</c:import>   --%>
 
-<%-- 관리자(ADMIN)로 로그인한 경우에만 "주의 요소 관리" 버튼을 표시 --%>
+<%--관리자 메뉴 --%>
 <c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
-    <div class="admin-menu" style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin-top: 20px; border-radius: 5px;">
-        <h4>관리자 메뉴</h4>
-        <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-warning">
-            ⚠️ 주의 요소 관리
-        </a>
-        <%-- 여기에 다른 관리 기능 링크(예: 영화 정보 수정, 삭제 등)를 추가할 수 있습니다. --%>
-        <%-- <a href="#" class="btn btn-info">영화 정보 수정</a> --%>
+    <div class="container mt-4">
+        <div class="admin-menu" style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px;">
+            <h4>관리자 메뉴</h4>
+            <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-warning">
+                ⚠️ 주의 요소 관리
+            </a>
+        </div>
     </div>
 </c:if>
 
-<%-- 주의 요소 표시 영역 --%>
+
+<%-- 사용자/관리자가 보는 주의 요소 표시 --%>
 <c:if test="${not empty groupedWarnings}">
-    <div class="warning-section" style="border: 1px solid #eee; padding: 20px; margin-top: 30px; border-radius: 8px;">
-        
-        <h4>⚠️ 이 콘텐츠에는 다음과 같은 요소가 포함되어 있어요.</h4>
-        
-        <%-- 1. 요약 정보 (아이콘 + 카테고리명) --%>
-        <p>
-            <c:forEach items="${groupedWarnings}" var="entry">
-                <span style="display:inline-block; text-align:center; margin: 5px; padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
-                    <%-- 카테고리 이름에 따라 다른 아이콘 표시 --%>
-                    <c:choose>
-                        <c:when test="${entry.key == '공포'}">
-                            <img src="${pageContext.request.contextPath}/resources/images/movies/horror.png" alt="공포" width="40">
-                        </c:when>
-                        <c:when test="${entry.key == '잔인성'}">
-                            <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="잔인성" width="40">
-                        </c:when>
-                        <c:when test="${entry.key == '폭력성'}">
-                            <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="폭력성" width="40">
-                        </c:when>
-                        <c:when test="${entry.key == '선정성'}">
-                            <img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" width="40">
-                        </c:when>
-                        <c:otherwise>
-                            <img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" width="40">
-                        </c:otherwise>
-                    </c:choose>
-                    <br>
-                    <b>${entry.key}</b>
-                </span>
-            </c:forEach>
-        </p>
-
-        <%-- 2. 상세 정보 (자세히 보기) --%>
-        <details>
-            <summary style="cursor: pointer; color: #007bff; margin-top: 10px;">자세히 보기</summary>
-            <ul style="margin-top: 10px; padding-left: 30px; list-style-type: '✓ '; ">
-                <c:forEach items="${groupedWarnings}" var="entry">
-                    <c:forEach items="${entry.value}" var="sentence">
-                        <li>${sentence}</li>
+    <div class="container mt-4">
+        <div class="warning-section" style="padding: 20px; border-radius: 8px; background-color: #f8f9fa;">
+            
+            <%-- 1. "주의할 요소가 있어요" + 아이콘 요약 (클릭 가능한 영역) --%>
+            <div id="warningSummary" class="summary-header">
+                <span class="warning-title">주의할 요소가 있어요</span>
+                <div class="icon-group">
+                    <c:forEach items="${groupedWarnings}" var="entry">
+                        <c:choose>
+                            <c:when test="${entry.key == '공포'}">
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/horror.png" alt="공포" title="공포">
+                            </c:when>
+                            <c:when test="${entry.key == '잔인성'}">
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="잔인성" title="잔인성">
+                            </c:when>
+                            <c:when test="${entry.key == '폭력성'}">
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="폭력성" title="폭력성">
+                            </c:when>
+                            <c:when test="${entry.key == '선정성'}">
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" title="선정성">
+                            </c:when>
+                            <c:otherwise>
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" title="기타">
+                            </c:otherwise>
+                        </c:choose>
                     </c:forEach>
-                </c:forEach>
-            </ul>
-        </details>
+                </div>
+            </div>
+
+            <%-- 2. 상세 내용 영역 (기본적으로 숨겨져 있음) --%>
+            <div id="warningDetails" class="details-content">
+                <ul class="warning-list-flat">
+                    <c:forEach items="${groupedWarnings}" var="entry">
+                        <c:forEach items="${entry.value}" var="sentence">
+                            <li>${sentence}</li>
+                        </c:forEach>
+                    </c:forEach>
+                </ul>
+            </div>
+        </div>
     </div>
 </c:if>
-
-
-
-
 
 
 <div class="container mt-4">
@@ -337,8 +339,9 @@
     </div>
   </div>
 </c:if>
+</div> <!-- 통계메시지의 container mt-4 끝 -->
 
-</div> <!-- container mt-4 끝 -->
+
 
 <!-- 출연자 정보가 하나도 없을 땐 조건문으로 감싸서 안 이 섹션을 안 보이게-->
 <c:if test="${not empty dbCastList or not empty castAndCrew}">
@@ -630,9 +633,6 @@
     </div>
 </c:if>
 
-
-
-
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 -->
 <div class="d-block d-md-none" style="height: 80px;"></div>
 
@@ -658,7 +658,27 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+
 <script>
+    // 주의 요소 토글 스크립트
+    // 스크립트 중복 실행 방지
+    if (!window.warningToggleScriptLoaded) {
+        const summary = document.getElementById('warningSummary');
+        const details = document.getElementById('warningDetails');
+
+        if (summary && details) {
+            summary.addEventListener('click', () => {
+                // details 영역의 display 상태를 확인하고 토글
+                if (details.style.display === 'block') {
+                    details.style.display = 'none';
+                } else {
+                    details.style.display = 'block';
+                }
+            });
+        }
+        window.warningToggleScriptLoaded = true;
+    }
+
 $(document).ready(function() {
     
     // 로그인한 회원용
