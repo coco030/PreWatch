@@ -345,7 +345,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         
         // "공포"를 "스릴"로 수정
         if (lovesProvocativeness && hatesThrill) // hatesHorror -> hatesThrill
-            return "감성(선정성) 중심 영화는 좋아하지만, 긴장감 넘치는 스릴러 요소는 기피하는 편입니다.";
+            return "긴장감 넘치는 스릴러 요소는 기피하는 편입니다.";
 
         // 단일 강한 편차도 커버 가능
         if (deviationScores.getOrDefault("스릴", 0.0) > 1.5) // "공포" -> "스릴"

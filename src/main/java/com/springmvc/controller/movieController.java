@@ -47,6 +47,7 @@ import com.springmvc.service.StatService;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
+import com.springmvc.service.WarningTagService;
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
@@ -71,6 +72,8 @@ public class movieController {
 
     @Autowired
     private StatRepository statRepository;
+    @Autowired
+    private WarningTagService warningTagService; 
     
     @Autowired
     public movieController(movieService movieService,
@@ -283,7 +286,7 @@ public class movieController {
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-            movie.setIsLiked(isLiked); // ✅ isLiked만 넣어줌
+            movie.setIsLiked(isLiked);
             logger.debug("상세 페이지 - 영화 '{}' (ID: {})의 찜 상태: {}", movie.getTitle(), movie.getId(), isLiked);
         } else {
             movie.setIsLiked(false);
@@ -300,7 +303,6 @@ public class movieController {
         System.out.println("리뷰 전체 리스트");
         
         // 25.08.02 coco030 영화 통계 정보 가져오기
-        // 영화 통계 정보 가져오기
         StatDTO stat = statRepository.findMovieStatsById(id);
         List<String> genres = statRepository.findGenresByMovieId(id);
         stat.setGenres(genres);
@@ -310,22 +312,19 @@ public class movieController {
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             // 로그인한 사용자: 취향 기반 추천
             recommended = statService.recommendForLoggedInUser(id, loginMember.getId());
-            
-            // 사용자 취향 편차 점수도 모델에 추가 (선택사항 - 디버깅용)
+            // 사용자 취향 편차 점수
             Map<String, Double> userTasteScores = statService.calculateUserDeviationScores(loginMember.getId());
             model.addAttribute("userTasteScores", userTasteScores);
             
             logger.info("로그인 사용자 {}의 취향 기반 추천 영화 {} 개 조회 완료", 
                         loginMember.getId(), recommended.size());
         } else {
-            // 비로그인 사용자: 기존 게스트 추천
             recommended = statService.recommendForGuest(id);
             
             logger.info("비로그인 사용자를 위한 게스트 추천 영화 {} 개 조회 완료", 
                         recommended.size());
         }
 
-        // JSP 전달
         model.addAttribute("stat", stat); 
         model.addAttribute("recommended", recommended); 
         model.addAttribute("movie", movie); 
@@ -372,6 +371,14 @@ public class movieController {
 
         logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
                 movie.getId(), movie.getTitle(), movie.getLikeCount());
+        
+        // 25.08.05 coco030  [주의 요소 정보 조회]
+        Map<String, List<String>> groupedWarnings = warningTagService.getGroupedWarningTagsByMovieId(id);
+        logger.info("[주의 요소] 영화 ID: {}, 조회된 주의 요소 그룹 수: {}", id, groupedWarnings.size());
+        if (!groupedWarnings.isEmpty()) {
+            System.out.println("주의 요소 정보: " + groupedWarnings);
+        }
+        model.addAttribute("groupedWarnings", groupedWarnings);
       
 
         return "movie/detailPage";

@@ -82,6 +82,53 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>   
 
+<%-- 주의 요소 표시 영역 --%>
+<c:if test="${not empty groupedWarnings}">
+    <div class="warning-section" style="border: 1px solid #eee; padding: 20px; margin-top: 30px; border-radius: 8px;">
+        
+        <h4>⚠️ 이 콘텐츠에는 다음과 같은 요소가 포함되어 있어요.</h4>
+        
+        <%-- 1. 요약 정보 (아이콘 + 카테고리명) --%>
+        <p>
+            <c:forEach items="${groupedWarnings}" var="entry">
+                <span style="display:inline-block; text-align:center; margin: 5px; padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
+                    <%-- 카테고리 이름에 따라 다른 아이콘 표시 --%>
+                    <c:choose>
+                        <c:when test="${entry.key == '공포'}">
+                            <img src="${pageContext.request.contextPath}/resources/images/movies/horror.png" alt="공포" width="40">
+                        </c:when>
+                        <c:when test="${entry.key == '잔인성'}">
+                            <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="잔인성" width="40">
+                        </c:when>
+                        <c:when test="${entry.key == '폭력성'}">
+                            <img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="폭력성" width="40">
+                        </c:when>
+                        <c:when test="${entry.key == '선정성'}">
+                            <img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" width="40">
+                        </c:when>
+                        <c:otherwise>
+                            <img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" width="40">
+                        </c:otherwise>
+                    </c:choose>
+                    <br>
+                    <b>${entry.key}</b>
+                </span>
+            </c:forEach>
+        </p>
+
+        <%-- 2. 상세 정보 (자세히 보기) --%>
+        <details>
+            <summary style="cursor: pointer; color: #007bff; margin-top: 10px;">자세히 보기</summary>
+            <ul style="margin-top: 10px; padding-left: 30px; list-style-type: '✓ '; ">
+                <c:forEach items="${groupedWarnings}" var="entry">
+                    <c:forEach items="${entry.value}" var="sentence">
+                        <li>${sentence}</li>
+                    </c:forEach>
+                </c:forEach>
+            </ul>
+        </details>
+    </div>
+</c:if>
 
 
 
