@@ -51,35 +51,47 @@
     
     /* 주의 요소 UI 스타일 */
     .summary-header { 
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between; 
-        gap: 15px; 
+        display: block; /* 수직 정렬을 위해 block으로 변경 */
+        text-align: left; /* 내부 요소  정렬 */
         cursor: pointer; 
-        padding: 10px;
+        padding: 15px;
         border-radius: 8px;
         transition: background-color 0.2s ease;
     }
     .summary-header:hover {
         background-color: #e9ecef;
     }
-    .warning-title { font-size: 1.1em; font-weight: 500; color: #333; }
-    .icon-group { display: flex; gap: 5px; }
+    .warning-title {
+        display: block; /* 제목을 한 줄 차지하게 함 */
+        font-size: 0.9em; /* 글자 크기 줄임 */
+        font-weight: 500; 
+        color: #6c757d; /* 튀지 않는 색상으로 변경 */
+        margin-bottom: 10px; /* 아이콘과의 간격 */
+    }
+    .icon-group { 
+        display: inline-flex; /* 아이콘들이 한 줄로 뭉치도록 설정 */
+        gap: 8px; 
+    }
     .icon-group img { 
-        width: 28px; /* 아이콘 크기 */
-        height: 28px; /* 아이콘 크기 */
+        width: 28px; 
+        height: 28px; 
     }
     .details-content { 
-        display: none; /* 기본적으로 숨김 */
+        display: none; 
         margin-top: 15px; 
         padding: 20px; 
         background-color: #fff; 
         border: 1px solid #e9ecef; 
         border-radius: 8px; 
     }
-    .category-block h5 { font-weight: bold; font-size: 1em; }
-    .category-block ul { padding-left: 20px; list-style-type: '✓ '; }
-    .category-block ul li { margin-bottom: 5px; }
+    .warning-list-flat { 
+        padding-left: 20px; 
+        list-style-type: '✓ '; 
+        margin: 0; 
+    }
+    .warning-list-flat li { 
+        margin-bottom: 5px; 
+    }
 </style>
 </head> 
 <body>
@@ -108,7 +120,7 @@
     <div class="container mt-4">
         <div class="warning-section" style="padding: 20px; border-radius: 8px; background-color: #f8f9fa;">
             
-            <%-- 1. "주의할 요소가 있어요" + 아이콘 요약 (클릭 가능한 영역) --%>
+            <%-- 1. 클릭 가능한 전체 요약 영역 --%>
             <div id="warningSummary" class="summary-header">
                 <span class="warning-title">주의할 요소가 있어요</span>
                 <div class="icon-group">
@@ -147,6 +159,7 @@
         </div>
     </div>
 </c:if>
+
 
 
 <div class="container mt-4">
