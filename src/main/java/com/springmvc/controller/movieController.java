@@ -47,10 +47,10 @@ import com.springmvc.service.StatService;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
-import com.springmvc.service.WarningTagService;
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
+import com.springmvc.service.WarningTagService;
 
 @Controller
 public class movieController {
@@ -832,5 +832,40 @@ public class movieController {
         model.addAttribute("recentComments", recentComments);
         return "movie/comment-card";
     }
+    
+    @GetMapping("/movies/all-recent-comments")  //(8/5 추가)
+    @Transactional(readOnly = true)
+    public String allRecentComments(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "date") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            @RequestParam(required = false, defaultValue = "all") String searchType,
+            @RequestParam(required = false) String keyword,
+            Model model, HttpSession session) {
+        
+        logger.info("[GET /movies/all-recent-comments] 모든 최근 댓글 목록 요청.");
+        
+        if (keyword == null) {
+            keyword = "";
+        }
+        
+        List<RecentCommentDTO> recentComments = movieService.getAllRecentCommentsWithDetails(page, limit, sortBy, sortDirection, searchType, keyword);
+        int totalComments = movieService.getTotalCommentCount(searchType, keyword);
+        int totalPages = (int) Math.ceil((double) totalComments / limit);
+
+        model.addAttribute("recentComments", recentComments);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("limit", limit);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDirection", sortDirection);
+        model.addAttribute("searchType", searchType);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("userRole", session.getAttribute("userRole"));
+        
+        return "movie/allRecentCommentList";
+    }
+
     
 }

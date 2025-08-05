@@ -72,6 +72,36 @@
         .movie-link { text-decoration: none; color: inherit; display: block; }
         .today { background-color: #ffe; }
         .other-month { color: #aaa; }
+        
+
+        /* --- 통계 표시 박스  --- */
+        .review-banner-bar {
+       		padding: 1rem;
+            margin-top: 1rem; /* 위 콘텐츠와의 간격 */
+            text-align: center;
+            background-color: #212529;
+            border-top: 1px solid #e9ecef;
+
+        }
+
+        .review-banner-bar p {
+            font-size: 1.1rem;
+            color: white;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .review-banner-bar p:last-child {
+            margin-bottom: 0; /* 마지막 문장의 하단 마진 제거 */
+        }
+
+        .review-banner-bar strong {
+            font-weight: 700;
+            font-size: 1.25em; /* 주변 텍스트보다 1.25배 크게 */
+            color: #DDA0DD;
+            margin: 0 4px; /* 숫자 좌우에 약간의 여백 */
+            min-width: 40px; /* 숫자가 변할 때 레이아웃이 흔들리지 않도록 최소 너비 지정 */
+            display: inline-block; }
     </style>
 </head>
 <body>
@@ -86,12 +116,12 @@
         </div>
     </main>
 	<!-- 통계 표시 박스  -->
-<div class="stats-display-box">
+<div class="review-banner-bar">
     <p>영화 댓글 <strong id="reviewCount" data-count="${globalStats.totalReviewContentCount}">0</strong>개가 쌓였어요.</p>
-    <p>영화 만족도 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
+  <!--  <p>영화 만족도 평가가 <strong id="ratingCount" data-count="${globalStats.totalUserRatingCount}">0</strong>개가 쌓였어요.</p>
     <p>영화 폭력성 평가가 <strong id="violenceCount" data-count="${globalStats.totalViolenceScoreCount}">0</strong>개 쌓였어요.</p>
     <p>영화 공포성 평가가 <strong id="horrorCount" data-count="${globalStats.totalHorrorScoreCount}">0</strong>개가 쌓였어요.</p>
-    <p>영화 선정성 평가가 <strong id="sexualCount" data-count="${globalStats.totalSexualScoreCount}">0</strong>개 쌓였어요.</p>   
+    <p>영화 선정성 평가가 <strong id="sexualCount" data-count="${globalStats.totalSexualScoreCount}">0</strong>개 쌓였어요.</p>    -->
 </div>
 
 <script>

@@ -5,7 +5,11 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="<c:url value='/resources/css/comment-card.css'/>">
+ <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="section-title">최근 달린 댓글</h2>
+       <!-- (8/5 추가) -->
+      <a href="<c:url value='/movies/all-recent-comments'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+ </div>     
 	<div class="row g-3 justify-content-center">
 	  <c:choose>
 	    <c:when test="${not empty recentComments}">

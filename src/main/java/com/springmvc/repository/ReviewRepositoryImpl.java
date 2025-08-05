@@ -27,50 +27,150 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     public List<RecentCommentDTO> findTop3RecentComments() {
         logger.debug("ReviewRepositoryImpl.findTop3RecentComments() 호출: 최근 코멘트 조회 시도.");
 
+       //(8/5 추가)
         String sql = "SELECT " +
-                     "    ur.id AS reviewId, " +       // ⭐ 리뷰의 ID 추가 (user_reviews 테이블의 id)
-                     "    m.id AS memberId, " +        // member 테이블의 'id' 컬럼 (사용자 ID)
-                     "    ur.user_rating AS userRating, " +
-                     "    mov.id AS movieId, " +       // ⭐ 영화의 ID 추가 (movies 테이블의 id)
-                     "    mov.title AS movieName, " +
-                     "    ur.review_content AS reviewContent, " +
-                     "    mov.poster_path AS posterPath, " +
-                     "    mov.like_count AS newLikeCount " + // movies 테이블의 'like_count' 컬럼 사용
-                     "FROM " +
-                     "    user_reviews ur " +
-                     "JOIN " +
-                     "    member m ON ur.member_id = m.id " +
-                     "JOIN " +
-                     "    movies mov ON ur.movie_id = mov.id " +
-                     "ORDER BY " +
-                     "    ur.created_at DESC " +
-                     "LIMIT 3"; // LIMIT 3은 유지하되, 필요에 따라 개수 조절
+                "    ur.id AS reviewId, " +       
+                "    ur.member_id AS memberId, " + 
+                "    ur.user_rating AS userRating, " +
+                "    mov.id AS movieId, " +       
+                "    mov.title AS movieName, " +
+                "    ur.review_content AS reviewContent, " +
+                "    mov.poster_path AS posterPath, " +
+                "    mov.like_count AS newLikeCount " +
+                "FROM " +
+                "    user_reviews ur " +
+                "JOIN " +
+                "    member m ON ur.member_id = m.id " +
+                "JOIN " +
+                "    movies mov ON ur.movie_id = mov.id " +
+                "WHERE ur.review_content IS NOT NULL AND ur.review_content != '' " +
+                "ORDER BY " +
+                "    ur.created_at DESC " +
+                "LIMIT 3";
+   List<RecentCommentDTO> comments = jdbcTemplate.query(sql, new RecentCommentRowMapper());
+   logger.debug("ReviewRepositoryImpl.findTop3RecentComments() 조회 결과: {}개의 코멘트 발견.", comments.size());
+   return comments;
+}
 
-        List<RecentCommentDTO> comments = jdbcTemplate.query(sql, new RecentCommentRowMapper());
+//(8/5 추가)
+@Override
+public List<RecentCommentDTO> findAllRecentCommentsWithDetails(int offset, int limit, String sortBy, String sortDirection, String searchType, String keyword) {
+   logger.debug("findAllRecentCommentsWithDetails 호출 - offset: {}, limit: {}, sortBy: {}, searchType: {}, keyword: {}", offset, limit, sortBy, searchType, keyword);
 
-        logger.debug("ReviewRepositoryImpl.findTop3RecentComments() 조회 결과: {}개의 코멘트 발견.", comments.size());
-        if (!comments.isEmpty()) {
-            comments.forEach(comment -> logger.debug("  - 코멘트: {}", comment.toString())); // 각 코멘트 내용 로깅
-        }
-        return comments; // 두 번 호출하지 않고, 한 번 조회한 결과를 반환
-    }
+   StringBuilder sqlBuilder = new StringBuilder();
+   sqlBuilder.append("SELECT ur.id AS reviewId, ur.member_id AS memberId, ur.user_rating AS userRating, ");
+   sqlBuilder.append("ur.review_content AS reviewContent, mov.id AS movieId, mov.title AS movieName, mov.poster_path AS posterPath, mov.like_count AS newLikeCount ");
+   sqlBuilder.append("FROM user_reviews ur ");
+   sqlBuilder.append("JOIN movies mov ON ur.movie_id = mov.id ");
+   sqlBuilder.append("WHERE ur.review_content IS NOT NULL AND ur.review_content != '' ");
 
-    // ResultSet을 RecentCommentDTO 객체로 매핑하는 RowMapper 구현
-    private static class RecentCommentRowMapper implements RowMapper<RecentCommentDTO> {
-        @Override
-        public RecentCommentDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
-            RecentCommentDTO dto = new RecentCommentDTO();
-            // ⭐⭐⭐ 여기 추가 ⭐⭐⭐
-            dto.setReviewId(rs.getLong("reviewId")); // SQL에서 AS reviewId로 조회한 값을 매핑
-            dto.setMovieId(rs.getLong("movieId"));   // SQL에서 AS movieId로 조회한 값을 매핑
-            // ⭐⭐⭐ 추가 끝 ⭐⭐⭐
-            dto.setMemberId(rs.getString("memberId"));
-            dto.setUserRating(rs.getInt("userRating"));
-            dto.setMovieName(rs.getString("movieName"));
-            dto.setReviewContent(rs.getString("reviewContent"));
-            dto.setPosterPath(rs.getString("posterPath"));
-            dto.setNewLikeCount(rs.getInt("newLikeCount"));
-            return dto;
-        }
-    }
+   String likeKeyword = "%" + keyword + "%";
+   
+   // 검색 조건 추가
+   if (keyword != null && !keyword.trim().isEmpty()) {
+       switch (searchType) {
+           case "title":
+               sqlBuilder.append("AND mov.title LIKE ? ");
+               break;
+           case "content":
+               sqlBuilder.append("AND ur.review_content LIKE ? ");
+               break;
+           case "writer":
+               sqlBuilder.append("AND ur.member_id LIKE ? ");
+               break;
+           case "all":
+           default:
+               sqlBuilder.append("AND (mov.title LIKE ? OR ur.review_content LIKE ? OR ur.member_id LIKE ?) ");
+               break;
+       }
+   }
+
+   // 정렬 조건 추가
+   String orderByClause;
+   switch (sortBy) {
+       case "like":
+           orderByClause = "ORDER BY newLikeCount " + sortDirection;
+           break;
+       case "rating":
+           orderByClause = "ORDER BY ur.user_rating " + sortDirection;
+           break;
+       case "date":
+       default:
+           orderByClause = "ORDER BY ur.created_at " + sortDirection;
+           break;
+   }
+   sqlBuilder.append(orderByClause);
+   sqlBuilder.append(" LIMIT ? OFFSET ?");
+
+   String sql = sqlBuilder.toString();
+   
+   // 파라미터 바인딩
+   Object[] params;
+   if (keyword != null && !keyword.trim().isEmpty()) {
+       if (searchType.equals("all")) {
+           params = new Object[]{likeKeyword, likeKeyword, likeKeyword, limit, offset};
+       } else {
+           params = new Object[]{likeKeyword, limit, offset};
+       }
+   } else {
+       params = new Object[]{limit, offset};
+   }
+
+   return jdbcTemplate.query(sql, new RecentCommentRowMapper(), params);
+}
+
+@Override
+public int countAllComments(String searchType, String keyword) {
+   StringBuilder sqlBuilder = new StringBuilder();
+   sqlBuilder.append("SELECT COUNT(*) FROM user_reviews ur ");
+   sqlBuilder.append("JOIN movies mov ON ur.movie_id = mov.id ");
+   sqlBuilder.append("WHERE ur.review_content IS NOT NULL AND ur.review_content != '' ");
+
+   String likeKeyword = "%" + keyword + "%";
+
+   if (keyword != null && !keyword.trim().isEmpty()) {
+       switch (searchType) {
+           case "title":
+               sqlBuilder.append("AND mov.title LIKE ?");
+               break;
+           case "content":
+               sqlBuilder.append("AND ur.review_content LIKE ?");
+               break;
+           case "writer":
+               sqlBuilder.append("AND ur.member_id LIKE ?");
+               break;
+           case "all":
+           default:
+               sqlBuilder.append("AND (mov.title LIKE ? OR ur.review_content LIKE ? OR ur.member_id LIKE ?)");
+               break;
+       }
+   }
+
+   String sql = sqlBuilder.toString();
+   if (keyword != null && !keyword.trim().isEmpty()) {
+       if (searchType.equals("all")) {
+           return jdbcTemplate.queryForObject(sql, Integer.class, likeKeyword, likeKeyword, likeKeyword);
+       } else {
+           return jdbcTemplate.queryForObject(sql, Integer.class, likeKeyword);
+       }
+   } else {
+       return jdbcTemplate.queryForObject(sql, Integer.class);
+   }
+}
+
+private static class RecentCommentRowMapper implements RowMapper<RecentCommentDTO> {
+   @Override
+   public RecentCommentDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+       RecentCommentDTO dto = new RecentCommentDTO();
+       dto.setReviewId(rs.getLong("reviewId"));
+       dto.setMovieId(rs.getLong("movieId"));
+       dto.setMemberId(rs.getString("memberId"));
+       dto.setUserRating(rs.getInt("userRating"));
+       dto.setMovieName(rs.getString("movieName"));
+       dto.setReviewContent(rs.getString("reviewContent"));
+       dto.setPosterPath(rs.getString("posterPath"));
+       dto.setNewLikeCount(rs.getInt("newLikeCount"));
+       return dto;
+   }
+}
 }
