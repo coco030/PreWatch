@@ -23,7 +23,7 @@ import com.springmvc.service.StatService;
 public class movieRepository {
 	
 	@Autowired
-	private StatService statService;
+	 private StatService statService; 
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -318,5 +318,26 @@ public class movieRepository {
                                           Date.valueOf(startDate), Date.valueOf(endDate)); // 07-31: 추가된 메서드
         logger.info("DB에서 {} ~ {} 기간 내 영화 레코드 {}개 성공적으로 가져옴.", startDate, endDate, list.size()); // 07-31: 추가된 메서드
         return list; // 07-31: 추가된 메서드
+    }
+    
+    
+    
+    //25.08.05 coco030
+    public List<movie> getAllMovies() {
+        logger.debug("movieRepository.getAllMovies() 호출: DB에서 모든 영화 조회 시도 (관리 페이지용).");
+        
+        // 관리 페이지에서는 영화를 찾기 쉽도록 제목순으로 정렬.
+        // 또한, 페이지 표시에 필요한 최소한의 정보(id, title)만 가져와서 효율성을 높입니다.
+        String sql = "SELECT id, title FROM movies ORDER BY title ASC";
+        
+        try {
+            List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+            logger.info("DB에서 전체 관리용 영화 레코드 {}개를 성공적으로 가져옴.", list.size());
+            return list;
+        } catch (Exception e) {
+            logger.error("전체 영화 목록 조회 중 오류 발생", e);
+          
+            return new java.util.ArrayList<>();
+        }
     }
 }

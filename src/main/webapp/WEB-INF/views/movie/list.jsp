@@ -37,6 +37,7 @@
 <c:if test="${userRole == 'ADMIN'}">
     <p><a href="<c:url value='/movies/new'/>">새 영화 직접 등록</a></p>
     <p><a href="<c:url value='/admin/banner-movies'/>">추천 영화 관리</a></p> <%-- (7-24 오후12:41 추가 된 코드) --%>
+    <p><a href="<c:url value='/admin/warnings/all'/>">전체 주의 요소 관리</a></p><%-- 25.08.05 coco030 --%>
 </c:if>
 
 <c:if test="${not empty param.error}">
@@ -112,8 +113,9 @@
             <c:if test="${userRole == 'ADMIN'}">
                 <td>
 
-                    <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>
-
+                    <a href="<c:url value='/movies/${movie.id}/edit'/>">수정</a>|
+                  <%-- 25.08.05 coco030 warnings/ --%>
+                    <a href="<c:url value='/admin/warnings/${movie.id}' />">주의요소</a>
                     <form action="<c:url value='/movies/${movie.id}/delete'/>" method="post" style="display:inline">
                         <button type="submit">삭제</button>
                     </form>

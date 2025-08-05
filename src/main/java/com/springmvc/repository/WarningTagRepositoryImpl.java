@@ -11,9 +11,11 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
 import com.springmvc.domain.WarningTag;
 
+@Repository
 public class WarningTagRepositoryImpl implements WarningTagRepository  {
 
 	@Autowired

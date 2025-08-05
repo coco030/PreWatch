@@ -82,6 +82,18 @@
     <c:param name="movieId" value="${movie.id}" />
 </c:import>   
 
+<%-- 관리자(ADMIN)로 로그인한 경우에만 "주의 요소 관리" 버튼을 표시 --%>
+<c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
+    <div class="admin-menu" style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin-top: 20px; border-radius: 5px;">
+        <h4>관리자 메뉴</h4>
+        <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-warning">
+            ⚠️ 주의 요소 관리
+        </a>
+        <%-- 여기에 다른 관리 기능 링크(예: 영화 정보 수정, 삭제 등)를 추가할 수 있습니다. --%>
+        <%-- <a href="#" class="btn btn-info">영화 정보 수정</a> --%>
+    </div>
+</c:if>
+
 <%-- 주의 요소 표시 영역 --%>
 <c:if test="${not empty groupedWarnings}">
     <div class="warning-section" style="border: 1px solid #eee; padding: 20px; margin-top: 30px; border-radius: 8px;">
