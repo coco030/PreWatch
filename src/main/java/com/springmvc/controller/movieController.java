@@ -302,12 +302,10 @@ public class movieController {
         model.addAttribute("reviewList", reviewList);
         System.out.println("리뷰 전체 리스트");
         
-        // 25.08.02 coco030 영화 통계 정보 가져오기
         StatDTO stat = statRepository.findMovieStatsById(id);
         List<String> genres = statRepository.findGenresByMovieId(id);
         stat.setGenres(genres);
 
-     // 추천 영화 리스트 - 로그인 상태에 따라 분기 처리
         List<StatDTO> recommended;
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             // 로그인한 사용자: 취향 기반 추천

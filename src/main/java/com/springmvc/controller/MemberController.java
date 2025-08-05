@@ -6,7 +6,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import com.springmvc.domain.TasteReportDTO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.springmvc.domain.Member;
+import com.springmvc.domain.TasteReportDTO;
 import com.springmvc.domain.UserReview;
 import com.springmvc.domain.movie;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.MemberService;
 import com.springmvc.service.TasteProfileService;
 import com.springmvc.service.UserReviewService;
+import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
 
 @Controller 
@@ -31,6 +33,9 @@ import com.springmvc.service.userCartService;
 
 
 public class MemberController {
+	
+	@Autowired
+    private movieService movieService;
 	
 	@Autowired
     private TasteProfileService tasteProfileService;
@@ -48,7 +53,7 @@ public class MemberController {
 
     // --- Read(all) Home ---
     // showHomePage 메서드: "/member/" 경로에 대한 GET 요청 처리
-    // 목적: (HomeController가 메인을 담당하므로 현재는 역할 중복, 테스트/경로 확인용)
+   
     @GetMapping("/")
     public String showHomePage() {
     	System.out.println("Membercontroller 메인 보여주기");
@@ -131,22 +136,21 @@ public class MemberController {
         }
 
         String memberId = loginMember.getId();
-        int pageSize = 1; // 페이지 리뷰 갯수 변경하는 숫자. 모바일에서 보니 5개는 너무 많아서 수정
+        int pageSize = 2; 
 
-        // 1. 리뷰 목록 (페이징)
         List<UserReview> myReviews = userReviewService.getPagedReviews(memberId, page, pageSize);
-        // 2. 영화 정보 Map
+        
         Map<Long, movie> movieMap = new HashMap<>();
         for (UserReview r : myReviews) {
             Long movieId = r.getMovieId();
             if (!movieMap.containsKey(movieId)) {
-                movie m = movieRepository.findTitleAndPosterById(movieId);
-                if (m != null) {
+            	movie m = movieService.findById(movieId); 
+            	if (m != null) {
                     movieMap.put(movieId, m);
                 }
             }
         }
-        // 3. 총 페이지 수
+
         int totalCount = userReviewService.getTotalReviewCount(memberId);
         int totalPages = (int) Math.ceil(totalCount / (double) pageSize);
 
