@@ -53,7 +53,7 @@
     .summary-header { 
         display: block; /* 수직 정렬을 위해 block으로 변경 */
         text-align: left; /* 내부 요소  정렬 */
-        cursor: pointer; 
+                cursor: pointer; 
         padding: 15px;
         border-radius: 8px;
         transition: background-color 0.2s ease;
@@ -120,7 +120,6 @@
     <div class="container mt-4">
         <div class="warning-section" style="padding: 20px; border-radius: 8px; background-color: #f8f9fa;">
             
-            <%-- 1. 클릭 가능한 전체 요약 영역 --%>
             <div id="warningSummary" class="summary-header">
                 <span class="warning-title">주의할 요소가 있어요</span>
                 <div class="icon-group">
@@ -138,6 +137,9 @@
                             <c:when test="${entry.key == '선정성'}">
                                 <img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" title="선정성">
                             </c:when>
+                            <c:when test="${entry.key == '동물'}">
+                                <img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="선정성" title="선정성">
+                            </c:when>
                             <c:otherwise>
                                 <img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" title="기타">
                             </c:otherwise>
@@ -146,7 +148,6 @@
                 </div>
             </div>
 
-            <%-- 2. 상세 내용 영역 (기본적으로 숨겨져 있음) --%>
             <div id="warningDetails" class="details-content">
                 <ul class="warning-list-flat">
                     <c:forEach items="${groupedWarnings}" var="entry">
