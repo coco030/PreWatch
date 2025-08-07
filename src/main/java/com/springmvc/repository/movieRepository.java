@@ -266,7 +266,7 @@ public class movieRepository {
         return list;
     }
 
-    //개봉예정영화 가져오는 거 초과 7일은 너무 목록이 짧아서 30일로 수정함
+    //개봉예정영화 가져오는 거 초과 7일은 너무 목록이 짧아서 14일로 수정함
     public List<movie> getUpcomingMoviesWithDday() {
         String sql = """
             SELECT
@@ -288,7 +288,7 @@ public class movieRepository {
                 rated,
                 DATEDIFF(release_date, CURDATE()) AS dday
             FROM movies
-            WHERE DATEDIFF(release_date, CURDATE()) >= -30
+            WHERE DATEDIFF(release_date, CURDATE()) >= -14
             ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
             LIMIT 6
             """;
