@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <head>  
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:ital,wght@0,200..900;1,200..900&family=Gothic+A1&family=Gowun+Dodum&family=Noto+Sans+KR:wght@100..900&display=swap');
     .btn {
             /* 버튼 글씨 색상 설정 */
             color: #a0a0a0 !important;
@@ -36,14 +37,21 @@
         font-size: 0.7em !important;
         border-radius: 8px !important; /* 모서리를 살짝 둥글게 */
     }
+    
+	.gothic-a1-regular {
+	  font-family: "Gothic A1", sans-serif;
+	  font-weight: 400;
+	  font-style: normal;
+	}
+	
     </style>
 </head>    
 <body class="bg">
   <div class="container py-4">
 
    <!-- 최근 등록된 영화 -->
-	<div class="d-flex justify-content-between align-items-center">
-    <h2 class="section-title mb-4">최근 등록된 영화</h2>
+	<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="section-title gothic-a1-regular mb-0">최근 등록된 영화</h2>
     <a href="<c:url value='/movies/all-recent'/>" class="btn">더 보기></a>
 	</div>
 	

@@ -264,9 +264,8 @@ public class TmdbApiService {
             result.put("overview", root.path("Plot").asText(null));
             result.put("runtime", root.path("Runtime").asText(null));
             result.put("poster_path", root.path("Poster").asText(null));
-            result.put("poster_path", root.path("Poster").asText(null));
-            
-	         // 개봉일(LocalDate) 파싱 추가
+          
+           
 	         String releasedStr = root.path("Released").asText(null);
 	         LocalDate releaseDate = null;
 	         if (releasedStr != null && !releasedStr.equalsIgnoreCase("N/A")) {
@@ -279,13 +278,10 @@ public class TmdbApiService {
 	         }
 	         result.put("release_date", releaseDate);
 
-	         // =============================================================
-	         // 2. TMDB API 호출하여 backdrop_path 가져오기 (이 부분이 추가됩니다)
-	         // =============================================================
-	         Integer tmdbId = getTmdbMovieId(apiId); // 기존 메서드 재활용
+	         Integer tmdbId = getTmdbMovieId(apiId); 
 	         if (tmdbId != null) {
 	             String tmdbUrl = UriComponentsBuilder
-	                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbId) // CREDITS URL 대신 DETAILS URL 사용
+	                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbId)
 	                 .queryParam("api_key", TMDB_API_KEY)
 	                 .toUriString();
 	             
@@ -294,7 +290,7 @@ public class TmdbApiService {
 	                 JsonNode tmdbRoot = objectMapper.readTree(tmdbJson);
 	                 String backdropPath = tmdbRoot.path("backdrop_path").asText(null);
 	                 
-	                 // backdropPath가 존재할 때만 결과 맵에 추가
+
 	                 if (backdropPath != null && !backdropPath.isEmpty() && !backdropPath.equals("null")) {
 	                     result.put("backdrop_path", backdropPath);
 	                     System.out.println("[DEBUG] TMDB backdrop_path 추가: " + backdropPath);
@@ -306,7 +302,7 @@ public class TmdbApiService {
 	                 System.out.println("[ERROR] TMDB 상세 정보(backdrop) 조회 실패: tmdbId=" + tmdbId + ", msg=" + e.getMessage());
 	             }
 	         }
-	         // =============================================================
+	     
 
 	     } catch (Exception e) {
 	         System.out.println("[ERROR] OMDb 영화 정보 파싱 실패: apiId=" + apiId + ", msg=" + e.getMessage());

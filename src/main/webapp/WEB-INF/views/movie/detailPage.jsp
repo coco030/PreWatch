@@ -280,7 +280,7 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Movie Details -->
+                
                 <div class="col-md-9">
                     <!-- Warning Section -->
                     <c:if test="${not empty groupedWarnings}">
@@ -331,8 +331,8 @@
                             </div>
                         </div>
                     </c:if>
-                    
-                    <!-- Rating/Review Panel -->
+                    <!-- 영화 개봉일 전엔 리뷰나 평점 못쓰게 -->
+                    <c:if test="${movie.releaseDate <= today}"> 
                     <div class="card mt-3 border-0">
                         <div class="card-body p-0">
                             <div class="row">
@@ -435,6 +435,7 @@
                             </div>
                         </div>
                     </div>
+                    </c:if>  <!-- 영화 개봉일 전엔 리뷰나 평점 못쓰게 -->
 
                     <!-- Overview -->
                     <c:if test="${not empty movie.overview}">
@@ -444,7 +445,7 @@
                     </c:if>
                 </div>
             </div>
-
+			<c:if test="${movie.releaseDate <= today}">
             <!-- Bottom Content Row -->
             <div class="row mt-4">
                 <div class="col-12">
@@ -466,6 +467,7 @@
                             </div>
                         </div>
                     </c:if>
+                   </c:if>
                     
                     <!-- Cast Section -->
                     <c:if test="${not empty dbCastList or not empty tmdbCastList}">
@@ -621,7 +623,7 @@
                             </div>
                         </div>
                     </c:if>
-                    
+                    <c:if test="${movie.releaseDate <= today}">
                     <!-- Recommendations Section -->
                     <c:if test="${not empty recommended}">
                         <div class="mb-4">
@@ -669,6 +671,7 @@
                         </div>
                     </c:if>
                 </div>
+               </c:if>
             </div>
         </div>
     </div>

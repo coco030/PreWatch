@@ -266,6 +266,7 @@ public class movieRepository {
         return list;
     }
 
+    //개봉예정영화 가져오는 거 초과 7일은 너무 목록이 짧아서 30일로 수정함
     public List<movie> getUpcomingMoviesWithDday() {
         String sql = """
             SELECT
@@ -287,9 +288,9 @@ public class movieRepository {
                 rated,
                 DATEDIFF(release_date, CURDATE()) AS dday
             FROM movies
-            WHERE DATEDIFF(release_date, CURDATE()) >= -7
+            WHERE DATEDIFF(release_date, CURDATE()) >= -30
             ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
-            LIMIT 5
+            LIMIT 6
             """;
 
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
@@ -313,7 +314,7 @@ public class movieRepository {
             FROM movies
             WHERE release_date BETWEEN ? AND ?
             ORDER BY release_date ASC
-            """; // 07-31: 추가된 메서드
+            """;
         List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), // 07-31: 추가된 메서드
                                           Date.valueOf(startDate), Date.valueOf(endDate)); // 07-31: 추가된 메서드
         logger.info("DB에서 {} ~ {} 기간 내 영화 레코드 {}개 성공적으로 가져옴.", startDate, endDate, list.size()); // 07-31: 추가된 메서드
@@ -325,18 +326,16 @@ public class movieRepository {
     //25.08.05 coco030
     public List<movie> getAllMovies() {
         logger.debug("movieRepository.getAllMovies() 호출: DB에서 모든 영화 조회 시도 (관리 페이지용).");
-        
-        // 관리 페이지에서는 영화를 찾기 쉽도록 제목순으로 정렬.
-        // 또한, 페이지 표시에 필요한 최소한의 정보(id, title)만 가져와서 효율성을 높입니다.
-        String sql = "SELECT id, title FROM movies ORDER BY title ASC";
-        
+
+        // 등록한 순서대로 최근 등록한 영화가 상단에 오도록 정렬
+        String sql = "SELECT id, title FROM movies ORDER BY id DESC";
+
         try {
             List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
             logger.info("DB에서 전체 관리용 영화 레코드 {}개를 성공적으로 가져옴.", list.size());
             return list;
         } catch (Exception e) {
             logger.error("전체 영화 목록 조회 중 오류 발생", e);
-          
             return new java.util.ArrayList<>();
         }
     }
