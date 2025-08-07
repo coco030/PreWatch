@@ -72,10 +72,16 @@
     .score-item .text-sexual { color: #fd7e14; }
 
     /* 리뷰 표시 영역 */
-    .review-content-wrapper {
-        border-top: 1px solid #e9ecef; padding: 1rem 1.5rem;
-        background-color: #fafbfd; font-size: 0.95rem; line-height: 1.7;
-    }
+    .review-content-wrapper{
+    border-top: 1px solid #e9ecef; 
+    padding: 1rem 1.5rem;
+    background-color: #fafbfd; 
+    font-size: 0.95rem; 
+    line-height: 1.7;
+
+    border-bottom-left-radius: 0.75rem;  /* 부모와 동일한 값으로 왼쪽 아래 모서리 둥글게 */
+    border-bottom-right-radius: 0.75rem; /* 부모와 동일한 값으로 오른쪽 아래 모서리 둥글게 */
+}
     
     .review-content-wrapper.expandable {
         cursor: pointer;
