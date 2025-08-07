@@ -9,20 +9,12 @@
 }
 
 
-
-
  /* 거슬리는 무비 밑 텍스트 밑줄 제거 */
 .movie-card a {
   text-decoration: none;
   color: inherit; /* 파란색 제거하고 상위 텍스트 색 상속 */
 }
 
-/* 새로운 섹션 구분선 스타일 */
-.section-divider {
-  border-bottom: 2px solid #eee; /* 회색 선 스타일 */
-  margin: 0 auto 30px; /* 선 위아래 여백을 설정합니다. (margin-top 0, margin-bottom 30px) */
-  width: 100%;
-}
 
 .movie-card {
   background: #fff;
@@ -51,19 +43,11 @@
   font-weight: bold;
   font-size: 14px;
 }
-.section-title {
-  font-size: 1.5rem;
-  margin: 40px 0 20px;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 10px;
-}
 
 .banner-section {
-  background-color: #fff;
-  border-radius: 10px;
+  background-color: #f8f9fa;
   padding: 30px 20px;
   margin-top: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
   text-decoration: none;
   gap: 0.75rem;

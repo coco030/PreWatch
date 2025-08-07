@@ -9,13 +9,42 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<head>  
+    <style>
+    .btn {
+            /* 버튼 글씨 색상 설정 */
+            color: #a0a0a0 !important;
+            
+            /* 버튼 배경을 투명하게 설정 (필요에 따라) */
+            background-color: transparent;
+            border: none;
+            }     
+     .bg {
+        background-color: #f8f9fa !important;
+    }
+    .calendar-container {
+    background-color: #fff !important;
+    padding: 15px; /* Optional: Add some padding around the calendar */
+    border-radius: 5px; /* Optional: Add some rounded corners */
+}       
+/* 캘린더 네비게이션 버튼 스타일 수정 */
+    .calendar-nav {
+        background-color: #f0f0f0 !important;
+        border: none !important; /* 테두리 제거 */
+        padding: 5px 10px !important;
+        cursor: pointer !important;
+        font-size: 0.7em !important;
+        border-radius: 8px !important; /* 모서리를 살짝 둥글게 */
+    }
+    </style>
+</head>    
 <body class="bg">
   <div class="container py-4">
 
    <!-- 최근 등록된 영화 -->
-	<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="section-title mb-0">최근 등록된 영화</h2>
-    <a href="<c:url value='/movies/all-recent'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+	<div class="d-flex justify-content-between align-items-center">
+    <h2 class="section-title mb-4">최근 등록된 영화</h2>
+    <a href="<c:url value='/movies/all-recent'/>" class="btn">더 보기></a>
 	</div>
 	
 	<div class="row g-4 justify-content-center">
@@ -80,16 +109,15 @@
       </div>
     </div>
 	 <!-- 개봉 예정작 -->
-    <div class="d-flex justify-content-between align-items-center mb-3" id="upcoming-movies">
+        <div class="d-flex justify-content-between align-items-center mb-3" id="upcoming-movies" style="margin-top: 30px;">
       <h2 class="section-title mb-0">개봉 예정작</h2>
-        <a href="<c:url value='/movies/all-upcoming'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+        <a href="<c:url value='/movies/all-upcoming'/>" class="btn">더 보기></a>
     </div>
     <div class="section-divider"></div> <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
 	
-	 <!-- 보고 싶어요 랭킹 -->
-    <div class="d-flex justify-content-between align-items-center mb-3" id="recommended-ranking">
+	 <div class="d-flex justify-content-between align-items-center mb-3" id="recommended-ranking" style="margin-top: 30px;">
         <h2 class="section-title mb-0">PreWatch 추천 랭킹</h2>
-        <a href="<c:url value='/movies/all-recommended'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+        <a href="<c:url value='/movies/all-recommended'/>" class="btn">더 보기></a>
     </div>
     <div class="section-divider"></div> 
     <div class="row g-3 justify-content-center">
@@ -129,8 +157,7 @@
         </c:forEach>
     </div>
 
-	 <!-- 관리자 추천 영화 -->
-    <h2 class="section-title" id="admin-recommended-movies">PreWatch 추천 영화</h2>
+	 <h2 class="section-title" id="admin-recommended-movies" style="margin-top: 30px;">PreWatch 추천 영화</h2>
     <div class="section-divider"></div> 
     <c:choose>
         <c:when test="${not empty adminRecommendedMovies}">
@@ -178,8 +205,7 @@
         </c:otherwise>
     </c:choose>
     
-    <!-- 최근 코멘트-->
- <div id="recent-comments">
+    <div id="recent-comments" style="margin-top: 30px;">
     <c:import url="/movies/commentCard" />
     </div>
 <div class="calendar-container" id="calendar-section">
@@ -308,4 +334,3 @@ function updateCalendarUI(data, contextPath) { // 07-31: contextPath를 파라�
     });
 }
 </script>
-    

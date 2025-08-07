@@ -161,16 +161,16 @@ CREATE TABLE movie_images (
 );
 
 
--- 주의 요소 마스터 테이블 08.04
+-- 주의 요소 마스터 테이블 (UNIQUE 제약조건 포함)
 CREATE TABLE warning_tags (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     category VARCHAR(50) NOT NULL,
-    sentence VARCHAR(255) NOT NULL,
+    sentence VARCHAR(255) NOT NULL UNIQUE, -- 컬럼 정의 시 바로 UNIQUE를 명시
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 영화-주의 요소 매핑 테이블 08.04
+-- 영화-주의 요소 매핑 테이블
 -- movies와 warning_tags 테이블이 먼저 존재해야 생성 가능.
 CREATE TABLE movie_warning_tags (
     movie_id BIGINT NOT NULL,

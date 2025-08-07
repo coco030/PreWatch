@@ -8,7 +8,7 @@
  <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="section-title">최근 달린 댓글</h2>
        <!-- (8/5 추가) -->
-      <a href="<c:url value='/movies/all-recent-comments'/>" class="btn btn-primary btn-sm mt-4">더 보기</a>
+      <a href="<c:url value='/movies/all-recent-comments'/>" class="btn">더 보기></a>
  </div>     
 	<div class="row g-3 justify-content-center">
 	  <c:choose>

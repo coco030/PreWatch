@@ -1,9 +1,11 @@
 package com.springmvc.controller;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -76,13 +78,13 @@ public class WarningTagController {
         List<movie> allMovies = movieRepository.findAll();
         model.addAttribute("allMovies", allMovies);
 
-  
-        List<WarningTag> allTags = warningTagService.getAllWarningTags();
-        Map<String, List<WarningTag>> allTagsGrouped = allTags.stream()
+        List<WarningTag> allTagsWithDuplicates = warningTagService.getAllWarningTags();
+        Set<WarningTag> uniqueTags = new HashSet<>(allTagsWithDuplicates);
+
+        Map<String, List<WarningTag>> allTagsGrouped = uniqueTags.stream()
                 .collect(Collectors.groupingBy(WarningTag::getCategory, LinkedHashMap::new, Collectors.toList()));
+        
         model.addAttribute("allTagsGrouped", allTagsGrouped);
-
-
         Map<Long, List<Long>> movieToSelectedTagsMap = new HashMap<>();
         for (movie movie : allMovies) {
             List<Long> selectedIds = warningTagService.getWarningTagIdsByMovieId(movie.getId());

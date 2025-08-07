@@ -1,6 +1,7 @@
 package com.springmvc.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class WarningTag {
 
@@ -26,6 +27,20 @@ public class WarningTag {
 		return "WarningTag [id=" + id + ", category=" + category + ", sentence=" + sentence + ", sortOrder=" + sortOrder
 				+ ", createdAt=" + createdAt + "]";
 	}
+	
+	@Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+	@Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WarningTag that = (WarningTag) o;
+   
+        return Objects.equals(id, that.id);
+    }
 	public long getId() {
 		return id;
 	}
