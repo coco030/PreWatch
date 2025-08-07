@@ -87,12 +87,13 @@
         cursor: pointer;
     }
     .review-text.collapsed {
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        -webkit-mask-image: none;
-    }
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: var(--line-clamp, 2); /* 2를 CSS 변수로 변경 (기본값은 2) */
+    -webkit-box-orient: vertical;
+    -webkit-mask-image: none;
+}
+
     .toggle-review-btn {
         background: none; border: none; color: var(--primary-color);
         font-weight: 500; cursor: pointer; padding: 0.25rem 0;
@@ -188,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const lineHeight = parseFloat(style.lineHeight);
         
         // 보여줄 줄 수 조절
-        const lineClamp = 2; 
+        const lineClamp = 3; 
         
         const maxHeight = lineHeight * lineClamp;
 
@@ -202,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 reviewWrapper.classList.add('expandable'); 
                 toggleButton.classList.remove('d-none');
                 reviewText.classList.add('collapsed');
+                reviewText.style.setProperty('--line-clamp', lineClamp);
 
                //클릭 이벤트를 버튼이 아닌, 리뷰 영역 전체(.review-content-wrapper)에 추가
                 reviewWrapper.addEventListener('click', function(event) {
