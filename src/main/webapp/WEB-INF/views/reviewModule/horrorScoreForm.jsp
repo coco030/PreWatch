@@ -18,8 +18,8 @@
 const horrorScore = Number("${myReview.horrorScore}");
 </script>
 
-<!-- ⭐ 별점 표시 영역 -->
-<div id="horrorScore-rating" class="d-flex align-items-center" style="font-size: 2rem;">
+<!-- ⭐ 별점 표시 영역  "font-size: 1.5rem;" 별크기-->
+<div id="horrorScore-rating" class="d-flex align-items-center" style="font-size: 1.5rem;">
     <c:forEach begin="1" end="5" var="i">
         <span class="star-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
@@ -28,40 +28,74 @@ const horrorScore = Number("${myReview.horrorScore}");
         </span>
     </c:forEach>
 
-    <!-- ⭐ 점수 라벨 -->
-    <div class="ms-2" id="score-label" style="font-size: 1rem;">
+    <!-- ⭐ 점수 라벨 표시 -->
+    <div class="ms-2" id="score-label" style="font-size: 0.9rem; font-weight: 500;">
         <c:if test="${not empty myReview.horrorScore}">
             ${myReview.horrorScore} / 10
         </c:if>
     </div>
 </div>
 
-<!-- ⭐ 별 아이콘 관련 CSS -->
+<!-- ⭐ 별점 관련 CSS - -->
 <style>
+    /* 별점 컨테이너 정렬 개선 */
+    #horrorScore-rating {
+        line-height: 1; /* 라인 높이를 1로 고정해서 수직 정렬 안정화 */
+        height: auto;   /* 높이 자동 조정 */
+    }
+
     .star-wrapper {
         position: relative;
         display: inline-block;
         cursor: pointer;
+        vertical-align: middle; /* 수직 정렬을 중간으로 맞춤 */
+        line-height: 1;         /* 별 아이콘의 라인 높이도 1로 고정 */
     }
 
+    /* 반쪽 클릭 영역 설정 */
     .star-wrapper .half {
         position: absolute;
         width: 50%;
         height: 100%;
         top: 0;
+        z-index: 10; /* 클릭 영역이 아이콘 위에 오도록 */
     }
 
     .left-half { left: 0; }
     .right-half { right: 0; }
 
-	/* 공포 점수 (파란색) */
-	#horrorScore-rating .fa-solid.fa-star,
-	#horrorScore-rating .fa-solid.fa-star-half-stroke {
-	    color: #4682B4;
-	}
+    /* 빈 별 아이콘 스타일 */
+    .fa-regular.fa-star { 
+        color: #ddd;
+        transition: color 0.2s ease; /* 색상 변화 애니메이션 */
+    }
+   
+    #horrorScore-rating .fa-solid.fa-star,
+    #horrorScore-rating .fa-solid.fa-star-half-stroke { 
+        color: #4682B4; /* 공포 점수 고유의 파란색 유지 */
+        transition: color 0.2s ease; 
+    }
+
+    #score-label {
+        color: #666;           /* 텍스트 색상 */
+        vertical-align: middle; /* 별과 수직 정렬 맞춤 */
+        line-height: 1;        /* 라인 높이 통일 */
+        margin-top: 1px;       /* 미세한 수직 정렬 보정 */
+    }
+
+    /* 반응형: 작은 화면에서 별점 크기 더 축소 */
+    @media (max-width: 576px) {
+        #horrorScore-rating {
+            font-size: 1rem;  /* 모바일에서는 더 작게 */
+        }
+        
+        #score-label {
+            font-size: 0.8rem;
+        }
+    }
 </style>
 
-<!-- ⭐ 공포 점수 별점 로직 -->
+<!-- ⭐ 공포 점수 별점 로직 (수정할 필요 없음) -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
@@ -72,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let currentScore = horrorScore;
 
-    // ⭐ 초기 렌더링
+    // 초기 렌더링
     if (currentScore > 0) {
         updateStars(currentScore);
         label.textContent = currentScore + " / 10";
@@ -80,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
         label.textContent = "";
     }
 
-    // ⭐ 마우스 오버: 미리보기 렌더링
+    // 마우스 오버
     stars.forEach(star => {
         star.addEventListener("mouseover", function () {
             const previewScore = parseInt(this.dataset.value);
@@ -89,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ⭐ 마우스 아웃: 기존 점수 복원
+    // 마우스 아웃
     document.getElementById("horrorScore-rating").addEventListener("mouseleave", function () {
         updateStars(currentScore);
         if (currentScore > 0) {
@@ -99,10 +133,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
- // ⭐ 클릭 시: 저장 및 UI 반영
+    // 클릭 시 저장
     stars.forEach(star => {
         star.addEventListener("click", function () {
-            // ⭐ 로그인 여부 확인
             const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
             if (!isLoggedIn) {
                 alert("로그인 후 이용 가능합니다.");
@@ -126,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(res => res.json())
             .then(data => {
-                console.log("공포 점수 저장 응답:", data);  // 에러 alert 제거
+                console.log("공포 점수 저장 응답:", data);
             })
             .catch(err => {
                 console.error("공포 점수 저장 중 오류:", err);
@@ -134,12 +167,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-
-    // ⭐ 별 아이콘 렌더링 함수
+    // 별 아이콘 렌더링 함수
     function updateStars(score) {
         icons.forEach((icon, idx) => {
             const value = (idx + 1) * 2;
-
             icon.classList.remove("fa-solid", "fa-regular", "fa-star", "fa-star-half-stroke");
 
             if (score >= value) {

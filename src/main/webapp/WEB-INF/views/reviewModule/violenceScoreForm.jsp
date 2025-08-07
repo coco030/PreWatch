@@ -1,26 +1,20 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-
-<!-- jQuery CDN (AJAX 및 이벤트 핸들용) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Font Awesome 아이콘 (원 모양 표시용) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<!-- ⭐ 서버에서 전달된 영화 ID -->
 <input type="hidden" id="movieId" value="${movieId}" />
 <c:if test="${not empty loginMember}">
     <input type="hidden" id="isLoggedIn" value="true" />
 </c:if>
 
-<!-- ⭐ 초기 사용자 폭력성 점수 정보 -->
+<!-- 폭력성 점수 정보 -->
 <script>
     const violenceScore = Number("${myReview.violenceScore}");
 </script>
 
-<!-- ⭐ 폭력성 점수 표시 영역 (1점 ~ 10점: 반개 단위, 원 모양) -->
-<div id="violence-score-rating" class="d-flex align-items-center" style="font-size: 2rem;">
+<div id="violence-score-rating" class="d-flex align-items-center" style="font-size: 1.5rem;">
     <c:forEach begin="1" end="5" var="i">
         <span class="circle-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
@@ -29,15 +23,13 @@
         </span>
     </c:forEach>
 
-    <!-- ⭐ 점수 라벨 -->
-    <div class="ms-2" id="violence-label" style="font-size: 1rem;">
+    <div class="ms-2" id="violence-label" style="font-size: 0.9rem;">
         <c:if test="${not empty myReview.violenceScore}">
             ${myReview.violenceScore} / 10
         </c:if>
     </div>
 </div>
 
-<!-- ⭐ CSS -->
 <style>
     .circle-wrapper {
         position: relative;
@@ -55,22 +47,25 @@
     .left-half { left: 0; }
     .right-half { right: 0; }
 
-    .fa-regular.fa-circle { color: #ccc; }
-    .fa-solid.fa-circle,
-    .fa-solid.fa-circle-half-stroke { color: #e54b4b; }
+    #violence-score-rating .fa-regular.fa-circle { color: #ccc; }
+    #violence-score-rating .fa-solid.fa-circle,
+    #violence-score-rating .fa-solid.fa-circle-half-stroke {
+        color: #e54b4b; /* 폭력성 점수: 빨간색 */
+    }
     
     /* 반응형 지원 */
     @media (max-width: 576px) {
         #violence-score-rating {
-            font-size: 1.5rem;
+            font-size: 1.2rem; /* 모바일에서는 조금 더 작게 */
         }
         
         #violence-label {
             font-size: 0.8rem;
         }
+    }
 </style>
 
-<!-- ⭐ 점수 저장 로직 -->
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
@@ -78,10 +73,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const halves = document.querySelectorAll("#violence-score-rating .half");
     const icons = document.querySelectorAll("#violence-score-rating i");
     const label = document.getElementById("violence-label");
-
     let currentScore = violenceScore;
 
-    // ⭐ 초기 렌더링
     if (currentScore > 0) {
         updateCircles(currentScore);
         label.textContent = currentScore + " / 10";
@@ -89,7 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
         label.textContent = "";
     }
 
-    // ⭐ 마우스 오버: 프리뷰
     halves.forEach(half => {
         half.addEventListener("mouseover", function () {
             const previewScore = parseInt(this.dataset.value);
@@ -98,7 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ⭐ 마우스 아웃: 원래 점수로 복원
     document.getElementById("violence-score-rating").addEventListener("mouseleave", function () {
         updateCircles(currentScore);
         if (currentScore > 0) {
@@ -108,26 +99,20 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
- // ⭐ 클릭: 점수 저장
     halves.forEach(half => {
         half.addEventListener("click", function () {
-            // ⭐ 로그인 여부 확인
             const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
             if (!isLoggedIn) {
                 alert("로그인 후 이용 가능합니다.");
                 return;
             }
-
             const score = parseInt(this.dataset.value);
             currentScore = score;
-
             updateCircles(score);
             label.textContent = score + " / 10";
-
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
             formData.append("violenceScore", score);
-
             fetch(contextPath + "/review/saveViolence", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -143,14 +128,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-
-    // ⭐ 원 아이콘 렌더링 함수
     function updateCircles(score) {
         icons.forEach((icon, idx) => {
             const value = (idx + 1) * 2;
-
             icon.classList.remove("fa-solid", "fa-regular", "fa-circle", "fa-circle-half-stroke");
-
             if (score >= value) {
                 icon.classList.add("fa-solid", "fa-circle");
             } else if (score === value - 1) {
