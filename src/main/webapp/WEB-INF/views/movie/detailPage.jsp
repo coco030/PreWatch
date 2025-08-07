@@ -70,10 +70,6 @@
 	    font-size: 0.9rem;
 	    color: #6c757d;
 	}
-	.score-input-panel .input-area {
-	    /* <<< margin-left: auto 제거! 이제 별점은 평균 바로 뒤에 붙습니다. */
-	}
-
     /* 평가|리뷰 분할 패널을 위한 구분선 */
     .border-end-lg { border-right: 1px solid #dee2e6 !important; }
     @media (max-width: 991.98px) {
@@ -118,29 +114,50 @@
             <h2 class="mb-2">${movie.title}</h2>
             <p class="text-muted">${movie.director} 감독<c:if test="${not empty movie.releaseDate and movie.releaseDate ne 'N/A'}">・ ${movie.releaseDate} 개봉</c:if><c:if test="${not empty movie.genre and movie.genre ne 'N/A'}">・ ${movie.genre}</c:if><c:if test="${not empty movie.runtime and movie.runtime ne 'N/A'}">・ ${movie.runtime}</c:if><c:if test="${not empty movie.rated and movie.rated ne 'N/A'}">・ ${movie.rated}</c:if></p>
 
-            <%-- 2. 주의 요소  --%>
-            <div class="d-flex justify-content-between align-items-center mt-3"> 
-                <c:if test="${sessionScope.loginMember.role == 'ADMIN'}"><a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-sm btn-outline-warning">⚠️ 관리</a></c:if>
-            </div>
-            <c:if test="${not empty groupedWarnings}">
-            <div id="warningSummaryWrapper" class="mt-1">
-                <div id="warningSummary" class="warning-section-compact">
-                    <div class="icon-group">
-                        <c:forEach items="${groupedWarnings}" var="entry">
-                            <c:choose>
-                                <c:when test="${entry.key == '공포'}"><img src="${pageContext.request.contextPath}/resources/images/movies/horror.png" alt="공포" title="공포"></c:when>
-                                <c:when test="${entry.key == '잔인성' or entry.key == '폭력성'}"><img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="잔인성/폭력성" title="${entry.key}"></c:when>
-                                <c:when test="${entry.key == '선정성'}"><img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" title="선정성"></c:when>
-                                <c:otherwise><img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" title="기타"></c:otherwise>
-                            </c:choose>
-                        </c:forEach>
-                    </div>
-                </div>
-                <div id="warningDetails" class="details-content">
-                    <ul class="warning-list-flat"><c:forEach items="${groupedWarnings}" var="entry"><c:forEach items="${entry.value}" var="sentence"><li>${sentence}</li></c:forEach></c:forEach></ul>
-                </div>
-            </div>
-            </c:if>
+            <%-- 2. 주의 요소 --%>
+			<div class="d-flex justify-content-between align-items-center mt-3"> 
+			    <%-- h5 태그를 strong 태그로 변경하여 크기 문제 해결 --%>
+			    <strong class="mb-0">⚠️ 주의</strong>
+			    <c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
+			        <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-sm btn-outline-dark">관리</a>
+			    </c:if>
+			</div>
+
+			
+	
+			<c:if test="${not empty groupedWarnings}">
+			    <div id="warningSummaryWrapper" class="mt-1">
+			        
+			        <%-- 아이콘 그룹 --%>
+			        <div id="warningSummary" class="warning-section-compact">
+			            <div class="icon-group">
+			                <c:forEach items="${groupedWarnings}" var="entry">
+			                    <c:choose>
+			                        <c:when test="${entry.key == '공포'}"><img src="${pageContext.request.contextPath}/resources/images/movies/horror.png" alt="공포" title="공포"></c:when>
+			                        <c:when test="${entry.key == '잔인성'}"><img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="잔인성" title="잔인성"></c:when>
+			                        <c:when test="${entry.key == '폭력성'}"><img src="${pageContext.request.contextPath}/resources/images/movies/violence.png" alt="폭력성" title="폭력성"></c:when>
+			                        <c:when test="${entry.key == '선정성'}"><img src="${pageContext.request.contextPath}/resources/images/movies/Sexualcontent.png" alt="선정성" title="선정성"></c:when>
+			                        <c:when test="${entry.key == '약물'}"><img src="${pageContext.request.contextPath}/resources/images/movies/drug.png" alt="약물" title="약물"></c:when>
+			                        <c:when test="${entry.key == '동물'}"><img src="${pageContext.request.contextPath}/resources/images/movies/animal_warning.png" alt="동물" title="동물"></c:when>
+			                        <c:otherwise><img src="${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png" alt="기타" title="기타"></c:otherwise>
+			                    </c:choose>
+			                </c:forEach>
+			            </div>
+			        </div>
+			        
+			    
+			        <div id="warningDetails" class="details-content">
+			            <ul class="warning-list-flat">
+			                <c:forEach items="${groupedWarnings}" var="entry">
+			                    <c:forEach items="${entry.value}" var="sentence">
+			                        <li>${sentence}</li>
+			                    </c:forEach>
+			                </c:forEach>
+			            </ul>
+			        </div>
+			        
+			    </div>
+			</c:if>
 
             <!-- 3. 평가 및 리뷰 작성 통합 패널 -->
             <div class="card mt-4 border-0">
