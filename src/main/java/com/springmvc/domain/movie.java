@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.multipart.MultipartFile;
 
 public class movie implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -29,6 +30,7 @@ public class movie implements Serializable {
     private String runtime;
     private String rated;
     private Integer dday;
+    private String backdropPath; //25.08.07 coco030
 
     public String getFormattedReleaseDate() {
         if (releaseDate != null) {
@@ -142,4 +144,16 @@ public class movie implements Serializable {
 
     public String getRated() { return rated; }
     public void setRated(String rated) { this.rated = rated; }
+
+    //25.08.07 coco030
+    public String getBackdropPath() {
+        return backdropPath;
+    }
+
+  //25.08.07 coco030
+    public void setBackdropPath(String backdropPath) {
+        this.backdropPath = backdropPath;
+    }
+	
+	
 }

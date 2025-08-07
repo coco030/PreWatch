@@ -71,7 +71,6 @@
 </c:if>
 
 <script>
-    // 날짜 포맷팅 스크립트 (기존 코드)
     document.querySelectorAll('.created-at').forEach(function(el) {
         const raw = el.dataset.createdAt;
         if (!raw) return;
@@ -84,7 +83,6 @@
         el.textContent = formatted;
     });
 
-    // (4) '더보기' 기능 스크립트 추가
     document.querySelectorAll('.review-item').forEach(function(item) {
         const content = item.querySelector('.review-content');
         const moreBtn = item.querySelector('.more-btn');

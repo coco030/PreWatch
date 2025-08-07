@@ -47,10 +47,10 @@ import com.springmvc.service.StatService;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
+import com.springmvc.service.WarningTagService;
 import com.springmvc.service.externalMovieApiService;
 import com.springmvc.service.movieService;
 import com.springmvc.service.userCartService;
-import com.springmvc.service.WarningTagService;
 
 @Controller
 public class movieController {
@@ -279,8 +279,22 @@ public class movieController {
        
         if (movie == null) {
             logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-            return "redirect:/movies?error=notFound";
+            return "redirect:/movies?error=notFound"; }
+            
+
+        //25.08.07 coco030
+        // ====================================================================
+        String backdropPath = null;
+        // movie 객체가 null이 아님이 보장된 상태에서 apiId를 사용합니다.
+        Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+        if (tmdbId != null) {
+            backdropPath = tmdbApiService.getBackdropPath(tmdbId);
         }
+        
+        model.addAttribute("backdropPath", backdropPath);
+        logger.info("[Backdrop] 영화 ID: {}의 backdropPath 조회 결과: {}", id, backdropPath);
+        // ====================================================================
+        
         
          // 찜 상태
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -325,7 +339,8 @@ public class movieController {
 
         model.addAttribute("stat", stat); 
         model.addAttribute("recommended", recommended); 
-        model.addAttribute("movie", movie); 
+        model.addAttribute("movie", movie);
+        
         System.out.println("영화 지표 및 통계 정보  :" + stat);
         System.out.println("========추천 영화 개수  :" + recommended.size()+ "==========");
         System.out.println("========추천된 영화  :" + recommended + "==========");
@@ -334,7 +349,7 @@ public class movieController {
         model.addAttribute("dbCastList", dbCastList);
         System.out.println("DB 출연진 리스트");
 
-        Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+       
         List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
         model.addAttribute("tmdbCastList", tmdbCastList);
         System.out.println("TMDB 실시간 출연진 (API)");
@@ -370,7 +385,6 @@ public class movieController {
         logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
                 movie.getId(), movie.getTitle(), movie.getLikeCount());
         
-        // 25.08.05 coco030  [주의 요소 정보 조회]
         Map<String, List<String>> groupedWarnings = warningTagService.getGroupedWarningTagsByMovieId(id);
         logger.info("[주의 요소] 영화 ID: {}, 조회된 주의 요소 그룹 수: {}", id, groupedWarnings.size());
         if (!groupedWarnings.isEmpty()) {
