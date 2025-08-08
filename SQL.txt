@@ -46,7 +46,7 @@ INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
 
 
--- 5. 영화 테이블 (수정)
+-- 5. 영화 테이블
 CREATE TABLE movies (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     api_id VARCHAR(255) UNIQUE,
