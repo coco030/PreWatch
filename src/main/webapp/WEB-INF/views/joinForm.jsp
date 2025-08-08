@@ -47,9 +47,15 @@
 
                     <div class="text-center">
                         <p class="mb-0">이미 계정이 있으신가요? 
-                            <a href="${pageContext.request.contextPath}/member/login">로그인</a>
+                            <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
                         </p>
                     </div>
+                    
+                    <div class="text-center mt-3">
+					    <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary w-100 py-2">
+					        홈으로 돌아가기
+					    </a>
+					</div>
 
                 </div>
             </div>

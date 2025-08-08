@@ -54,10 +54,16 @@
                     <hr class="my-4">
 
                     <div class="text-center">
-                        <p class="mb-0">아직 회원이 아니신가요? 
-                            <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
-                        </p>
-                    </div>
+				    <p class="mb-0">아직 회원이 아니신가요? 
+				        <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
+				    </p>
+				</div>
+				
+				<div class="text-center mt-3">
+				    <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary w-100 py-2">
+				        홈으로 돌아가기
+				    </a>
+				</div>
 
                 </div>
             </div>

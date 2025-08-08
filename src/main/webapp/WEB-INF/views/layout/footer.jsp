@@ -79,16 +79,16 @@
 
 <body>
     <!-- 푸터 (PC 전용) -->
-    <footer class="footer main-footer">
-        <div>
-            <a href="#">프로젝트 기간 : 25.07.08~25.07.2?</a> |
-            <a href="https://github.com/qowlsgh4544/">깃허브 @qowlsgh4544</a> |
-            <a href="https://github.com/coco030">깃허브 @coco030</a>
-        </div>
-        <div class="mt-2">
-            <p class="mb-0">© 2025 PreWatch. All Rights Reserved.</p>
-        </div>
-    </footer>
+	<footer class="footer main-footer text-center">
+	    <div>
+	        <a href="#">프로젝트 기간 : 25.07.08~25.08.08</a><br>
+	        <a href="https://github.com/qowlsgh4544/">깃허브 @qowlsgh4544</a> | 
+	        <a href="https://github.com/coco030">깃허브 @coco030</a>
+	    </div>
+	    <div class="mt-2">
+	        <p class="mb-0">© 2025 PreWatch. All Rights Reserved.</p>
+	    </div>
+	</footer>
 
     <!-- 모바일 하단 메뉴 -->
     <%-- 1. 로그인하지 않은 사용자 --%>

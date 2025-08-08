@@ -1,6 +1,21 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
+<style>
+    .btn-home {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border-radius: var(--border-radius);
+        background-color: transparent;
+    }
+    .btn-home:hover {
+        background: var(--primary-gradient);
+        color: white;
+        border-color: transparent;
+        box-shadow: var(--shadow-soft);
+    }
+</style>
 <!-- 로그인 모달  -->
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">

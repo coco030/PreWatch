@@ -16,6 +16,7 @@
 </head>
 
 <body class="bg-light">
+<jsp:include page="/WEB-INF/views/layout/header.jsp" />
     <div class="container py-4">
         <h2 class="section-title text-center mb-4">모든 최근 댓글</h2>
 
@@ -148,6 +149,7 @@
         </nav>
 
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+ <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
