@@ -204,6 +204,14 @@
                 margin-bottom: 1.5rem;
             }
         }
+        
+
+    .movie-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    transition: all 0.2s ease-in-out;
+	}
+
     </style>
 </head>
 
@@ -625,51 +633,59 @@
                     </c:if>
                     <c:if test="${movie.releaseDate <= today}">
                     <!-- Recommendations Section -->
-                    <c:if test="${not empty recommended}">
-                        <div class="mb-4">
-                            <hr>
-                            <p>
-                                <c:choose>
-                                    <c:when test="${empty sessionScope.loginMember}">
-                                        이 영화와 비슷한 영화를 추천해드릴게요. 평가를 해주시면 취향에 맞는 비슷한 영화를 추천드릴 수 있습니다.
-                                    </c:when>
-                                    <c:otherwise>
-                                        ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
-                                    </c:otherwise>
-                                </c:choose>
-                            </p>
-                            <div class="d-flex flex-wrap gap-3">
-                                <c:forEach var="rec" items="${recommended}">
-                                    <div class="movie-card" style="width: 120px; font-size: 0.8rem;">
-                                        <a href="${pageContext.request.contextPath}/movies/${rec.movieId}" class="text-decoration-none text-dark">
-                                            <div class="rounded overflow-hidden">
-                                                <c:choose>
-                                                    <c:when test="${not empty rec.posterPath and fn:startsWith(rec.posterPath, 'http')}">
-                                                        <img src="${rec.posterPath}" class="w-100" style="height: 160px; object-fit: cover;">
-                                                    </c:when>
-                                                    <c:when test="${not empty rec.posterPath}">
-                                                        <img src="https://image.tmdb.org/t/p/w185/${rec.posterPath}" class="w-100" style="height: 160px; object-fit: cover;">
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>" class="w-100" style="height: 160px; object-fit: cover;">
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                            <div class="mt-1">
-                                                <div class="text-truncate fw-semibold" title="${rec.title}">${rec.title}</div>
-                                                <div class="text-muted small">${rec.rated}</div>
-                                                <div class="text-muted small">
-                                                    <c:forEach var="genre" items="${rec.genres}">
-                                                        <span>${genre} </span>
-                                                    </c:forEach>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </c:forEach>
-                            </div>
-                        </div>
-                    </c:if>
+					<c:if test="${not empty recommended}">
+					    <div class="mb-4">
+					        <hr>
+					        <p class="fw-bold mb-3">
+					            <c:choose>
+					                <c:when test="${empty sessionScope.loginMember}">
+					                    이 영화와 비슷한 영화를 추천해드릴게요.<br>
+					                    평가를 해주시면 취향에 맞는 영화를 추천드릴 수 있습니다.
+					                </c:when>
+					                <c:otherwise>
+					                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
+					                </c:otherwise>
+					            </c:choose>
+					        </p>
+					
+					        <div class="row g-3">
+					            <c:forEach var="rec" items="${recommended}">
+							    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+							        <div class="card border-0 shadow-sm h-100 movie-card">
+							            <a href="${pageContext.request.contextPath}/movies/${rec.movieId}" class="text-decoration-none text-dark">
+							                <c:choose>
+											    <c:when test="${not empty rec.posterPath and fn:startsWith(rec.posterPath, 'http')}">
+											        <img src="${rec.posterPath}" class="card-img-top" style="height: 300px; object-fit: cover;">
+											    </c:when>
+											    <c:when test="${not empty rec.posterPath}">
+											        <img src="https://image.tmdb.org/t/p/w342/${rec.posterPath}" class="card-img-top" style="height: 300px; object-fit: cover;">
+											    </c:when>
+											    <c:otherwise>
+											        <img src="<c:url value='/resources/images/movies/256px-No-Image-Placeholder.png'/>"
+											             class="card-img-top" style="height: 300px; object-fit: cover;">
+											    </c:otherwise>
+											</c:choose>
+							                <div class="card-body p-2 text-center">
+							                    <h6 class="card-title text-truncate fw-semibold mb-1" title="${rec.title}">
+							                        ${rec.title}
+							                    </h6>
+							                    <div class="text-secondary small">
+							                        <i class="fas fa-star"></i>
+							                        <c:choose>
+							                            <c:when test="${rec.userRatingAvg > 0}">
+							                                <fmt:formatNumber value="${rec.userRatingAvg}" pattern="#0.0" />
+							                            </c:when>
+							                            <c:otherwise>N/A</c:otherwise>
+							                        </c:choose>
+							                    </div>
+							                </div>
+							            </a>
+							        </div>
+							    </div>
+							</c:forEach>
+					        </div>
+					    </div>
+					</c:if>
                 </div>
                </c:if>
             </div>
