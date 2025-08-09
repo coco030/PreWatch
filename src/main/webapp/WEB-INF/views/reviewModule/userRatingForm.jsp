@@ -88,21 +88,28 @@
 document.addEventListener("DOMContentLoaded", function () {
     const movieId = document.getElementById("movieId")?.value;
     const contextPath = '${pageContext.request.contextPath}';
-    const stars = document.querySelectorAll("#star-rating .half");
-    const icons = document.querySelectorAll("#star-rating i");
+    const starRatingContainer = document.getElementById("star-rating");
+    const stars = starRatingContainer.querySelectorAll(".half");
+    const icons = starRatingContainer.querySelectorAll("i");
     const label = document.getElementById("rating-label");
 
-    let currentRating = userRating;
 
-    // ⭐ 초기 렌더링
-    if (currentRating > 0) {
+    let currentRating = Number("${myReview.userRating}") || 0;
+
+
+    function renderInitialRating() {
         updateStars(currentRating);
-        label.textContent = currentRating + " / 10";
-    } else {
-        label.textContent = "";
+        if (currentRating > 0) {
+            label.textContent = currentRating + " / 10";
+        } else {
+            label.textContent = "평가하기";
+        }
     }
 
-    // ⭐ 마우스 오버 시: 프리뷰 렌더링
+
+    renderInitialRating();
+
+
     stars.forEach(star => {
         star.addEventListener("mouseover", function () {
             const previewRating = parseInt(this.dataset.value);
@@ -111,64 +118,62 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ⭐ 마우스 아웃 시: 기존 점수 복원
-    document.getElementById("star-rating").addEventListener("mouseleave", function () {
-        updateStars(currentRating);
-        if (currentRating > 0) {
-            label.textContent = currentRating + " / 10";
-        } else {
-            label.textContent = "";
-        }
+    starRatingContainer.addEventListener("mouseleave", function () {
+        renderInitialRating(); 
     });
 
-    // ⭐ 클릭 시: 평가 저장 및 UI 반영
     stars.forEach(star => {
         star.addEventListener("click", function () {
-            // ⭐ 로그인 여부 확인
             const isLoggedIn = document.getElementById("isLoggedIn")?.value === "true";
             if (!isLoggedIn) {
                 alert("로그인 후 이용 가능합니다.");
+                renderInitialRating();
                 return;
             }
 
-            const rating = parseInt(this.dataset.value);
-            currentRating = rating;
+            const newRating = parseInt(this.dataset.value);
+            currentRating = newRating;
 
-            updateStars(rating);
-            label.textContent = rating + " / 10";
+            updateStars(currentRating);
+            label.textContent = currentRating + " / 10";
 
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
-            formData.append("userRating", rating);
+            formData.append("userRating", currentRating);
 
             fetch(contextPath + "/review/saveRating", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('서버 응답 오류');
+                }
+                return res.json();
+            })
             .then(data => {
                 console.log("저장 성공:", data);
             })
             .catch(err => {
                 console.error("저장 실패:", err);
+                alert("별점 저장에 실패했습니다. 다시 시도해 주세요.");
             });
         });
     });
 
-    // ⭐ 별 아이콘 갱신 함수
     function updateStars(rating) {
         icons.forEach((icon, idx) => {
-            const value = (idx + 1) * 2;
+            const starFullValue = (idx + 1) * 2;
+            const starHalfValue = starFullValue - 1;
+            icon.className = 'fa-star'; 
 
-            icon.classList.remove("fa-solid", "fa-regular", "fa-star", "fa-star-half-stroke");
-
-            if (rating >= value) {
-                icon.classList.add("fa-solid", "fa-star");
-            } else if (rating === value - 1) {
-                icon.classList.add("fa-solid", "fa-star-half-stroke");
+            if (rating >= starFullValue) {
+                icon.classList.add("fa-solid"); 
+            } else if (rating === starHalfValue) {
+                icon.classList.add("fa-solid", "fa-star-half-stroke"); 
             } else {
-                icon.classList.add("fa-regular", "fa-star");
+                icon.classList.add("fa-regular"); 
             }
         });
     }

@@ -291,14 +291,20 @@
 
                 
                 <div class="col-md-9">
-                    <!-- Warning Section -->
+                  <!-- Warning Section (수정된 로직) -->
+                <%-- 관리자이거나, 등록된 주의요소가 있을 경우에만 이 섹션을 표시합니다. --%>
+                <c:if test="${sessionScope.loginMember.role == 'ADMIN' or not empty groupedWarnings}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="mb-0 caution-text">⚠️ 주의</strong>
+                        
+                        <%-- 관리자에게는 항상 '관리' 버튼을 표시합니다. --%>
+                        <c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
+                            <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-sm btn-outline-dark">관리</a>
+                        </c:if>
+                    </div>
+
+                    <%-- 등록된 주의요소가 있을 경우에만 아이콘과 상세 내용을 표시합니다. --%>
                     <c:if test="${not empty groupedWarnings}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong class="mb-0 caution-text">⚠️ 주의</strong>
-                            <c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
-                                <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-sm btn-outline-dark">관리</a>
-                            </c:if>
-                        </div>
                         <div id="warningSummaryWrapper" class="mt-1">
                             <div id="warningSummary" class="warning-section-compact">
                                 <div class="icon-group">
@@ -340,6 +346,7 @@
                             </div>
                         </div>
                     </c:if>
+                </c:if>
                     <!-- 영화 개봉일 전엔 리뷰나 평점 못쓰게 -->
                     <c:if test="${movie.releaseDate <= today}"> 
                     <div class="card mt-3 border-0">
