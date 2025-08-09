@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
-import com.springmvc.domain.movie;
 import com.springmvc.repository.UserReviewRepository;
 import com.springmvc.repository.movieRepository;
 import com.springmvc.service.UserReviewService;
@@ -203,7 +202,15 @@ public class ReviewController {
         return "reviewModule/tagForm";
     }
     
-
+    // 모든 태그를 뷰로 뿌려주기
+    @GetMapping("/reviewTagAll")
+    public String tagList(@RequestParam Long movieId, Model model) {
+    	System.out.println(">>> reviewTagAll(모든 태그를 뷰로) 호출됨");
+    	List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
+        model.addAttribute("reviewList", reviewList); 
+        return "reviewModule/reviewTagAll"; 
+    }
+    
     // 모든 리뷰를 뷰로 뿌려주기 
     @GetMapping("/list")
     public String listReviews(@RequestParam Long movieId, Model model, HttpSession session) {
@@ -222,15 +229,8 @@ public class ReviewController {
         return "reviewModule/reviewList"; // → /WEB-INF/views/reviewModule/reviewList.jsp
     }
     
-    // 모든 태그를 뷰로 뿌려주기
-    @GetMapping("/reviewTagAll")
-    public String tagList(@RequestParam Long movieId, Model model) {
-    	System.out.println(">>> reviewTagAll(모든 태그를 뷰로) 호출됨");
-    	List<UserReview> reviewList = userReviewService.getReviewsByMovie(movieId);
-        model.addAttribute("reviewList", reviewList); // 태그만 뽑을 거라 리뷰 전체 보내면 됨
-        return "reviewModule/reviewTagAll"; 
-    }
-    
+
+  
     //폭력성 주의문구 뷰로 뿌려주기
     @GetMapping("/sensitivity")
     public String getViolenceSensitivity(@RequestParam Long movieId, Model model) {
@@ -291,12 +291,12 @@ public class ReviewController {
     }
     
     
- // 리뷰 삭제
+    // 리뷰 삭제 25.08.09 수정. 다른 평가지수 다 삭제중이어서.
     @PostMapping("/deleteReview")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> deleteReview(@RequestParam Long movieId, HttpSession session) {
-    	System.out.println(">>> deleteReview(리뷰 삭제) 호출됨");
-    	Map<String, Object> response = new HashMap<>();
+        System.out.println(">>> deleteReview(리뷰 내용 삭제) 호출됨"); 
+        Map<String, Object> response = new HashMap<>();
         Object loginMemberObj = session.getAttribute("loginMember");
 
         if (loginMemberObj == null) {
@@ -307,12 +307,12 @@ public class ReviewController {
 
         Member loginMember = (Member) loginMemberObj;
         String memberId = loginMember.getId();
+        boolean cleared = userReviewService.clearReviewContent(memberId, movieId); // <- 새 코드로 교체
+        
+        response.put("success", cleared);
 
-        boolean deleted = userReviewService.deleteReview(memberId, movieId);
-        response.put("success", deleted);
-
-        if (!deleted) {
-            response.put("message", "삭제 실패: 리뷰가 존재하지 않거나 삭제 중 오류 발생");
+        if (!cleared) {
+            response.put("message", "리뷰 내용을 지우는 데 실패했습니다.");
         }
 
         return ResponseEntity.ok(response);

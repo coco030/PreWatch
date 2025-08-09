@@ -287,6 +287,7 @@
                         </c:choose>
                     </div>
                 </div>
+             
 
                 
                 <div class="col-md-9">
@@ -433,13 +434,13 @@
                                 </div>
                                 
                                 <!-- Review Content -->
-                                <c:if test="${not empty sessionScope.loginMember}">
+
                                     <div class="col-lg-6">
                                         <c:import url="/review/content">
                                             <c:param name="movieId" value="${movie.id}" />
                                         </c:import>
                                     </div>
-                                </c:if>
+
                             </div>
                         </div>
                     </div>
@@ -479,9 +480,11 @@
                     
                     <!-- Cast Section -->
                     <c:if test="${not empty dbCastList or not empty tmdbCastList}">
-                        <div class="card bg-light border-0 mb-4">
-                            <div class="card-body">
-                                <h5 class="mb-2">출연/제작</h5>
+                       
+                        <div class="card border-0 mt-4 mb-4">
+						<h5 class="mb-2">출연/제작</h5>
+						<div class="card-body">
+                             
                                 <ul class="list-unstyled d-flex flex-wrap gap-3" style="margin-top:8px; padding-left:0;">
                                     <!-- DB Cast List -->
                                     <c:if test="${not empty dbCastList}">
@@ -639,8 +642,8 @@
 					        <p class="fw-bold mb-3">
 					            <c:choose>
 					                <c:when test="${empty sessionScope.loginMember}">
-					                    이 영화와 비슷한 영화를 추천해드릴게요.<br>
-					                    평가를 해주시면 취향에 맞는 영화를 추천드릴 수 있습니다.
+					                    이 영화와 비슷한 영화입니다.<br>
+					                    평가를 해주시면 취향에 맞는 영화를 추천드릴게요.
 					                </c:when>
 					                <c:otherwise>
 					                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요

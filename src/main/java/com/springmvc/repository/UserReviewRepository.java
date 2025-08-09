@@ -182,11 +182,30 @@ public class UserReviewRepository {
     }
 
     
-    // 유저 리뷰 삭제하기
+    public boolean clearReviewContent(String memberId, Long movieId) {
+        String sql = "UPDATE user_reviews SET review_content = NULL WHERE member_id = ? AND movie_id = ?";
+        
+        System.out.println("✅ [Repository] DB 업데이트 시도: memberId=" + memberId + ", movieId=" + movieId);
+        System.out.println("✅ [Repository] 실행될 SQL: " + sql); 
+
+        int updatedRows = 0;
+        try {
+            updatedRows = jdbcTemplate.update(sql, memberId, movieId);
+        } catch (Exception e) {
+            System.err.println("❌ [Repository] SQL 실행 중 에러 발생!");
+            e.printStackTrace();
+        }
+        
+        System.out.println("✅ [Repository] 업데이트된 행(row)의 수: " + updatedRows);
+        
+        return updatedRows > 0;
+    }
+
+    // 더 안 쓰는 메서드. 전체 삭제가 됨.
     public boolean deleteByMemberIdAndMovieId(String memberId, Long movieId) {
-        String sql = "DELETE FROM user_reviews WHERE member_id = ? AND movie_id = ?";
-        int rowsAffected = jdbcTemplate.update(sql, memberId, movieId);
-        return rowsAffected > 0;
+        String sql = "DELETE FROM UserReview WHERE memberId = ? AND movieId = ?";
+        int updatedRows = jdbcTemplate.update(sql, memberId, movieId);
+        return updatedRows > 0;
     }
     
     

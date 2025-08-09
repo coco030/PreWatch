@@ -40,16 +40,29 @@ public class TmdbApiService {
             .queryParam("external_source", "imdb_id")
             .toUriString();
 
+        System.out.println("========== [디버깅 2] getTmdbMovieId 호출됨. 요청 URL: " + url + " ==========");
+
         try {
             String json = restTemplate.getForObject(url, String.class);
+            System.out.println("========== [디버깅 3] getTmdbMovieId API 응답 (JSON): " + json + " ==========");
+
             JsonNode root = objectMapper.readTree(json);
             JsonNode movieResults = root.get("movie_results");
+            
             if (movieResults != null && movieResults.isArray() && movieResults.size() > 0) {
-                return movieResults.get(0).get("id").asInt();
+                int tmdbId = movieResults.get(0).get("id").asInt();
+                System.out.println("========== [디버깅 4] TMDB ID 파싱 성공! -> " + tmdbId + " ==========");
+                return tmdbId;
+            } else {
+                System.out.println("!!!!!!!!!! [디버깅 4-실패] 'movie_results'가 비어있음! imdbId: " + imdbId + " !!!!!!!!!!");
             }
         } catch (Exception e) {
-            System.out.println("[ERROR] TMDB 영화 ID 조회 실패: imdbId=" + imdbId);
+            System.out.println("!!!!!!!!!! [디버깅 ERROR] getTmdbMovieId API 호출 중 예외 발생! imdbId=" + imdbId + " !!!!!!!!!!");
+            e.printStackTrace(); // <-- 예외의 상세 내용을 콘솔에 출력해줍니다. 매우 중요!
         }
+        
+        // 여기까지 왔다면 실패한 것이므로 null을 반환합니다.
+        System.out.println("!!!!!!!!!! [디버깅] getTmdbMovieId 최종 실패. null 반환. !!!!!!!!!!");
         return null;
     }
 
@@ -102,7 +115,7 @@ public class TmdbApiService {
         return result;
     }
     
-    // [수정됨] TMDB 인물 상세 정보 가져오기 (사망자 나이 계산 보정 포함)
+    //  TMDB 인물 상세 정보 가져오기 (사망자 나이 계산 보정 포함)
     public Map<String, Object> getPersonDetailFromTmdb(Integer tmdbId) {
         String url = UriComponentsBuilder
             .fromHttpUrl(TMDB_PERSON_DETAIL_URL + tmdbId)
@@ -352,9 +365,9 @@ public class TmdbApiService {
     }
     
     
-  //25.08.07 coco030
     public String getBackdropPath(Integer tmdbMovieId) {
         if (tmdbMovieId == null) {
+            System.out.println("!!!!!!!!!! [디버깅] getBackdropPath 호출 실패: tmdbMovieId가 null입니다. !!!!!!!!!!");
             return null;
         }
         
@@ -363,17 +376,27 @@ public class TmdbApiService {
             .queryParam("api_key", TMDB_API_KEY)
             .toUriString();
 
+        System.out.println("========== [디버깅 5] getBackdropPath 호출됨. 요청 URL: " + url + " ==========");
+
         try {
             String json = restTemplate.getForObject(url, String.class);
+            System.out.println("========== [디버깅 6] getBackdropPath API 응답 (JSON): " + json + " ==========");
+            
             JsonNode root = objectMapper.readTree(json);
             String backdropPath = root.path("backdrop_path").asText(null);
             
             if (backdropPath != null && !backdropPath.isEmpty() && !backdropPath.equals("null")) {
+                System.out.println("========== [디버깅 7] Backdrop Path 파싱 성공! -> " + backdropPath + " ==========");
                 return backdropPath;
+            } else {
+                System.out.println("!!!!!!!!!! [디버깅 7-실패] 'backdrop_path'가 비어있거나 null임! tmdbId: " + tmdbMovieId + " !!!!!!!!!!");
             }
         } catch (Exception e) {
-            System.out.println("[ERROR] TMDB backdrop_path 조회 실패: tmdbId=" + tmdbMovieId);
+            System.out.println("!!!!!!!!!! [디버깅 ERROR] getBackdropPath API 호출 중 예외 발생! tmdbId=" + tmdbMovieId + " !!!!!!!!!!");
+            e.printStackTrace(); // 예외 상세 내용 출력
         }
+        
+        System.out.println("!!!!!!!!!! [디버깅] getBackdropPath 최종 실패. null 반환. !!!!!!!!!!");
         return null;
     }
 }

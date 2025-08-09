@@ -73,7 +73,8 @@ public class UserReviewService {
         movieRepository.updateAverageScores(movieId, avgRating, avgViolence);
     }
     //1인 리뷰
-	public void saveReviewContent(String memberId, Long movieId, String reviewContent) {
+    @Transactional
+    public void saveReviewContent(String memberId, Long movieId, String reviewContent) {
 	    userReviewRepository.saveOrUpdateReviewContent(memberId, movieId, reviewContent);
 	}
 	// 1인 태그
@@ -91,9 +92,16 @@ public class UserReviewService {
         return userReviewRepository.getTotalReviewCount(memberId);
     }
 
-    // 사용자 리뷰 삭제하기
+    // 사용자 리뷰 삭제하기 더 안쓰는 메서드. 리뷰만이 아니라 별점들을 전부 삭제하고 있었다.
     public boolean deleteReview(String memberId, Long movieId) {
         return userReviewRepository.deleteByMemberIdAndMovieId(memberId, movieId); 
+    }
+    
+  // 리뷰 내용만 삭제. 전체 삭제가 아니라!! 25.08.09
+    @Transactional
+    public boolean clearReviewContent(String memberId, Long movieId) {
+        System.out.println("✅ [Service] 내용 삭제 처리: memberId=" + memberId + ", movieId=" + movieId);
+        return userReviewRepository.clearReviewContent(memberId, movieId);
     }
     
     // 사용자가 자주 평가한 영화 장르

@@ -303,22 +303,27 @@ public class movieController {
        
         if (movie == null) {
             logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
-            return "redirect:/movies?error=notFound"; }
+            return "redirect:/movies?error=notFound";
+        }
             
+  
+        //  tmdbId를 여기서 한 번만 조회해서 여러 곳에서 재사용
+       Integer tmdbId = null;
+        if (movie.getApiId() != null && !movie.getApiId().isEmpty()) {
+            tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+            logger.info("[TMDB] 영화 ID: {} (apiId: {})의 tmdbId 조회 결과: {}", id, movie.getApiId(), tmdbId);
+        } else {
+            logger.warn("[TMDB] 영화 ID: {}에 apiId가 없어 TMDB 연동 작업을 건너뜁니다.", id);
+        }
+   
 
-        //25.08.07 coco030
-        // ====================================================================
+        // 1. 배경 이미지 가져오기
         String backdropPath = null;
-        // movie 객체가 null이 아님이 보장된 상태에서 apiId를 사용합니다.
-        Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
         if (tmdbId != null) {
             backdropPath = tmdbApiService.getBackdropPath(tmdbId);
         }
-        
         model.addAttribute("backdropPath", backdropPath);
         logger.info("[Backdrop] 영화 ID: {}의 backdropPath 조회 결과: {}", id, backdropPath);
-        // ====================================================================
-        
         
          // 찜 상태
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -329,7 +334,7 @@ public class movieController {
         } else {
             movie.setIsLiked(false);
         }
-	     
+         
         double avgHorror = userReviewService.getAverageHorrorScore(id);
         double avgSexual = userReviewService.getAverageSexualScore(id);     
         model.addAttribute("avgHorrorScore", avgHorror);
@@ -373,11 +378,14 @@ public class movieController {
         model.addAttribute("dbCastList", dbCastList);
         System.out.println("DB 출연진 리스트");
 
-       
-        List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+    
+        List<Map<String, String>> tmdbCastList = new ArrayList<>();
+        if (tmdbId != null) {
+            tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+        }
         model.addAttribute("tmdbCastList", tmdbCastList);
-        System.out.println("TMDB 실시간 출연진 (API)");
-
+        System.out.println("TMDB 실시간 출연진 (API), 조회된 인원: " + tmdbCastList.size());
+       
         Map<String, List<String>> castInfo = new HashMap<>();
         for (Map<String, String> cast : tmdbCastList) {
             String type = cast.get("roleType"); 
@@ -401,7 +409,6 @@ public class movieController {
 
         List<InsightMessage> insights = statService.generateInsights(id);
         model.addAttribute("insights", insights);
-        model.addAttribute("movie", movie);
         model.addAttribute("userRole", session.getAttribute("userRole"));
         model.addAttribute("today", LocalDate.now());
         logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
@@ -416,11 +423,11 @@ public class movieController {
             System.out.println("주의 요소 정보: " + groupedWarnings);
         }
         model.addAttribute("groupedWarnings", groupedWarnings);
-      
+
+        model.addAttribute("movie", movie);
 
         return "movie/detailPage";
     }
-
 
 
 
@@ -429,7 +436,6 @@ public class movieController {
     @Transactional(readOnly = true)
     public String list(Model model, HttpSession session) {
         logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
-        // findAll()이 이미 like_count 기준으로 정렬되어 있으므로 별도 변경 필요 없음
         List<movie> movies = movieService.findAll();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -604,54 +610,83 @@ public class movieController {
         return "movie/apiSearchPage";
     }
 
-    @GetMapping("/movies/api-external-detail")
-    @Transactional(readOnly = true)
-    public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+	    @GetMapping("/movies/api-external-detail")
+	    @Transactional(readOnly = true)
+	    public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+	        logger.info("[GET /movies/api-external-detail] API 외부 영화 상세 정보 요청. imdbId: {}", imdbId);
+
         try {
-            movie externalMovieDetail = externalMovieApiService.getMovieFromApi(imdbId);
-
-            if (externalMovieDetail != null) {
-                movie localMovie = movieService.findByApiId(externalMovieDetail.getApiId());
-                if (localMovie != null) {
-                    externalMovieDetail.setRating(localMovie.getRating());
-                    externalMovieDetail.setViolence_score_avg(localMovie.getViolence_score_avg());
-                    externalMovieDetail.setId(localMovie.getId());
-                    externalMovieDetail.setLikeCount(localMovie.getLikeCount());
-
-                    Member loginMember = (Member) session.getAttribute("loginMember");
-                    if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-                        boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), localMovie.getId());
-                        externalMovieDetail.setIsLiked(isLiked);
-                        logger.debug("API 상세 페이지 (DB 존재) 영화 '{}'의 찜 상태: {}", externalMovieDetail.getTitle(), isLiked);
-                    } else {
-                        externalMovieDetail.setIsLiked(false);
-                    }
-
-                } else {
-                    logger.debug("API 상세 페이지에 영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/잔혹도/찜개수 유지.", externalMovieDetail.getTitle(), externalMovieDetail.getApiId());
-                    externalMovieDetail.setIsLiked(false);
-                    externalMovieDetail.setLikeCount(0);
-                }
-                // imdbId로 Tmdb 출연진 조회
-                String imdbIdForTmdb = externalMovieDetail.getApiId();
-                Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbIdForTmdb);
-                if (tmdbId != null) {
-                    List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
-                    model.addAttribute("castAndCrew", castAndCrew);
-                }
-
-                model.addAttribute("movie", externalMovieDetail);
-                model.addAttribute("userRole", session.getAttribute("userRole"));
-                return "movie/detailPage";
-            } else {
-                logger.warn("[GET /movies/api-external-detail] imdbID '{}'에 해당하는 영화 정보를 API에서 찾을 수 없습니다.", imdbId);
-                redirectAttributes.addAttribute("error", "movieNotFound");
-                return "redirect:/movies/search-api";
+            movie apiMovie = externalMovieApiService.getMovieFromApi(imdbId);
+            if (apiMovie == null) {
+                logger.warn("API에서 imdbID '{}'에 해당하는 영화 정보를 찾을 수 없습니다.", imdbId);
+                redirectAttributes.addFlashAttribute("errorMessage", "해당 영화 정보를 찾을 수 없습니다.");
+                return "redirect:/search";
             }
+            
+	            Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+	            movie localMovie = movieService.findByApiId(imdbId);
+	            if (localMovie != null) {
+	            logger.info("DB에서 영화(ID: {})를 찾았습니다. DB 정보를 기반으로 페이지를 구성합니다.", localMovie.getId());
+                
+                apiMovie.setId(localMovie.getId());
+                apiMovie.setLikeCount(localMovie.getLikeCount());
+                apiMovie.setRating(localMovie.getRating());
+                apiMovie.setViolence_score_avg(localMovie.getViolence_score_avg());
+                
+                Member loginMember = (Member) session.getAttribute("loginMember");
+                if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
+                    boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), localMovie.getId());
+                    apiMovie.setIsLiked(isLiked);
+                } else {
+                    apiMovie.setIsLiked(false);
+                }
+                
+                model.addAttribute("stat", statRepository.findMovieStatsById(localMovie.getId()));
+                model.addAttribute("reviewList", userReviewService.getReviewsByMovie(localMovie.getId()));
+                model.addAttribute("insights", statService.generateInsights(localMovie.getId()));
+                model.addAttribute("dbCastList", actorRepository.findCastAndCrewByMovieId(localMovie.getId()));
+                model.addAttribute("groupedWarnings", warningTagService.getGroupedWarningTagsByMovieId(localMovie.getId()));
+
+            } else {
+                logger.info("DB에 영화가 없습니다. 100% 실시간 API 정보로 페이지를 구성합니다.");
+                apiMovie.setIsLiked(false);
+                model.addAttribute("stat", null);
+                model.addAttribute("reviewList", new ArrayList<>());
+                model.addAttribute("insights", new ArrayList<>());
+                model.addAttribute("dbCastList", new ArrayList<>());
+                model.addAttribute("groupedWarnings", new HashMap<>());
+            }
+            if (tmdbId != null) {
+                model.addAttribute("backdropPath", tmdbApiService.getBackdropPath(tmdbId));
+                List<Map<String, String>> tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
+                model.addAttribute("tmdbCastList", tmdbCastList);
+                
+                Map<String, List<String>> castInfo = new HashMap<>();
+                for (Map<String, String> cast : tmdbCastList) {
+                    String type = cast.get("roleType");
+                    String name = cast.get("name");
+                    castInfo.computeIfAbsent(type, k -> new ArrayList<>()).add(name);
+                }
+                model.addAttribute("castInfo", castInfo);
+
+                // 이미지 갤러리
+                List<String> backdropImageUrls = tmdbApiService.getBackdropImageUrls(imdbId);
+                List<MovieImage> movieImages = new ArrayList<>();
+                for(String url : backdropImageUrls) {
+                    movieImages.add(new MovieImage(null, url, url, tmdbId));
+                }
+                model.addAttribute("movieImages", movieImages);
+            }
+
+            model.addAttribute("movie", apiMovie);
+            model.addAttribute("userRole", session.getAttribute("userRole"));
+
+            return "movie/detailPage";
+
         } catch (Exception e) {
-            logger.error("API 외부 영화 상세 정보 가져오기 실패: {}", e.getMessage(), e);
-            redirectAttributes.addAttribute("error", "apiError");
-            return "redirect:/movies/search-api";
+            logger.error("API 외부 영화 상세 정보 처리 중 오류 발생: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("errorMessage", "정보를 가져오는 중 오류가 발생했습니다.");
+            return "redirect:/search";
         }
     }
 
