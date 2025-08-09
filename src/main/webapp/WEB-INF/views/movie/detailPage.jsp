@@ -649,8 +649,7 @@
 					        <p class="fw-bold mb-3">
 					            <c:choose>
 					                <c:when test="${empty sessionScope.loginMember}">
-					                    이 영화와 비슷한 영화입니다.<br>
-					                    평가를 해주시면 취향에 맞는 영화를 추천드릴게요.
+					                    비슷한 영화
 					                </c:when>
 					                <c:otherwise>
 					                    ${sessionScope.loginMember.id}님의 취향에 맞는 영화를 추천해드릴게요
