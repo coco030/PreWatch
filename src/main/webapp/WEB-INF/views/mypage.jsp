@@ -159,6 +159,8 @@
                         <div class="review-content-wrapper">
                             <c:if test="${not empty review.reviewContent}">
                                 <p class="review-text fst-italic mb-1">${review.reviewContent}</p>
+                             
+								<p class="text-muted small mb-2"><i class="fa-regular fa-clock me-1"></i>${review.createdAt.format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"))}</p>
                                 <button type="button" class="toggle-review-btn d-none">더보기</button>
                             </c:if>
                             <c:if test="${not empty review.tags}">

@@ -176,7 +176,8 @@ public class UserReviewRepository {
             review.setSexualScore(rs.getObject("sexual_score") != null ? rs.getInt("sexual_score") : null); // ✅ 추가됨
             review.setReviewContent(rs.getString("review_content"));
             review.setTags(rs.getString("tags"));
-            review.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            java.sql.Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
+            review.setCreatedAt(createdAtTimestamp != null ? createdAtTimestamp.toLocalDateTime() : null);
             return review;
         });
     }

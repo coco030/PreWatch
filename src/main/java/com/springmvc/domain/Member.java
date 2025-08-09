@@ -1,15 +1,13 @@
 package com.springmvc.domain;
 
-// Member 클래스: 애플리케이션의 사용자(회원) 정보를 담는 도메인 클래스.
-// 목적: 회원 가입, 로그인, 정보 수정 등 회원 관련 데이터 주고받기.
 public class Member {
 	private String id;       // 회원의 고유 아이디 (PRIMARY KEY)
 	private String password; // 회원의 비밀번호
 	private String role;     // 회원의 권한(역할)
 	
-	private String tasteTitle;          // taste_title 컬럼
-    private String tasteReport;         // taste_report 컬럼
-    private Double tasteAnomalyScore;   // taste_anomaly_score 컬럼
+	private String tasteTitle; 
+    private String tasteReport;      
+    private Double tasteAnomalyScore;  
 
 	public Member(String id, String password, String role, String tasteTitle, String tasteReport,
 			Double tasteAnomalyScore) {
@@ -52,11 +50,7 @@ public class Member {
 		this.tasteAnomalyScore = tasteAnomalyScore;
 	}
 
-
-	// 기본 생성자: 매개변수 없이 객체 생성. Spring MVC 폼 바인딩 등에 사용.
 	public Member() {}
-
-	// Getter/Setter: private 필드에 안전하게 접근하고 값을 설정. (role 필드 포함)
 	public String getId() {
 		return id;
 	}
@@ -71,10 +65,10 @@ public class Member {
 		this.password = password;
 	}
 
-	public String getRole() { // role Getter
+	public String getRole() { 
 		return role;
 	}
-	public void setRole(String role) { // role Setter
+	public void setRole(String role) { 
 		this.role = role;
 	}
 
