@@ -28,20 +28,20 @@ public class externalMovieApiService {
     private final String omdbSearchApiKey;
     private final String OMDB_BASE_URL = "http://www.omdbapi.com/";
 
-    private final RestTemplate restTemplate; // 외부 REST API 호출
-    private final ObjectMapper objectMapper; // JSON 파싱 및 매핑
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public externalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
-        this.omdbSearchApiKey = omdbSearchApiKey; // 주입받은 키를 필드에 할당
+        this.omdbSearchApiKey = omdbSearchApiKey;
         logger.info("externalMovieApiService 초기화 완료. OMDb 검색용 API 키가 설정되었습니다.");
     }
 
     public List<movie> searchMoviesByKeyword(String keyword) {
         logger.debug("OMDb API에서 키워드 '{}'로 영화 목록 검색 시도.", keyword);
         String searchApiUrl = UriComponentsBuilder.fromHttpUrl(OMDB_BASE_URL)
-                .queryParam("apikey", this.omdbSearchApiKey) // [수정] 주입받은 키 사용
+                .queryParam("apikey", this.omdbSearchApiKey)
                 .queryParam("s", keyword)
                 .build().toUriString();
 
@@ -59,7 +59,7 @@ public class externalMovieApiService {
                     for (JsonNode movieNode : searchResults) {
                         String imdbId = movieNode.has("imdbID") ? movieNode.get("imdbID").asText() : null;
                         if (imdbId != null) {
-                            movie fullMovieDetail = getMovieFromApi(imdbId); // 상세 정보 재호출
+                            movie fullMovieDetail = getMovieFromApi(imdbId); 
                             if (fullMovieDetail != null) { moviesWithFullDetails.add(fullMovieDetail); }
                         }
                     }

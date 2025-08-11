@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springmvc.repository.ActorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value; // @Value 임포트
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -47,7 +47,7 @@ public class TmdbApiService {
 
     public Integer getTmdbMovieId(String imdbId) {
         String url = UriComponentsBuilder.fromHttpUrl(TMDB_FIND_URL + imdbId)
-                .queryParam("api_key", this.tmdbApiKey) // [수정] 주입받은 키 사용
+                .queryParam("api_key", this.tmdbApiKey)
                 .queryParam("external_source", "imdb_id")
                 .toUriString();
 
@@ -179,7 +179,7 @@ public class TmdbApiService {
         try {
             String url = UriComponentsBuilder
                     .fromHttpUrl(OMDB_URL)
-                    .queryParam("apikey", this.omdbDetailApiKey) // [수정] 주입받은 키 사용
+                    .queryParam("apikey", this.omdbDetailApiKey)
                     .queryParam("i", apiId)
                     .toUriString();
             
@@ -218,7 +218,7 @@ public class TmdbApiService {
             if (tmdbId != null) {
                  String tmdbUrl = UriComponentsBuilder
 	                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbId)
-	                 .queryParam("api_key", this.tmdbApiKey) // [수정] 주입받은 키 사용
+	                 .queryParam("api_key", this.tmdbApiKey)
 	                 .toUriString();
                  
                  try {
@@ -257,7 +257,7 @@ public class TmdbApiService {
 
             String url = UriComponentsBuilder
                     .fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbMovieId + "/images")
-                    .queryParam("api_key", this.tmdbApiKey) // [수정] 주입받은 키 사용
+                    .queryParam("api_key", this.tmdbApiKey)
                     .toUriString();
             
             String json = restTemplate.getForObject(url, String.class);
