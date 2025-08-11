@@ -1,20 +1,22 @@
 package com.springmvc.service;
 
-import com.fasterxml.jackson.databind.JsonNode;     
-import com.fasterxml.jackson.databind.ObjectMapper; 
-import com.springmvc.domain.movie;                  
-import org.slf4j.Logger;                            
-import org.slf4j.LoggerFactory;                      
-import org.springframework.stereotype.Service;       
-import org.springframework.web.client.RestTemplate;  
-import org.springframework.web.util.UriComponentsBuilder; 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
-import java.time.LocalDate;       
-import java.time.format.DateTimeFormatter; 
-import java.time.format.DateTimeParseException; 
-import java.util.ArrayList;       
-import java.util.List;            
-import java.util.Locale;          
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.springmvc.domain.movie;          
 
 // externalMovieApiService 클래스: 외부 영화 API(OMDb API) 연동 로직 구현.
 // 목적: 영화 검색 기능에서 외부 데이터 통합.
@@ -23,31 +25,26 @@ public class externalMovieApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(externalMovieApiService.class); // Logger 객체 초기화
 
-    private final String OMDB_API_KEY = "c71cc3d8"; // OMDb API 키
-    private final String OMDB_BASE_URL = "http://www.omdbapi.com/"; // OMDb API 기본 URL
+    private final String omdbSearchApiKey;
+    private final String OMDB_BASE_URL = "http://www.omdbapi.com/";
 
     private final RestTemplate restTemplate; // 외부 REST API 호출
     private final ObjectMapper objectMapper; // JSON 파싱 및 매핑
 
-    // 생성자: RestTemplate, ObjectMapper 초기화.
-    public externalMovieApiService() {
+    public externalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
-        logger.info("externalMovieApiService 초기화 완료.");
+        this.omdbSearchApiKey = omdbSearchApiKey; // 주입받은 키를 필드에 할당
+        logger.info("externalMovieApiService 초기화 완료. OMDb 검색용 API 키가 설정되었습니다.");
     }
 
-    /**
-     * searchMoviesByKeyword 메서드: 키워드로 OMDb API에서 영화 목록 검색 및 상세 정보 가져옴.
-     * 목적: 사용자 검색어에 해당하는 영화 찾고 상세 정보 채움. OMDb 평점/폭력성지수는 0.0으로 초기화.
-     * @param keyword 검색할 영화 키워드.
-     * @return 상세 정보가 채워진 영화 목록 (평점/폭력성지수는 0.0).
-     */
     public List<movie> searchMoviesByKeyword(String keyword) {
         logger.debug("OMDb API에서 키워드 '{}'로 영화 목록 검색 시도.", keyword);
         String searchApiUrl = UriComponentsBuilder.fromHttpUrl(OMDB_BASE_URL)
-                .queryParam("apikey", OMDB_API_KEY)
+                .queryParam("apikey", this.omdbSearchApiKey) // [수정] 주입받은 키 사용
                 .queryParam("s", keyword)
                 .build().toUriString();
+
 
         List<movie> moviesWithFullDetails = new ArrayList<>();
         try {
@@ -91,7 +88,7 @@ public class externalMovieApiService {
         logger.debug("OMDb API 호출 파라미터: {}={}", paramKey, imdbIdOrTitle);
 
         String apiUrl = UriComponentsBuilder.fromHttpUrl(OMDB_BASE_URL)
-                .queryParam("apikey", OMDB_API_KEY)
+                .queryParam("apikey", this.omdbSearchApiKey)
                 .queryParam(paramKey, imdbIdOrTitle)
                 .build().toUriString();
 
