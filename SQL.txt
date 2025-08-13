@@ -9,12 +9,12 @@ COLLATE utf8mb4_unicode_ci;
 USE prewatch_db;
 
 -- 3. 기존 테이블 삭제 (자식 → 부모 순서)
-DROP TABLE IF EXISTS movie_warning_tags; --  08.04 추가
-DROP TABLE IF EXISTS warning_tags;   -- 무비 테이블이 부모  08.04 추가
+DROP TABLE IF EXISTS movie_warning_tags; 
+DROP TABLE IF EXISTS warning_tags;   -- 무비 테이블이 부모  
 DROP TABLE IF EXISTS movie_genres;          -- 영화-장르 매핑
 DROP TABLE IF EXISTS movie_actors;          -- 영화-배우 연결
 DROP TABLE IF EXISTS actors;                -- 배우 테이블
-DROP TABLE IF EXISTS movie_images;          -- (25.08.01 추가) 영화-이미지 연결
+DROP TABLE IF EXISTS movie_images;          -- 영화-이미지 연결
 DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
 DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
 DROP TABLE IF EXISTS user_carts;            -- 유저 찜
@@ -28,7 +28,7 @@ CREATE TABLE member (
     password VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
-    taste_title VARCHAR(255) DEFAULT '취향 탐색 중', -- 
+    taste_title VARCHAR(255) DEFAULT '취향 탐색 중', 
     taste_report TEXT,
     taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0
 );
@@ -46,7 +46,7 @@ INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
 
 
--- 5. 영화 테이블
+-- 5. 영화 테이블 (수정)
 CREATE TABLE movies (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     api_id VARCHAR(255) UNIQUE,
@@ -104,7 +104,7 @@ CREATE TABLE admin_banner_movies (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 9. 영화별 추가 통계 테이블 (25.07.28 coco030 : horror, 선정성 등)
+-- 9. 영화별 추가 통계 테이블
 CREATE TABLE movie_stats (
     movie_id BIGINT PRIMARY KEY,  -- FK → movies.id
     horror_score_avg DECIMAL(3,1) DEFAULT 0.0,
@@ -114,11 +114,11 @@ CREATE TABLE movie_stats (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 10. 배우 테이블 (25.07.28 오후 추가)
+-- 10. 배우 테이블 
 CREATE TABLE actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    tmdb_id INT, -- 유니크 제거 
+    tmdb_id INT, 
     profile_image_url VARCHAR(255),
     birthday DATE,
     deathday DATE,
@@ -129,7 +129,7 @@ CREATE TABLE actors (
     known_for_department VARCHAR(50)
 );
 
--- 11. 영화-배우/감독 연결 테이블 (25.07.28 오후 추가)
+-- 11. 영화-배우/감독 연결 테이블 
 CREATE TABLE movie_actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     movie_id BIGINT NOT NULL,
@@ -194,8 +194,8 @@ SELECT * FROM actors;
 SELECT * FROM movie_actors;     
 SELECT * FROM movie_genres;    
 SELECT * FROM movie_images;
-SELECT * FROM warning_tags;        -- (25.08.05 추가)
-SELECT * FROM movie_warning_tags;  -- (25.08.05 추가)
+SELECT * FROM warning_tags;       
+SELECT * FROM movie_warning_tags;
 
 
 -- 배우들 정보 삭제 (순서대로.)
@@ -269,4 +269,3 @@ INSERT INTO warning_tags (category, sentence, sort_order) VALUES
 ('동물', '동물이 죽거나 죽음을 암시하는 장면이 있어요.', 20),
 ('동물', '동물의 사체가 화면에 직접 등장해요.', 30),
 ('동물', '동물이 실험, 사냥, 투견 등의 설정에 이용돼요.', 40);
-

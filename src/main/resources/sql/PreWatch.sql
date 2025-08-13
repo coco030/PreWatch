@@ -1,3 +1,5 @@
+ 
+
 -- 1. 데이터베이스 만들기
 CREATE DATABASE IF NOT EXISTS prewatch_db
 CHARACTER SET utf8mb4
@@ -7,13 +9,16 @@ COLLATE utf8mb4_unicode_ci;
 USE prewatch_db;
 
 -- 3. 기존 테이블 삭제 (자식 → 부모 순서)
-DROP TABLE IF EXISTS movie_genres;          -- (25.07.28 오후 추가) 영화-장르 매핑
-DROP TABLE IF EXISTS movie_actors;          -- (25.07.28 오후 추가) 영화-배우 연결
-DROP TABLE IF EXISTS actors;                -- (25.07.28 오후 추가) 배우 테이블
+DROP TABLE IF EXISTS movie_warning_tags; 
+DROP TABLE IF EXISTS warning_tags;   -- 무비 테이블이 부모  
+DROP TABLE IF EXISTS movie_genres;          -- 영화-장르 매핑
+DROP TABLE IF EXISTS movie_actors;          -- 영화-배우 연결
+DROP TABLE IF EXISTS actors;                -- 배우 테이블
+DROP TABLE IF EXISTS movie_images;          -- 영화-이미지 연결
 DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
 DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
 DROP TABLE IF EXISTS user_carts;            -- 유저 찜
-DROP TABLE IF EXISTS movie_stats;           -- (25.07.28 오후 추가) 영화별 통계
+DROP TABLE IF EXISTS movie_stats;           -- 영화별 통계
 DROP TABLE IF EXISTS movies;                -- 영화 테이블
 DROP TABLE IF EXISTS member;                -- 회원 테이블
 
@@ -22,8 +27,17 @@ CREATE TABLE member (
     id VARCHAR(50) PRIMARY KEY,
     password VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER'
+    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
+    taste_title VARCHAR(255) DEFAULT '취향 탐색 중', 
+    taste_report TEXT,
+    taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0
 );
+
+-- 멤버 테이블에 새로운 컬럼 3개 더 추가할 때 1회 사용
+ALTER TABLE member
+ADD COLUMN taste_title VARCHAR(255) DEFAULT '취향 탐색 중',
+ADD COLUMN taste_report TEXT,
+ADD COLUMN taste_anomaly_score DECIMAL(10, 5) DEFAULT 0.0;
 
 INSERT INTO member (id, password, role) VALUES ('admin', '1234', 'ADMIN');
 INSERT INTO member (id, password, role) VALUES ('member1', '1234', 'MEMBER');
@@ -31,7 +45,8 @@ INSERT INTO member (id, password, role) VALUES ('guest', '1234', 'MEMBER'); -- �
 INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
 
--- 5. 영화 테이블
+
+-- 5. 영화 테이블 (수정)
 CREATE TABLE movies (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     api_id VARCHAR(255) UNIQUE,
@@ -45,6 +60,8 @@ CREATE TABLE movies (
     overview TEXT,
     poster_path VARCHAR(255),
     like_count INT DEFAULT 0,
+    runtime VARCHAR(50),   
+    rated VARCHAR(50),     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -56,8 +73,8 @@ CREATE TABLE user_reviews (
     movie_id BIGINT NOT NULL,
     user_rating INT,
     violence_score INT,
-    horror_score INT,           -- ✅ 유저의 공포성 평가 점수
-    sexual_score INT,           -- ✅ 유저의 선정성 평가 점수
+    horror_score INT,   
+    sexual_score INT,        
     review_content TEXT,
     tags VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -87,7 +104,7 @@ CREATE TABLE admin_banner_movies (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 9. 영화별 추가 통계 테이블 (25.07.28 coco030 : horror, 선정성 등)
+-- 9. 영화별 추가 통계 테이블
 CREATE TABLE movie_stats (
     movie_id BIGINT PRIMARY KEY,  -- FK → movies.id
     horror_score_avg DECIMAL(3,1) DEFAULT 0.0,
@@ -97,27 +114,28 @@ CREATE TABLE movie_stats (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 10. 배우 테이블 (25.07.28 오후 추가)
+-- 10. 배우 테이블 
 CREATE TABLE actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    tmdb_id INT UNIQUE,
+    tmdb_id INT, 
     profile_image_url VARCHAR(255),
     birthday DATE,
     deathday DATE,
+    age INT,
     place_of_birth VARCHAR(255),
     biography TEXT,
     gender TINYINT,
     known_for_department VARCHAR(50)
 );
 
--- 11. 영화-배우/감독 연결 테이블 (25.07.28 오후 추가)
+-- 11. 영화-배우/감독 연결 테이블 
 CREATE TABLE movie_actors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     movie_id BIGINT NOT NULL,
     actor_id BIGINT NOT NULL,
     role_name VARCHAR(100),
-    role_type VARCHAR(20) DEFAULT 'ACTOR', -- '배우', '감독'
+    role_type VARCHAR(50) DEFAULT 'ACTOR', -- '배우', '감독'
     display_order INT DEFAULT 0,
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES actors(id) ON DELETE CASCADE
@@ -131,16 +149,59 @@ CREATE TABLE movie_genres (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
--- 13. 데이터 확인용 SELECT (생성 순서와 일치)
+--  영화별 이미지 테이블 (갤러리용)
+CREATE TABLE movie_images (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,           -- 각 이미지 고유 ID
+    movie_id BIGINT NOT NULL,                       -- 어떤 영화의 이미지인지 (FK)
+    image_url VARCHAR(500) NOT NULL,                -- TMDb에서 받은 이미지 경로
+    type VARCHAR(50) DEFAULT 'backdrop',            -- 이미지 종류 (예: backdrop, poster, logo)
+    sort_order INT DEFAULT 0,                       -- 정렬 순서
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 저장 시각
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
+);
+
+
+-- 주의 요소 마스터 테이블 (UNIQUE 제약조건 포함)
+CREATE TABLE warning_tags (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    sentence VARCHAR(255) NOT NULL UNIQUE, -- 컬럼 정의 시 바로 UNIQUE를 명시
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 영화-주의 요소 매핑 테이블
+-- movies와 warning_tags 테이블이 먼저 존재해야 생성 가능.
+CREATE TABLE movie_warning_tags (
+    movie_id BIGINT NOT NULL,
+    warning_tag_id BIGINT NOT NULL,
+    PRIMARY KEY (movie_id, warning_tag_id),
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    FOREIGN KEY (warning_tag_id) REFERENCES warning_tags(id) ON DELETE CASCADE
+);
+
+
+
+
+--  데이터 확인용 SELECT (생성 순서와 일치)
 SELECT * FROM member;
 SELECT * FROM movies;
 SELECT * FROM user_reviews;
 SELECT * FROM user_carts;
 SELECT * FROM admin_banner_movies;
-SELECT * FROM movie_stats;      -- (25.07.28 오후 추가)
-SELECT * FROM actors;           -- (25.07.28 오후 추가)
-SELECT * FROM movie_actors;     -- (25.07.28 오후 추가)
-SELECT * FROM movie_genres;     -- (25.07.28 오후 추가)
+SELECT * FROM movie_stats;      
+SELECT * FROM actors;         
+SELECT * FROM movie_actors;     
+SELECT * FROM movie_genres;    
+SELECT * FROM movie_images;
+SELECT * FROM warning_tags;       
+SELECT * FROM movie_warning_tags;
+
+
+-- 배우들 정보 삭제 (순서대로.)
+TRUNCATE TABLE movie_actors;
+DELETE FROM actors;
+
 
 -- ### **⭐ `like_count` 자동 업데이트를 위한 트리거 추가 ⭐**
 DELIMITER //
@@ -155,6 +216,7 @@ BEGIN
 END;
 //
 
+
 -- user_carts에서 찜이 삭제될 때 like_count 감소
 CREATE TRIGGER trg_decrease_like_count
 AFTER DELETE ON user_carts
@@ -167,3 +229,46 @@ END;
 //
 
 DELIMITER ;
+
+
+
+INSERT INTO warning_tags (category, sentence, sort_order) VALUES
+-- 카테고리: 공포
+('공포', '갑작스럽게 놀라게 하는 장면(점프 스케어)이 있어요.', 10),
+('공포', '지속적인 긴장감이나 불안감을 유발해요.', 20),
+('공포', '기괴하거나 초자연적인 존재가 등장해요.', 30),
+('공포', '음향 효과로 공포감이나 불쾌감을 줘요.', 40),
+
+-- 카테고리: 잔인성
+('잔인성', '선혈이 낭자하거나 유혈 장면이 반복돼요.', 10),
+('잔인성', '신체 절단이나 장기 훼손이 구체적으로 묘사돼요.', 20),
+('잔인성', '훼손된 시체가 상세하게 등장해요.', 30),
+('잔인성', '혐오감을 주는 벌레나 오물이 클로즈업돼요.', 40),
+
+-- 카테고리: 폭력성
+('폭력성', '구타, 집단 폭행 등 물리적 폭력이 자주 나와요.', 10),
+('폭력성', '고문, 학대 등 과정이 상세하게 묘사돼요.', 20),
+('폭력성', '총, 칼 등 무기를 사용한 폭력/살상 장면이 직접적으로 나와요.', 30),
+('폭력성', '아동 학대나 가정 내 폭력 장면이 포함돼요.', 40),
+
+-- 카테고리: 선정성
+('선정성', '직접적인 성적 행위나 강한 암시가 있어요.', 10),
+('선정성', '과도한 신체 노출 장면이 포함돼요.', 20),
+('선정성', '성적인 폭력이나 강압적인 상황이 묘사/암시돼요.', 30),
+('선정성', '성적 대상화나 불쾌감을 주는 대사가 있어요.', 40),
+
+-- 카테고리: 기타
+('기타', '자살 또는 자해 시도가 직접적으로 묘사돼요.', 10),
+('기타', '욕설이나 비속어가 반복적으로 사용돼요.', 20),
+
+-- 카테고리: 약물
+('약물', '약물 사용이나 중독 관련 상황이 표현돼요.', 10),
+
+-- 카테고리: 동물
+('동물', '동물이 위험에 처하거나 고통받는 장면이 나와요.', 10),
+('동물', '동물이 죽거나 죽음을 암시하는 장면이 있어요.', 20),
+('동물', '동물의 사체가 화면에 직접 등장해요.', 30),
+('동물', '동물이 실험, 사냥, 투견 등의 설정에 이용돼요.', 40);
+
+
+
