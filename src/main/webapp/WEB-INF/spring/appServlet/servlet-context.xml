@@ -30,8 +30,6 @@
 	<!--  서버 배포 시 외부 설정 파일을, 로컬 개발 시 내부 설정 파일을 읽도록 설정  -->
 	<context:property-placeholder location="file:/etc/config/prewatch/server-application.properties, classpath:application.properties" ignore-resource-not-found="true"/>
 	<context:component-scan base-package="com.springmvc.*"/>
-
-	<context:component-scan	base-package="com.springmvc.*" />
 	
 
 
