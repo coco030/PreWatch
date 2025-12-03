@@ -101,7 +101,7 @@ public class MemberController {
         String pw = request.getParameter("pw");             // 새 비밀번호
         String confirmPassword = request.getParameter("confirmPassword"); // 비밀번호 확인 (현재 사용되지 않음)
 
-        System.out.println("[Controller] 비밀번호 수정 요청 도착");
+        System.out.println("[Controller] 비밀번호 수정 요청도착");
         System.out.println("[Controller] 파라미터 id = " + id + ", pw = " + pw);
 
         memberService.updatePassword(id, pw); // 비밀번호 업데이트 (Update)
