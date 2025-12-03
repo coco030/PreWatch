@@ -31,6 +31,7 @@ public class movie implements Serializable {
     private String rated;
     private Integer dday;
     private String backdropPath; //25.08.07 coco030
+    private double tmdbRating; // TMDB 평점을 화면에 보여주기 위한 임시 필드 (DB 저장 X)
 
     public String getFormattedReleaseDate() {
         if (releaseDate != null) {
@@ -154,6 +155,11 @@ public class movie implements Serializable {
     public void setBackdropPath(String backdropPath) {
         this.backdropPath = backdropPath;
     }
+    
+    // 25.12.03
+    public double getTmdbRating() {return tmdbRating;}
+    public void setTmdbRating(double tmdbRating) {
+    	this.tmdbRating = tmdbRating;}
 	
 	
 }

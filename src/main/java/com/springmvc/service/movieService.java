@@ -1,4 +1,3 @@
-// src/main/java/com/springmvc/service/movieService.java
 package com.springmvc.service;
 
 import java.time.LocalDate;

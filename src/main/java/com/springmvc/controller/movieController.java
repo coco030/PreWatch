@@ -134,9 +134,9 @@ public class movieController {
             return "redirect:/accessDenied";
         }
 
-        logger.info("[POST /movies] 영화 등록 요청: 제목 = {}, IMDb ID = {}", movie.getTitle(), movie.getApiId());
+        logger.info("[POST /movies] 영화 등록 요청: 제목 = {}, Api ID = {}", movie.getTitle(), movie.getApiId());
         
-     // 중복 등록 방지 25.08.04 coco030
+        // 중복 등록 방지
         if (movie.getApiId() != null && movieService.existsByApiId(movie.getApiId())) {
             model.addAttribute("movie", movie);
             model.addAttribute("userRole", session.getAttribute("userRole"));
@@ -144,59 +144,75 @@ public class movieController {
             return "movie/form";
         }
 
-        // 1. api_id가 입력된 경우: TMDB/OMDb에서 정보 자동 불러오기
+        // 1. api_id가 입력된 경우: TMDB에서 정보 자동 불러오기
         Integer tmdbId = null;
         if (movie.getApiId() != null && !movie.getApiId().isBlank()) {
-        	try {
-        	    movie.setTitle(null); 
+            try {
+                movie.setTitle(null); 
 
-        	    // tmdb 기반 영화 정보 불러오기 (25.12.03)
-        	    Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId());
-        	    // Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId()); 혼용코드
+                // tmdb 기반 영화 정보 불러오기
+                Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId());
+                
+                // tmdbId 변수 세팅
+                try {
+                    tmdbId = Integer.parseInt(movie.getApiId());
+                } catch (NumberFormatException e) {
+                    logger.warn("API ID가 숫자가 아닙니다: {}", movie.getApiId());
+                }
 
-        	    // title은 무조건 덮어쓰기 (null 방지)
-        	    movie.setTitle((String) movieInfo.get("title"));
+                movie.setTitle((String) movieInfo.get("title"));
 
-        	    if (isBlank(movie.getDirector())) 
-        	        movie.setDirector((String) movieInfo.get("director"));
+                if (isBlank(movie.getDirector())) 
+                    movie.setDirector((String) movieInfo.get("director"));
 
-        	    if (movie.getYear() == 0) 
-        	        movie.setYear((Integer) movieInfo.get("year"));
+                if (movie.getYear() == 0 && movieInfo.get("year") != null) 
+                    movie.setYear((Integer) movieInfo.get("year"));
 
-        	    if (movie.getReleaseDate() == null) 
-        	        movie.setReleaseDate((LocalDate) movieInfo.get("release_date"));
+                if (movie.getReleaseDate() == null) 
+                    movie.setReleaseDate((LocalDate) movieInfo.get("release_date"));
 
-        	    if (isBlank(movie.getGenre())) 
-        	        movie.setGenre((String) movieInfo.get("genre"));
+                if (isBlank(movie.getGenre())) 
+                    movie.setGenre((String) movieInfo.get("genre"));
 
-        	    if (isBlank(movie.getRated()) && movieInfo.get("rated") != null) 
-        	        movie.setRated((String) movieInfo.get("rated"));
+                if (isBlank(movie.getRated()) && movieInfo.get("rated") != null) 
+                    movie.setRated((String) movieInfo.get("rated"));
 
-        	    if (isBlank(movie.getOverview())) 
-        	        movie.setOverview((String) movieInfo.get("overview"));
+                if (isBlank(movie.getOverview())) 
+                    movie.setOverview((String) movieInfo.get("overview"));
 
-        	    if (isBlank(movie.getRuntime())) 
-        	        movie.setRuntime((String) movieInfo.get("runtime"));
+                if (isBlank(movie.getRuntime())) 
+                    movie.setRuntime((String) movieInfo.get("runtime"));
 
-        	    if (isBlank(movie.getPosterPath())) 
-        	        movie.setPosterPath((String) movieInfo.get("poster_path"));
+                if (isBlank(movie.getPosterPath())) 
+                    movie.setPosterPath((String) movieInfo.get("poster_path"));
+                
+                // 25.12.05 TMDB 평점 저장 (DB 저장)
+                if (movieInfo.containsKey("vote_average")) {
+                    Object voteObj = movieInfo.get("vote_average");
+                    if (voteObj instanceof Number) {
+                        movie.setTmdbRating(((Number) voteObj).doubleValue());
+                    }
+                } else if (tmdbId != null) {
+                    // 맵에 없으면 별도로 조회
+                    double tmdbScore = tmdbApiService.getTmdbRating(String.valueOf(tmdbId));
+                    movie.setTmdbRating(tmdbScore);
+                }
 
-        	    logger.info("영화 정보 자동 매핑 완료: {}", movie.getTitle());
+                logger.info("영화 정보 자동 매핑 완료: {}", movie.getTitle());
 
-        	} catch (Exception e) {
-        	    logger.warn("영화 정보 자동 채우기 실패: {}", e.getMessage());
-        	}
-        	
-        	if (isBlank(movie.getTitle())) {
+            } catch (Exception e) {
+                logger.warn("영화 정보 자동 채우기 실패: {}", e.getMessage());
+            }
+            
+            if (isBlank(movie.getTitle())) {
                 model.addAttribute("movie", movie);
                 model.addAttribute("userRole", session.getAttribute("userRole"));
                 model.addAttribute("errorMessage", "제목 정보를 불러오지 못했습니다. 수동 입력이 필요합니다.");
                 return "movie/form";
             }
-
         }
 
-        // 2. 포스터 수동 업로드 (자동 포스터 없을 때만 적용)
+        // 2. 포스터 수동 업로드
         if ((movie.getPosterPath() == null || movie.getPosterPath().isBlank()) && posterImage != null && !posterImage.isEmpty()) {
             try {
                 String realUploadPath = request.getSession().getServletContext().getRealPath(UPLOAD_DIRECTORY_RELATIVE);
@@ -217,11 +233,11 @@ public class movieController {
             }
         }
 
-        //영화 DB 저장
+        // 영화 DB 저장
         movieService.save(movie);
-        logger.info("영화 '{}' 저장 완료. ID = {}", movie.getTitle(), movie.getId());
+        logger.info("영화 '{}' 저장 완료. ID = {}, TMDB Rating = {}", movie.getTitle(), movie.getId(), movie.getTmdbRating());
 
-        //출연진 자동 저장 (TMDB ID가 있을 경우에만)
+        // 출연진 자동 저장 (TMDB ID가 있을 경우에만)
         if (tmdbId != null) {
             try {
                 List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
@@ -236,6 +252,7 @@ public class movieController {
 
         return "redirect:/movies";
     }
+
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
@@ -312,14 +329,11 @@ public class movieController {
         //  tmdbId를 여기서 한 번만 조회해서 여러 곳에서 재사용
         Integer tmdbId = null;
 
-        // movie.getApiId()가 null이 아니고 비어있지 않을 때만 실행
         if (movie.getApiId() != null && !movie.getApiId().isEmpty()) {
             try {
-                // [수정 전] 25.12.03 coco030 - 과거에는 변환 함수를 호출했음
+                // 과거에는 변환 함수를 호출했음
                 // tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-
-                // [수정 후] 25.12.03 coco030 - 이제 apiId가 곧 TMDB ID(숫자)이므로, 변환 없이 바로 숫자로 파싱
-                // 주의: 여기서는 imdbId라는 변수가 없으니 movie.getApiId()를 써야 함
+                // 여기서는 imdbId라는 변수가 없으니 movie.getApiId()를 써야 함
                 tmdbId = Integer.parseInt(movie.getApiId());
 
                 logger.info("[TMDB] 영화 ID: {} (apiId: {}) -> tmdbId 파싱 성공: {}", id, movie.getApiId(), tmdbId);
@@ -380,6 +394,16 @@ public class movieController {
             logger.info("비로그인 사용자를 위한 게스트 추천 영화 {} 개 조회 완료", 
                         recommended.size());
         }
+        
+  
+        
+        //25.12.04 TMDB 평점 조회
+        if (movie.getRating() == 0.0 && movie.getApiId() != null) {
+            double externalRating = tmdbApiService.getTmdbRating(movie.getApiId());
+            movie.setTmdbRating(externalRating);
+            System.out.println("[DEBUG] TMDB 평점 세팅: " + externalRating); // 로그 확인용
+       }
+
 
         model.addAttribute("stat", stat); 
         model.addAttribute("recommended", recommended); 
@@ -438,8 +462,6 @@ public class movieController {
             System.out.println("주의 요소 정보: " + groupedWarnings);
         }
         model.addAttribute("groupedWarnings", groupedWarnings);
-
-        model.addAttribute("movie", movie);
 
         return "movie/detailPage";
     }

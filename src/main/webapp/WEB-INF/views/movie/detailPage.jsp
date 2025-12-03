@@ -291,19 +291,19 @@
 
                 
                 <div class="col-md-9">
-                  <!-- Warning Section (수정된 로직) -->
-                <%-- 관리자이거나, 등록된 주의요소가 있을 경우에만 이 섹션을 표시합니다. --%>
+                  <!-- Warning Section -->
+                <%-- 관리자이거나, 등록된 주의요소가 있을 경우에만 이 섹션을 표시. --%>
                 <c:if test="${sessionScope.loginMember.role == 'ADMIN' or not empty groupedWarnings}">
                     <div class="d-flex justify-content-between align-items-center">
                         <strong class="mb-0 caution-text">⚠️ 주의</strong>
                         
-                        <%-- 관리자에게는 항상 '관리' 버튼을 표시합니다. --%>
+                        <%-- 관리자에게는 항상 '관리' 버튼을 표시. --%>
                         <c:if test="${sessionScope.loginMember.role == 'ADMIN'}">
                             <a href="<c:url value='/admin/warnings/${movie.id}' />" class="btn btn-sm btn-outline-dark">관리</a>
                         </c:if>
                     </div>
 
-                    <%-- 등록된 주의요소가 있을 경우에만 아이콘과 상세 내용을 표시합니다. --%>
+                    <%-- 등록된 주의요소가 있을 경우에만 아이콘과 상세 내용을 표시. --%>
                     <c:if test="${not empty groupedWarnings}">
                         <div id="warningSummaryWrapper" class="mt-1">
                             <div id="warningSummary" class="warning-section-compact">
@@ -359,15 +359,19 @@
                                             <div class="label">
                                                 <i class="fas fa-star text-warning me-1"></i>만족도
                                             </div>
-                                            <div class="avg-score">
-                                                평균 
-                                                <c:choose>
-                                                    <c:when test="${movie.rating == 0.0}">N/A</c:when>
-                                                    <c:otherwise>
-                                                        <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
+											<div class="avg-score">
+											    평균 
+											    <c:choose>
+											        <c:when test="${movie.rating > 0.0}">
+											            <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
+											        </c:when>
+											        <c:when test="${movie.tmdbRating > 0.0}">
+											            <fmt:formatNumber value="${movie.tmdbRating}" pattern="#0.0" />
+											        </c:when>
+											        <c:otherwise>N/A</c:otherwise>
+											    </c:choose>
+											</div>
+
                                             <div class="input-area">
                                                 <c:import url="/review/rating">
                                                     <c:param name="movieId" value="${movie.id}" />
@@ -380,15 +384,18 @@
                                             <div class="label">
                                                 <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>폭력성
                                             </div>
-                                            <div class="avg-score">
+ 											<div class="avg-score">
                                                 평균 
                                                 <c:choose>
-                                                    <c:when test="${movie.violence_score_avg == 0.0}">N/A</c:when>
+                                                    <c:when test="${movie.rating == 0.0}">N/A</c:when>
                                                     <c:otherwise>
-                                                        <fmt:formatNumber value="${movie.violence_score_avg}" pattern="#0.0" />
+                                                        <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
                                                     </c:otherwise>
                                                 </c:choose>
-                                            </div>
+                                            </div>        
+                    
+                                            
+                                            
                                             <div class="input-area">
                                                 <c:import url="/review/violence">
                                                     <c:param name="movieId" value="${movie.id}" />

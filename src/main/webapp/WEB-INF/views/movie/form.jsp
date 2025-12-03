@@ -108,12 +108,12 @@
 
     <form action="${formActionUrl}" method="post" enctype="multipart/form-data">
         <div class="mb-3">
-            <label for="apiId" class="form-label">IMDb 코드:</label>
+            <label for="apiId" class="form-label">TMDb 코드:</label>
             <div class="d-flex align-items-center">
-                <input type="text" class="form-control d-inline-block w-auto me-2" id="apiId" name="apiId" value="${movie.apiId}" placeholder="예: tt1234567" style="min-width: 160px;" />
+                <input type="text" class="form-control d-inline-block w-auto me-2" id="apiId" name="apiId" value="${movie.apiId}" placeholder="예: 496243" style="min-width: 160px;" />
                 <small class="form-text text-muted imdb-info">
                     (※ 코드만 입력하면 영화 정보 자동완성 및 출연진까지 동시 등록)
-                    <a href="https://www.imdb.com/calendar/" target="_blank">IMDb에서 코드 찾기</a>
+                    <a href="https://www.themoviedb.org/" target="_blank">TMDb에서 코드 찾기</a>
                 </small>
             </div>
         </div>

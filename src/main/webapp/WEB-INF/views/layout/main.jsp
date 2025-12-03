@@ -82,7 +82,20 @@
 	          <div class="p-3">
 	            <h5 class="fw-bold">${movie.title}</h5>
 	            <p class="text-muted mb-1">${movie.year} | ${movie.genre}</p>
-	            <p class="text-muted mb-0">평점: <fmt:formatNumber value="${movie.rating}" pattern="#0.0" /></p>
+	            <p class="text-muted mb-0">평점: 
+				    <c:choose>
+				        <%-- 사용자 평점이 있을 때 --%>
+				        <c:when test="${movie.rating > 0.0}">
+				            <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
+				        </c:when>
+				        <%-- 사용자 평점 없으면 TMDB 평점 조용히 표시 --%>
+				        <c:when test="${movie.tmdbRating > 0.0}">
+				            <fmt:formatNumber value="${movie.tmdbRating}" pattern="#0.0" />
+				        </c:when>
+				        <%-- 둘 다 없으면 --%>
+				        <c:otherwise>N/A</c:otherwise>
+				    </c:choose>
+				</p>
 	          </div>
 	        </a>
 	      </div>

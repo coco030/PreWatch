@@ -161,7 +161,7 @@
                             <th>폭력성</th>
                             <th>개요</th>
                             <c:if test="${userRole == 'ADMIN'}">
-                                <th>IMDb ID</th>
+                                <th>TMDb ID</th>
                                 <th>동작</th>
                             </c:if>
                         </tr>

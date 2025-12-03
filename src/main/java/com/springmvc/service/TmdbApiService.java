@@ -300,4 +300,24 @@ public class TmdbApiService {
         }
         return null;
     }
+    
+    // 영화의 TMDB 평점만 가져오는 메소드
+    public double getTmdbRating(String tmdbId) {
+        if (tmdbId == null || tmdbId.isEmpty()) return 0.0;
+        
+        String apiUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbId)
+                // omdbSearchApiKey -> tmdbApiKey
+                .queryParam("api_key", this.tmdbApiKey) 
+                .build().toUriString();
+        try {
+            JsonNode root = restTemplate.getForObject(apiUrl, JsonNode.class);
+            if (root.has("vote_average")) {
+                return root.get("vote_average").asDouble();
+            }
+        } catch (Exception e) {
+            System.out.println("[WARN] TMDB 평점 조회 실패 (ID: " + tmdbId + "): " + e.getMessage());
+        }
+        return 0.0;
+    }
+
 }
