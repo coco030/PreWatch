@@ -178,7 +178,7 @@
                     <th>평점</th>
                     <th>폭력성</th>
                     <th>개요</th>
-                    <th>IMDb ID</th>
+                    <th>TMDb ID</th>
                     <c:if test="${userRole == 'ADMIN'}">
                         <th class="text-center">관리</th>
                     </c:if>

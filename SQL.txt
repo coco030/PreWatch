@@ -35,8 +35,8 @@ CREATE TABLE member (
 
 
 INSERT INTO member (id, password, role) VALUES ('admin', '1234', 'ADMIN');
-INSERT INTO member (id, password, role) VALUES ('member1', '1234', 'MEMBER');
-INSERT INTO member (id, password, role) VALUES ('guest', '1234', 'MEMBER'); -- 테스트용 일반 회원 추가
+INSERT INTO member (id, password, role) VALUES ('3', '3', 'MEMBER');
+INSERT INTO member (id, password, role) VALUES ('4', '4', 'MEMBER'); -- 테스트용 일반 회원 추가
 INSERT INTO member (id, password, role) VALUES ('1', '1', 'MEMBER');
 INSERT INTO member (id, password, role) VALUES ('2', '2', 'MEMBER');
 
