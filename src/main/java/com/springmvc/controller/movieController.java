@@ -150,8 +150,9 @@ public class movieController {
         	try {
         	    movie.setTitle(null); 
 
-        	    // OMDb / IMDb 기반 영화 정보 불러오기
+        	    // tmdb 기반 영화 정보 불러오기 (25.12.03)
         	    Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId());
+        	    // Map<String, Object> movieInfo = tmdbApiService.getMovieDetailByImdbId(movie.getApiId()); 혼용코드
 
         	    // title은 무조건 덮어쓰기 (null 방지)
         	    movie.setTitle((String) movieInfo.get("title"));
@@ -277,7 +278,8 @@ public class movieController {
             System.out.println("DEBUG: 저장된 영화 id = " + movieId);
 
             // TMDB 배우/감독 정보 저장
-            Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+            // Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+        	Integer tmdbId = Integer.parseInt(imdbId); //25.12.03 tmdb로 바로 이으면서 숫자로 잇기 처리
             if (tmdbId != null) {
                 List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
                 tmdbApiService.saveCastAndCrew(movieId, castAndCrew); // 반드시 null 아님!
@@ -308,10 +310,23 @@ public class movieController {
             
   
         //  tmdbId를 여기서 한 번만 조회해서 여러 곳에서 재사용
-       Integer tmdbId = null;
+        Integer tmdbId = null;
+
+        // movie.getApiId()가 null이 아니고 비어있지 않을 때만 실행
         if (movie.getApiId() != null && !movie.getApiId().isEmpty()) {
-            tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
-            logger.info("[TMDB] 영화 ID: {} (apiId: {})의 tmdbId 조회 결과: {}", id, movie.getApiId(), tmdbId);
+            try {
+                // [수정 전] 25.12.03 coco030 - 과거에는 변환 함수를 호출했음
+                // tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+
+                // [수정 후] 25.12.03 coco030 - 이제 apiId가 곧 TMDB ID(숫자)이므로, 변환 없이 바로 숫자로 파싱
+                // 주의: 여기서는 imdbId라는 변수가 없으니 movie.getApiId()를 써야 함
+                tmdbId = Integer.parseInt(movie.getApiId());
+
+                logger.info("[TMDB] 영화 ID: {} (apiId: {}) -> tmdbId 파싱 성공: {}", id, movie.getApiId(), tmdbId);
+            } catch (NumberFormatException e) {
+                // 혹시라도 apiId에 숫자가 아닌 이상한 문자가 들어있을 경우를 대비한 안전장치
+                logger.warn("[TMDB] 영화 ID: {}의 apiId({})가 숫자가 아닙니다. 변환 실패.", id, movie.getApiId());
+            }
         } else {
             logger.warn("[TMDB] 영화 ID: {}에 apiId가 없어 TMDB 연동 작업을 건너뜁니다.", id);
         }
@@ -623,7 +638,8 @@ public class movieController {
                 return "redirect:/search";
             }
             
-	            Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+	           // Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+            	Integer tmdbId = Integer.parseInt(imdbId); //25.12.03 tmdb로 바로 이으면서 숫자로 잇기 처리
 	            movie localMovie = movieService.findByApiId(imdbId);
 	            if (localMovie != null) {
 	            logger.info("DB에서 영화(ID: {})를 찾았습니다. DB 정보를 기반으로 페이지를 구성합니다.", localMovie.getId());
