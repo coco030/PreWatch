@@ -186,7 +186,7 @@ public class movieController {
                 if (isBlank(movie.getPosterPath())) 
                     movie.setPosterPath((String) movieInfo.get("poster_path"));
                 
-                // 25.12.05 TMDB 평점 저장 (DB 저장)
+                // 25.12.04 TMDB 평점 저장 (DB 저장)
                 if (movieInfo.containsKey("vote_average")) {
                     Object voteObj = movieInfo.get("vote_average");
                     if (voteObj instanceof Number) {
