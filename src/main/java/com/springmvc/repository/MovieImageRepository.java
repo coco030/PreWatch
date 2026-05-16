@@ -8,3 +8,7 @@ public interface MovieImageRepository {
     void saveImages(List<MovieImage> images);
     void deleteImagesByMovieId(Long movieId); // 관리자용 등 추가 가능
 }
+
+
+
+

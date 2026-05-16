@@ -13,13 +13,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 
-// externalMovieApiService 클래스: 외부 영화 API(TMDB API) 연동 로직 구현.
+// ExternalMovieApiService 클래스: 외부 영화 API(TMDB API) 연동 로직 구현.
 @Service // Spring 빈으로 등록
-public class externalMovieApiService {
+public class ExternalMovieApiService {
 
-    private static final Logger logger = LoggerFactory.getLogger(externalMovieApiService.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExternalMovieApiService.class);
 
     private final String omdbSearchApiKey; // API Key
     private final RestTemplate restTemplate;
@@ -29,15 +29,15 @@ public class externalMovieApiService {
     private final String OMDB_BASE_URL = "https://api.themoviedb.org/3/search/movie";
 
     // 3. 생성자
-    public externalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey) {
+    public ExternalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         this.omdbSearchApiKey = omdbSearchApiKey;
-        logger.info("externalMovieApiService 초기화 완료. TMDb 검색용 API 키가 설정되었습니다.");
+        logger.info("ExternalMovieApiService 초기화 완료. TMDb 검색용 API 키가 설정되었습니다.");
     }
 
     // 검색 기능
-    public List<movie> searchMoviesByKeyword(String keyword) {
+    public List<Movie> searchMoviesByKeyword(String keyword) {
         logger.debug("TMDB API에서 키워드 '{}'로 영화 목록 검색 시도.", keyword);
 
         String searchApiUrl = UriComponentsBuilder.fromHttpUrl(OMDB_BASE_URL)
@@ -46,7 +46,7 @@ public class externalMovieApiService {
                 .queryParam("language", "ko-KR")
                 .build().toUriString();
 
-        List<movie> moviesWithFullDetails = new ArrayList<>();
+        List<Movie> moviesWithFullDetails = new ArrayList<>();
         try {
             logger.debug("TMDB API 검색 호출 URL: {}", searchApiUrl);
             String jsonResponse = restTemplate.getForObject(searchApiUrl, String.class);
@@ -61,9 +61,9 @@ public class externalMovieApiService {
                         String tmdbId = movieNode.has("id") ? movieNode.get("id").asText() : null;
 
                         if (tmdbId != null) {
-                            movie fullMovieDetail = getMovieFromApi(tmdbId); 
-                            if (fullMovieDetail != null) { 
-                                moviesWithFullDetails.add(fullMovieDetail); 
+                            Movie fullMovieDetail = getMovieFromApi(tmdbId);
+                            if (fullMovieDetail != null) {
+                                moviesWithFullDetails.add(fullMovieDetail);
                             }
                         }
                     }
@@ -79,7 +79,7 @@ public class externalMovieApiService {
     }
 
     // 상세 조회  (ID -> 상세 정보)
-    public movie getMovieFromApi(String tmdbId) {
+    public Movie getMovieFromApi(String tmdbId) {
         String detailBaseUrl = "https://api.themoviedb.org/3/movie/";
         
         String apiUrl = UriComponentsBuilder.fromHttpUrl(detailBaseUrl + tmdbId)
@@ -92,10 +92,11 @@ public class externalMovieApiService {
             JsonNode rootNode = objectMapper.readTree(jsonResponse);
 
             if (rootNode.has("title")) {
-                movie movie = new movie();
+                Movie movie = new Movie();
                 
                 movie.setApiId(rootNode.has("id") ? rootNode.get("id").asText() : null);
                 movie.setTitle(rootNode.has("title") ? rootNode.get("title").asText() : "N/A");
+                movie.setDirector(getDirectorFromCredits(tmdbId));
                 
                 // 날짜 파싱
                 if (rootNode.has("release_date")) {
@@ -133,11 +134,37 @@ public class externalMovieApiService {
                     movie.setGenre("N/A");
                 }
 
-                return movie; 
+                return movie;
             }
         } catch (Exception e) {
             logger.error("TMDB 상세 조회 오류: {}", e.getMessage());
         }
-        return null; 
+        return null;
+    }
+
+    private String getDirectorFromCredits(String tmdbId) {
+        String creditsUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbId + "/credits")
+                .queryParam("api_key", this.omdbSearchApiKey)
+                .build().toUriString();
+
+        try {
+            String jsonResponse = restTemplate.getForObject(creditsUrl, String.class);
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+            JsonNode crew = rootNode.get("crew");
+            List<String> directors = new ArrayList<>();
+
+            if (crew != null && crew.isArray()) {
+                for (JsonNode member : crew) {
+                    if ("Director".equalsIgnoreCase(member.path("job").asText())) {
+                        directors.add(member.path("name").asText());
+                    }
+                }
+            }
+
+            return directors.isEmpty() ? null : String.join(", ", directors);
+        } catch (Exception e) {
+            logger.warn("TMDB 감독 정보 조회 실패: tmdbId = {}, 오류 = {}", tmdbId, e.getMessage());
+            return null;
+        }
     }
 }

@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
-public class movie implements Serializable {
+public class Movie implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
@@ -41,14 +41,14 @@ public class movie implements Serializable {
         }
     }
 
-    public movie() {
+    public Movie() {
         this.rating = 0.0;
         this.violence_score_avg = 0.0;
         this.likeCount = 0;
         this.isLiked = false;
     }
 
-    public movie(Long id, String title, String director, int year, String genre) {
+    public Movie(Long id, String title, String director, int year, String genre) {
         this();
         this.id = id;
         this.title = title;
@@ -57,7 +57,7 @@ public class movie implements Serializable {
         this.genre = genre;
     }
 
-    public movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
+    public Movie(Long id, String apiId, String title, String director, int year, LocalDate releaseDate, String genre, double rating, double violence_score_avg, String overview, String posterPath,
                  LocalDateTime createdAt, LocalDateTime updatedAt, int likeCount, String runtime, String rated) {
         this.id = id;
         this.apiId = apiId;
@@ -77,7 +77,7 @@ public class movie implements Serializable {
         this.rated = rated;    
     }
 
-    public movie(String apiId, String title, String director, int year,
+    public Movie(String apiId, String title, String director, int year,
                  LocalDate releaseDate, String genre, String overview, String posterPath, String runtime, String rated) {
         this();
         this.apiId = apiId;
@@ -163,3 +163,6 @@ public class movie implements Serializable {
 	
 	
 }
+
+
+

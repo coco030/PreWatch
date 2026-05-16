@@ -11,3 +11,7 @@ public interface TasteProfileService {
 	 TasteReportDTO updateUserTasteProfile(String memberId);
 	   Map<String, Double> getTasteScores(String memberId);
 }
+
+
+
+

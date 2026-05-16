@@ -24,30 +24,30 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.springmvc.domain.CalendarData;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.StatDTO;
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.repository.CalendarUtil; // 07-31: CalendarUtil의 실제 패키지 확인
 import com.springmvc.service.AdminBannerMovieService;
 import com.springmvc.service.GlobalStatService;
-import com.springmvc.service.movieService;
-import com.springmvc.service.userCartService;
+import com.springmvc.service.MovieService;
+import com.springmvc.service.UserCartService;
 
 @Controller
 public class HomeController {
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
-    private final movieService movieService;
+    private final MovieService movieService;
     private final AdminBannerMovieService adminBannerMovieService;
-    private final userCartService userCartService;
+    private final UserCartService userCartService;
     private final CalendarUtil calendarUtil; // 07-31: CalendarUtil 필드 추가
 
     @Autowired
     private GlobalStatService statisticsService;
 
     @Autowired
-    public HomeController(movieService movieService,
+    public HomeController(MovieService movieService,
                           AdminBannerMovieService adminBannerMovieService,
-                          userCartService userCartService,
+                          UserCartService userCartService,
                           CalendarUtil calendarUtil) { // 07-31: CalendarUtil 파라미터 추가
         this.movieService = movieService;
         this.adminBannerMovieService = adminBannerMovieService;
@@ -63,19 +63,19 @@ public class HomeController {
         logger.info("루트 경로 '/' 요청이 감지되었습니다. 메인 홈페이지 데이터를 불러옵니다.");
 
         // 1. 최근 등록된 영화 목록 가져오기 (상위 3개)
-        List<movie> recentMovies = movieService.getRecentMovies(3);
+        List<Movie> recentMovies = movieService.getRecentMovies(3);
         model.addAttribute("movies", recentMovies);
 
         // 2. PreWatch 추천 랭킹 영화 목록 가져오기 (like_count 기준 상위 5개)
-        List<movie> recommendedMovies = movieService.getTop6RecommendedMovies();
+        List<Movie> recommendedMovies = movieService.getTop6RecommendedMovies();
         model.addAttribute("recommendedMovies", recommendedMovies);
 
         // 3. 관리자 수동 추천 영화 목록 가져오기 (새로운 배너용)
-        List<movie> adminRecommendedMovies = adminBannerMovieService.getAdminRecommendedMovies();
+        List<Movie> adminRecommendedMovies = adminBannerMovieService.getAdminRecommendedMovies();
         model.addAttribute("adminRecommendedMovies", adminRecommendedMovies);
 
         // 07.26 coco030 오후 3시 20분 - 최근 개봉 예정작
-        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        List<Movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
      
         // 07-31: 달력 관련 로직 (초기 페이지 로드 시 Model에 데이터 담기)
@@ -106,19 +106,19 @@ public class HomeController {
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("홈 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
-            for (movie movie : recentMovies) {
+            for (Movie movie : recentMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
             }
-            for (movie movie : recommendedMovies) {
+            for (Movie movie : recommendedMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
             }
-            for (movie movie : adminRecommendedMovies) {
+            for (Movie movie : adminRecommendedMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
             }
-            for (movie movie : upcomingMovies) {
+            for (Movie movie : upcomingMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
             }
@@ -175,3 +175,10 @@ public ResponseEntity<Map<String, Object>> getCalendarDataAjax(
     return ResponseEntity.ok(response);
 	}
 }
+
+
+
+
+
+
+

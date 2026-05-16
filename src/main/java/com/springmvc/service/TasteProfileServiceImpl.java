@@ -22,7 +22,7 @@ import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.MemberRepository;
 import com.springmvc.repository.StatRepository;
 import com.springmvc.repository.UserReviewRepository;
-import com.springmvc.repository.userCartRepository; 
+import com.springmvc.repository.UserCartRepository; 
 
 @Service
 public class TasteProfileServiceImpl implements TasteProfileService {
@@ -32,7 +32,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
     @Autowired private MemberRepository memberRepository;
     @Autowired private StatService statService;
     @Autowired private ActorRepository actorRepository; 
-    @Autowired private userCartRepository userCartRepository; 
+    @Autowired private UserCartRepository userCartRepository; 
 
     @Override
     public TasteReportDTO updateUserTasteProfile(String memberId) {
@@ -165,7 +165,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
             foundDesires.add(new PotentialDesire("[지적 허영심 스탯 활성화]", "안전하고 검증된 선택에서 벗어나, 이제 당신은 남들이 쉽게 판단하지 못하는 영화에 도전하고 싶어 하는군요. 좋습니다. 당신의 비평가적 안목을 시험해보세요.", 7));
         }
 
-        // ✨ [신규 추가] 시나리오: 배우 세대교체 (중요도: 6)
+        // ? [신규 추가] 시나리오: 배우 세대교체 (중요도: 6)
         double avgReviewedActorBirthYear = statRepository.findAverageActorBirthYearByMovieIds(reviewedMovieIds);
         double avgCartActorBirthYear = statRepository.findAverageActorBirthYearByMovieIds(cartMovieIds);
         if (avgReviewedActorBirthYear > 0 && avgCartActorBirthYear > 0 && Math.abs(avgReviewedActorBirthYear - avgCartActorBirthYear) >= 10) {
@@ -395,3 +395,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         return result;
     }
 }
+
+
+
+

@@ -34,6 +34,15 @@
         border-radius: 4px;
         margin-bottom: 20px;
     }
+    .empty-message {
+        color: #856404;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
     form {
         margin-top: 20px;
     }
@@ -130,22 +139,32 @@
         </c:if>
 
         <form action="<c:url value='/admin/warnings/${movieId}'/>" method="post">
-            <c:forEach items="${allTagsGrouped}" var="entry">
-                <fieldset>
-                    <legend>${entry.key}</legend>
-                    <div class="checkbox-group">
-                        <c:forEach items="${entry.value}" var="tag">
-                            <div>
-                                <input type="checkbox" name="tagIds" value="${tag.id}" id="tag_${tag.id}"
-                                       <c:if test="${selectedTagIds.contains(tag.id)}">checked</c:if>
-                                >
-                                <label for="tag_${tag.id}">${tag.sentence}</label>
+            <c:choose>
+                <c:when test="${empty allTagsGrouped}">
+                    <p class="empty-message">
+                        등록된 주의 요소가 없습니다. warning_tags 기본 데이터가 DB에 들어가지 않았거나 조회에 실패했습니다.
+                        서버 로그를 확인한 뒤 페이지를 새로고침해 주세요.
+                    </p>
+                </c:when>
+                <c:otherwise>
+                    <c:forEach items="${allTagsGrouped}" var="entry">
+                        <fieldset>
+                            <legend>${entry.key}</legend>
+                            <div class="checkbox-group">
+                                <c:forEach items="${entry.value}" var="tag">
+                                    <div>
+                                        <input type="checkbox" name="tagIds" value="${tag.id}" id="tag_${tag.id}"
+                                               <c:if test="${selectedTagIds.contains(tag.id)}">checked</c:if>
+                                        >
+                                        <label for="tag_${tag.id}">${tag.sentence}</label>
+                                    </div>
+                                </c:forEach>
                             </div>
-                        </c:forEach>
-                    </div>
-                </fieldset>
-            </c:forEach>
-            <button type="submit" class="submit-button">저장하기</button>
+                        </fieldset>
+                    </c:forEach>
+                </c:otherwise>
+            </c:choose>
+            <button type="submit" class="submit-button" <c:if test="${empty allTagsGrouped}">disabled</c:if>>저장하기</button>
         </form>
         
         <div class="back-link-container">

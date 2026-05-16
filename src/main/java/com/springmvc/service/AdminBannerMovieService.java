@@ -1,6 +1,6 @@
 package com.springmvc.service;
 
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.domain.AdminBannerMovie;
 import com.springmvc.repository.AdminBannerMovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,31 +19,31 @@ public class AdminBannerMovieService {
     private static final Logger logger = LoggerFactory.getLogger(AdminBannerMovieService.class);
 
     private final AdminBannerMovieRepository adminBannerMovieRepository;
-    private final movieService movieService; // movie 상세 정보를 가져오기 위함
+    private final MovieService movieService; // Movie 상세 정보를 가져오기 위함
 
     @Autowired
-    public AdminBannerMovieService(AdminBannerMovieRepository adminBannerMovieRepository, movieService movieService) {
+    public AdminBannerMovieService(AdminBannerMovieRepository adminBannerMovieRepository, MovieService movieService) {
         this.adminBannerMovieRepository = adminBannerMovieRepository;
         this.movieService = movieService;
     }
 
     /**
      * 관리자 배너에 표시될 영화 목록을 조회합니다.
-     * @return movie 객체 리스트
+     * @return Movie 객체 리스트
      */
     @Transactional(readOnly = true)
-    public List<movie> getAdminRecommendedMovies() {
+    public List<Movie> getAdminRecommendedMovies() {
         logger.debug("AdminBannerMovieService.getAdminRecommendedMovies() 호출.");
         List<AdminBannerMovie> bannerEntries = adminBannerMovieRepository.findAllOrdered();
-        // ⭐ 디버그 로깅 추가: DB에서 가져온 배너 엔트리 확인 (7-24 오후12:41 추가 된 코드)
+        // ? 디버그 로깅 추가: DB에서 가져온 배너 엔트리 확인 (7-24 오후12:41 추가 된 코드)
         logger.debug("DB에서 조회된 AdminBannerMovie 엔트리 수: {}", bannerEntries.size()); // (7-24 오후12:41 추가 된 코드)
         bannerEntries.forEach(entry -> logger.debug("  - 배너 엔트리 ID: {}, Movie ID: {}, Display Order: {}", entry.getId(), entry.getMovieId(), entry.getDisplayOrder())); // (7-24 오후12:41 추가 된 코드)
 
-        List<movie> recommendedMovies = new ArrayList<>();
+        List<Movie> recommendedMovies = new ArrayList<>();
 
         for (AdminBannerMovie entry : bannerEntries) {
-            movie movieDetail = movieService.findById(entry.getMovieId()); // movieService를 통해 상세 정보 조회
-            // ⭐ 디버그 로깅 추가: 각 영화 ID에 대한 상세 정보 조회 결과 확인 (7-24 오후12:41 추가 된 코드)
+            Movie movieDetail = movieService.findById(entry.getMovieId()); // movieService를 통해 상세 정보 조회
+            // ? 디버그 로깅 추가: 각 영화 ID에 대한 상세 정보 조회 결과 확인 (7-24 오후12:41 추가 된 코드)
             if (movieDetail != null) { // (7-24 오후12:41 추가 된 코드)
                 logger.debug("  - Movie ID {}에 대한 상세 정보 조회 성공: {}", entry.getMovieId(), movieDetail.getTitle()); // (7-24 오후12:41 추가 된 코드)
                 recommendedMovies.add(movieDetail);
@@ -90,3 +90,11 @@ public class AdminBannerMovieService {
         return adminBannerMovieRepository.findByMovieId(movieId) != null;
     }
 }
+
+
+
+
+
+
+
+

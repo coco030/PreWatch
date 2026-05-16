@@ -407,3 +407,7 @@ public class StatServiceImpl implements StatService {
         return sum / numbers.size();
     }
 }
+
+
+
+

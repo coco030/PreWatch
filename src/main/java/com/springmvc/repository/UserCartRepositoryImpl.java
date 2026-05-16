@@ -15,15 +15,26 @@ import org.slf4j.LoggerFactory;
 // 목적: JdbcTemplate을 사용하여 'user_carts' 테이블에 대한 실제 데이터베이스 작업을 수행합니다.
 // 관계: (클래스 다이어그램: UserCartRepositoryImpl -> UserCartRepository (구현 관계))
 @Repository // Spring이 이 클래스를 데이터 접근 계층의 빈으로 등록하도록 지시합니다.
-public class userCartRepositoryImpl implements userCartRepository {
+public class UserCartRepositoryImpl implements UserCartRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(userCartRepositoryImpl.class); // 로깅을 위한 Logger 인스턴스
+    private static final Logger logger = LoggerFactory.getLogger(UserCartRepositoryImpl.class); // 로깅을 위한 Logger 인스턴스
+    private static final String CREATE_USER_CARTS_SQL =
+        "CREATE TABLE IF NOT EXISTS user_carts ("
+            + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
+            + "member_id VARCHAR(50) NOT NULL, "
+            + "movie_id BIGINT NOT NULL, "
+            + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+            + "UNIQUE (member_id, movie_id), "
+            + "FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE, "
+            + "FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE"
+            + ")";
 
     private final JdbcTemplate jdbcTemplate; // 데이터베이스 작업을 수행할 JdbcTemplate 객체
+    private volatile boolean schemaChecked;
 
     // 생성자를 통한 DataSource 주입: JdbcTemplate 초기화.
     @Autowired
-    public userCartRepositoryImpl(DataSource dataSource) {
+    public UserCartRepositoryImpl(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         logger.info("UserCartRepositoryImpl 초기화: DataSource 주입 완료.");
     }
@@ -32,6 +43,7 @@ public class userCartRepositoryImpl implements userCartRepository {
     // 목적: 사용자가 영화를 찜할 때 호출.
     @Override
     public void addMovieToCart(String memberId, Long movieId) {
+        ensureUserCartTable();
         logger.debug("찜 목록에 영화 추가 시도: memberId={}, movieId={}", memberId, movieId);
         String sql = "INSERT INTO user_carts (member_id, movie_id) VALUES (?, ?)";
         try {
@@ -48,6 +60,7 @@ public class userCartRepositoryImpl implements userCartRepository {
     // 목적: 사용자가 찜을 취소할 때 호출.
     @Override
     public void removeMovieFromCart(String memberId, Long movieId) {
+        ensureUserCartTable();
         logger.debug("찜 목록에서 영화 제거 시도: memberId={}, movieId={}", memberId, movieId);
         String sql = "DELETE FROM user_carts WHERE member_id = ? AND movie_id = ?";
         int deletedRows = jdbcTemplate.update(sql, memberId, movieId);
@@ -62,6 +75,7 @@ public class userCartRepositoryImpl implements userCartRepository {
     // 목적: JSP에서 하트 아이콘의 상태(빈 하트/꽉 찬 하트)를 결정할 때 사용.
     @Override
     public boolean isMovieInCart(String memberId, Long movieId) {
+        ensureUserCartTable();
         logger.debug("영화 ID {}가 회원 {}의 찜 목록에 있는지 확인 시도.", movieId, memberId);
         String sql = "SELECT COUNT(*) FROM user_carts WHERE member_id = ? AND movie_id = ?";
         try {
@@ -82,6 +96,7 @@ public class userCartRepositoryImpl implements userCartRepository {
     // 목적: 마이페이지 등에서 사용자가 찜한 영화들의 ID를 가져와 상세 정보를 조회할 때 사용.
     @Override
     public List<Long> findMovieIdsInCartByMemberId(String memberId) {
+        ensureUserCartTable();
         logger.debug("회원 {}이 찜한 영화 ID 목록 조회 시도.", memberId);
         String sql = "SELECT movie_id FROM user_carts WHERE member_id = ?";
         List<Long> movieIds = jdbcTemplate.queryForList(sql, Long.class, memberId);
@@ -90,18 +105,38 @@ public class userCartRepositoryImpl implements userCartRepository {
     }
     
     //25.08.05 coco030 
-    // ⭐ 총 찜 개수 조회
+    // ? 총 찜 개수 조회
     @Override
     public int countLikedMovies(String memberId) {
+        ensureUserCartTable();
         String sql = "SELECT COUNT(*) FROM user_carts WHERE member_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, memberId);
     }
 
     @Override
     public List<Long> findLikedMovieIdsPaged(String memberId, int limit, int offset) {
+        ensureUserCartTable();
         String sql = "SELECT movie_id FROM user_carts WHERE member_id = ? ORDER BY movie_id DESC LIMIT ? OFFSET ?";
         return jdbcTemplate.query(sql, new Object[]{memberId, limit, offset},
             (rs, rowNum) -> rs.getLong("movie_id"));
     }
 
+    private void ensureUserCartTable() {
+        if (schemaChecked) {
+            return;
+        }
+
+        synchronized (this) {
+            if (schemaChecked) {
+                return;
+            }
+
+            jdbcTemplate.execute(CREATE_USER_CARTS_SQL);
+            schemaChecked = true;
+        }
+    }
+
 }
+
+
+

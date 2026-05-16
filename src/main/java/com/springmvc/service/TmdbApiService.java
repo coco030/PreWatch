@@ -46,7 +46,16 @@ public class TmdbApiService {
     }
 
     public Integer getTmdbMovieId(String imdbId) {
-        String url = UriComponentsBuilder.fromHttpUrl(TMDB_FIND_URL + imdbId)
+        if (imdbId == null || imdbId.isBlank()) {
+            return null;
+        }
+
+        String trimmedId = imdbId.trim();
+        if (trimmedId.matches("\\d+")) {
+            return Integer.parseInt(trimmedId);
+        }
+
+        String url = UriComponentsBuilder.fromHttpUrl(TMDB_FIND_URL + trimmedId)
                 .queryParam("api_key", this.tmdbApiKey)
                 .queryParam("external_source", "imdb_id")
                 .toUriString();
@@ -176,6 +185,10 @@ public class TmdbApiService {
 
     public Map<String, Object> getMovieDetailByImdbId(String apiId) {
         Map<String, Object> result = new HashMap<>();
+        if (apiId != null && apiId.trim().matches("\\d+")) {
+            return getMovieDetailByTmdbId(Integer.parseInt(apiId.trim()));
+        }
+
         try {
             String url = UriComponentsBuilder
                     .fromHttpUrl(OMDB_URL)
@@ -216,6 +229,15 @@ public class TmdbApiService {
 
             Integer tmdbId = getTmdbMovieId(apiId);
             if (tmdbId != null) {
+                 String director = getDirectorName(tmdbId);
+                 if (director != null) {
+                     result.put("director", director);
+                 }
+                 String certification = getCertification(tmdbId);
+                 if (certification != null) {
+                     result.put("rated", certification);
+                 }
+
                  String tmdbUrl = UriComponentsBuilder
 	                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbId)
 	                 .queryParam("api_key", this.tmdbApiKey)
@@ -239,6 +261,165 @@ public class TmdbApiService {
             System.out.println("[ERROR] OMDb 영화 정보 파싱 실패: apiId=" + apiId + ", msg=" + e.getMessage());
         }
         return result;
+    }
+
+    private Map<String, Object> getMovieDetailByTmdbId(Integer tmdbId) {
+        Map<String, Object> result = new HashMap<>();
+        String url = UriComponentsBuilder
+                .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbId)
+                .queryParam("api_key", this.tmdbApiKey)
+                .queryParam("language", "ko-KR")
+                .toUriString();
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(json);
+
+            result.put("title", root.path("title").asText(null));
+            result.put("director", getDirectorName(tmdbId));
+            result.put("overview", root.path("overview").asText(null));
+
+            String releaseDateText = root.path("release_date").asText(null);
+            if (releaseDateText != null && !releaseDateText.isBlank()) {
+                LocalDate releaseDate = LocalDate.parse(releaseDateText);
+                result.put("release_date", releaseDate);
+                result.put("year", releaseDate.getYear());
+            }
+
+            JsonNode genres = root.path("genres");
+            if (genres.isArray()) {
+                List<String> genreNames = new ArrayList<>();
+                for (JsonNode genre : genres) {
+                    String name = genre.path("name").asText(null);
+                    if (name != null && !name.isBlank()) {
+                        genreNames.add(name);
+                    }
+                }
+                result.put("genre", String.join(", ", genreNames));
+            }
+
+            int runtime = root.path("runtime").asInt(0);
+            result.put("runtime", runtime > 0 ? runtime + "분" : null);
+            result.put("rated", getCertification(tmdbId));
+
+            String posterPath = root.path("poster_path").asText(null);
+            if (posterPath != null && !posterPath.isBlank() && !"null".equals(posterPath)) {
+                result.put("poster_path", "https://image.tmdb.org/t/p/w500" + posterPath);
+            }
+
+            String backdropPath = root.path("backdrop_path").asText(null);
+            if (backdropPath != null && !backdropPath.isBlank() && !"null".equals(backdropPath)) {
+                result.put("backdrop_path", backdropPath);
+            }
+
+            result.put("vote_average", root.path("vote_average").asDouble(0.0));
+        } catch (Exception e) {
+            System.out.println("[ERROR] TMDB 영화 정보 파싱 실패: tmdbId=" + tmdbId + ", msg=" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    public String getCertification(Integer tmdbMovieId) {
+        if (tmdbMovieId == null) {
+            return null;
+        }
+
+        String url = UriComponentsBuilder
+                .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/release_dates")
+                .queryParam("api_key", this.tmdbApiKey)
+                .toUriString();
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode results = root.path("results");
+
+            String fallback = null;
+            if (results.isArray()) {
+                for (JsonNode country : results) {
+                    String countryCode = country.path("iso_3166_1").asText();
+                    String certification = firstCertification(country.path("release_dates"));
+
+                    if (certification == null) {
+                        continue;
+                    }
+
+                    if ("KR".equals(countryCode)) {
+                        return normalizeCertification(certification);
+                    }
+
+                    if (fallback == null && "US".equals(countryCode)) {
+                        fallback = normalizeCertification(certification);
+                    }
+                }
+            }
+
+            return fallback;
+        } catch (Exception e) {
+            System.out.println("[WARN] TMDB 연령 등급 조회 실패: tmdbId=" + tmdbMovieId + ", msg=" + e.getMessage());
+            return null;
+        }
+    }
+
+    private String firstCertification(JsonNode releaseDates) {
+        if (releaseDates == null || !releaseDates.isArray()) {
+            return null;
+        }
+
+        for (JsonNode releaseDate : releaseDates) {
+            String certification = releaseDate.path("certification").asText(null);
+            if (certification != null && !certification.isBlank()) {
+                return certification.trim();
+            }
+        }
+
+        return null;
+    }
+
+    private String normalizeCertification(String certification) {
+        if (certification == null || certification.isBlank()) {
+            return null;
+        }
+
+        return switch (certification.trim().toUpperCase(Locale.ROOT)) {
+            case "ALL", "ALL AGES", "0", "전체" -> "전체관람가";
+            case "12", "12+", "12세이상관람가" -> "12세";
+            case "15", "15+", "15세이상관람가" -> "15세";
+            case "18", "18+", "19", "19+", "청소년관람불가" -> "청불";
+            default -> certification.trim();
+        };
+    }
+
+    private String getDirectorName(Integer tmdbMovieId) {
+        if (tmdbMovieId == null) {
+            return null;
+        }
+
+        String url = UriComponentsBuilder
+                .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/credits")
+                .queryParam("api_key", this.tmdbApiKey)
+                .toUriString();
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode crew = root.get("crew");
+            List<String> directors = new ArrayList<>();
+
+            if (crew != null && crew.isArray()) {
+                for (JsonNode member : crew) {
+                    if ("Director".equalsIgnoreCase(member.path("job").asText())) {
+                        directors.add(member.path("name").asText());
+                    }
+                }
+            }
+
+            return directors.isEmpty() ? null : String.join(", ", directors);
+        } catch (Exception e) {
+            System.out.println("[ERROR] TMDB 감독 정보 조회 실패: tmdbId=" + tmdbMovieId + ", msg=" + e.getMessage());
+            return null;
+        }
     }
 
     private int parseIntOrZero(String value) {
@@ -300,14 +481,14 @@ public class TmdbApiService {
         }
         return null;
     }
-    
+
     // 영화의 TMDB 평점만 가져오는 메소드
     public double getTmdbRating(String tmdbId) {
         if (tmdbId == null || tmdbId.isEmpty()) return 0.0;
-        
+
         String apiUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbId)
                 // omdbSearchApiKey -> tmdbApiKey
-                .queryParam("api_key", this.tmdbApiKey) 
+                .queryParam("api_key", this.tmdbApiKey)
                 .build().toUriString();
         try {
             JsonNode root = restTemplate.getForObject(apiUrl, JsonNode.class);

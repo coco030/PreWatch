@@ -37,6 +37,15 @@
     .submit-button:hover {
         background-color: #0056b3; /* hover 시 어두운 파란색 */
     }
+    .empty-message {
+        color: #856404;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 5px;
+        padding: 12px;
+        margin: 16px 0;
+        line-height: 1.5;
+    }
     
     /* --- 데스크탑용 카드 레이아웃 --- */
     .movie-card { display: flex; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
@@ -132,8 +141,12 @@
                         <c:set var="posterSrc">
                             <c:choose>
                                 <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                                    <c:if test="${fn:startsWith(movie.posterPath, 'http')}">${movie.posterPath}</c:if>
-                                    <c:if test="${not fn:startsWith(movie.posterPath, 'http')}">${pageContext.request.contextPath}${movie.posterPath}</c:if>
+                                    <c:choose>
+                                        <c:when test="${fn:startsWith(movie.posterPath, 'http')}">${movie.posterPath}</c:when>
+                                        <c:when test="${fn:startsWith(movie.posterPath, '/resources')}">${pageContext.request.contextPath}${movie.posterPath}</c:when>
+                                        <c:when test="${fn:startsWith(movie.posterPath, '/')}">https://image.tmdb.org/t/p/w185${movie.posterPath}</c:when>
+                                        <c:otherwise>${pageContext.request.contextPath}/${movie.posterPath}</c:otherwise>
+                                    </c:choose>
                                 </c:when>
                                 <c:otherwise>${pageContext.request.contextPath}/resources/images/placeholder.png</c:otherwise>
                             </c:choose>
@@ -148,19 +161,29 @@
                             </c:if>
                         </div>
                         <div class="tags-section">
-                            <c:forEach items="${allTagsGrouped}" var="categoryEntry">
-                                <div class="tag-group">
-                                    <div class="tag-group-title">${categoryEntry.key}</div>
-                                    <c:forEach items="${categoryEntry.value}" var="tag">
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="tags_${movie.id}" value="${tag.id}"
-                                                <c:if test="${movieToSelectedTagsMap[movie.id].contains(tag.id)}">checked</c:if>
-                                            >
-                                            ${tag.sentence}
-                                        </label>
+                            <c:choose>
+                                <c:when test="${empty allTagsGrouped}">
+                                    <p class="empty-message">
+                                        등록된 주의 요소가 없습니다. warning_tags 기본 데이터가 DB에 들어가지 않았거나 조회에 실패했습니다.
+                                        서버 로그를 확인한 뒤 페이지를 새로고침해 주세요.
+                                    </p>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:forEach items="${allTagsGrouped}" var="categoryEntry">
+                                        <div class="tag-group">
+                                            <div class="tag-group-title">${categoryEntry.key}</div>
+                                            <c:forEach items="${categoryEntry.value}" var="tag">
+                                                <label class="checkbox-item">
+                                                    <input type="checkbox" name="tags_${movie.id}" value="${tag.id}"
+                                                        <c:if test="${movieToSelectedTagsMap[movie.id].contains(tag.id)}">checked</c:if>
+                                                    >
+                                                    ${tag.sentence}
+                                                </label>
+                                            </c:forEach>
+                                        </div>
                                     </c:forEach>
-                                </div>
-                            </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                 </div>
@@ -172,7 +195,7 @@
         <div class="controls bottom">
             <a href="<c:url value='/movies'/>" class="back-link">« 영화 목록으로</a>
             <a href="#top" class="go-to-top-link">맨 위로</a>
-            <button type="submit" class="submit-button">변경사항 저장</button>
+            <button type="submit" class="submit-button" <c:if test="${empty allTagsGrouped}">disabled</c:if>>변경사항 저장</button>
         </div>
     </form>
 </div>
@@ -211,6 +234,7 @@
 
         function createPaginationButtons() {
             const prevButton = document.createElement('button');
+            prevButton.type = 'button';
             prevButton.textContent = '이전';
             prevButton.id = 'prev-button';
             prevButton.addEventListener('click', () => { if (currentPage > 1) displayPage(currentPage - 1); });
@@ -218,6 +242,7 @@
 
             for (let i = 1; i <= pageCount; i++) {
                 const button = document.createElement('button');
+                button.type = 'button';
                 button.textContent = i;
                 button.classList.add('page-button');
                 button.dataset.page = i;
@@ -226,6 +251,7 @@
             }
             
             const nextButton = document.createElement('button');
+            nextButton.type = 'button';
             nextButton.textContent = '다음';
             nextButton.id = 'next-button';
             nextButton.addEventListener('click', () => { if (currentPage < pageCount) displayPage(currentPage + 1); });

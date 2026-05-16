@@ -16,40 +16,76 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.service.StatService;
 
 @Repository
-public class movieRepository {
+public class MovieRepository {
 	
 	@Autowired
 	 private StatService statService; 
 
 	private final JdbcTemplate jdbcTemplate;
 
-    private static final Logger logger = LoggerFactory.getLogger(movieRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieRepository.class);
 
     @Autowired
-    public movieRepository(JdbcTemplate jdbcTemplate) {
+    public MovieRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        logger.info("movieRepository 초기화: JdbcTemplate 주입 완료.");
+        logger.info("MovieRepository 초기화: JdbcTemplate 주입 완료.");
     }
 
-    public List<movie> findAll() {
+    private void fillMissingDirectors(List<Movie> movies) {
+        for (Movie movie : movies) {
+            fillMissingDirector(movie);
+        }
+    }
+
+    private void fillMissingDirector(Movie movie) {
+        if (movie == null || movie.getId() == null || !isBlank(movie.getDirector())) {
+            return;
+        }
+
+        String mappedDirector = findMappedDirector(movie.getId());
+        if (!isBlank(mappedDirector)) {
+            movie.setDirector(mappedDirector);
+        }
+    }
+
+    private String findMappedDirector(Long movieId) {
+        String sql = """
+            SELECT a.name
+            FROM movie_actors ma
+            JOIN actors a ON ma.actor_id = a.id
+            WHERE ma.movie_id = ?
+              AND (ma.role_type = 'DIRECTOR' OR ma.role_type = '감독')
+            ORDER BY ma.display_order ASC
+            """;
+        List<String> directors = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("name"), movieId);
+        return directors.isEmpty() ? null : String.join(", ", directors);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    public List<Movie> findAll() {
         logger.debug("movieRepository.findAll() 호출: DB에서 모든 영화 조회 시도.");
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at FROM movies ORDER BY like_count DESC, created_at DESC";
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
+        fillMissingDirectors(list);
 
         logger.info("DB에서 {}개의 영화 레코드 성공적으로 가져옴.", list.size());
         return list;
     }
 
-    public movie findById(Long id) {
+    public Movie findById(Long id) {
         logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at FROM movies WHERE id = ?";
         try {
-            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), id);
+            Movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(Movie.class), id);
+            fillMissingDirector(movie);
             logger.info("DB에서 영화 ID {} 레코드 성공적으로 가져옴.", id);
             return movie;
         } catch (EmptyResultDataAccessException e) {
@@ -61,11 +97,12 @@ public class movieRepository {
         }
     }
 
-    public movie findByApiId(String apiId) {
+    public Movie findByApiId(String apiId) {
         logger.debug("movieRepository.findByApiId({}) 호출: DB에서 API ID로 영화 조회 시도.", apiId);
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies WHERE api_id = ?";
         try {
-            movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(movie.class), apiId);
+            Movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(Movie.class), apiId);
+            fillMissingDirector(movie);
             logger.info("DB에서 API ID '{}'에 해당하는 영화 레코드 성공적으로 가져옴.", apiId);
             return movie;
         } catch (EmptyResultDataAccessException e) {
@@ -77,7 +114,7 @@ public class movieRepository {
         }
     }
 
-    public List<movie> findAllUpcomingMovies() {
+    public List<Movie> findAllUpcomingMovies() {
         logger.debug("movieRepository.findAllUpcomingMovies() 호출: 모든 개봉 예정작 조회 시도.");
         String sql = """
             SELECT
@@ -87,12 +124,12 @@ public class movieRepository {
             WHERE release_date > CURDATE()
             ORDER BY release_date ASC
             """;
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
         logger.info("DB에서 모든 개봉 예정작 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
     
-    public Long save(movie movie) {
+    public Long save(Movie movie) {
         logger.debug("movieRepository.save() 호출: 영화 '{}' 저장 시도.", movie.getTitle());
 
         String sql = "INSERT INTO movies (api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated) " +
@@ -124,7 +161,7 @@ public class movieRepository {
 
             String selectIdSql = "SELECT id FROM movies WHERE api_id = ?";
             Long movieIdByApi = jdbcTemplate.queryForObject(selectIdSql, Long.class, movie.getApiId());
-            System.out.println("DEBUG:: SELECT로 찾은 movie id = " + movieIdByApi + ", movie.getId() = " + movie.getId());
+            System.out.println("DEBUG:: SELECT로 찾은 Movie id = " + movieIdByApi + ", movie.getId() = " + movie.getId());
 
             return movieId;
         } else {
@@ -133,7 +170,7 @@ public class movieRepository {
         }
     }
 
-    public void update(movie movie) {
+    public void update(Movie movie) {
         logger.debug("movieRepository.update() 호출: 영화 ID {} 업데이트 시도.", movie.getId());
         String sql = "UPDATE movies SET api_id=?, title=?, director=?, year=?, release_date=?, genre=?, rating=?, violence_score_avg=?, overview=?, poster_path=?, like_count=?, runtime=?, rated=? WHERE id=?";
         int rowsAffected = jdbcTemplate.update(sql,
@@ -171,11 +208,11 @@ public class movieRepository {
     }
     
     // 마이페이지 전용 메서드 (영화 ID로 제목과 포스터 경로만 조회)
-    public movie findTitleAndPosterById(Long id) {
+    public Movie findTitleAndPosterById(Long id) {
         String sql = "SELECT id, title, poster_path FROM movies WHERE id = ?";
         try {
             return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                movie m = new movie();
+                Movie m = new Movie();
                 m.setId(rs.getLong("id"));
                 m.setTitle(rs.getString("title"));
                 m.setPosterPath(rs.getString("poster_path"));
@@ -222,52 +259,67 @@ public class movieRepository {
         }
     }
 
-    public List<movie> findTop6RecommendedMoviesByLikeCount() {
+    public int syncLikeCountFromUserCarts(Long movieId) {
+        String countSql = "SELECT COUNT(*) FROM user_carts WHERE movie_id = ?";
+        Integer count = jdbcTemplate.queryForObject(countSql, Integer.class, movieId);
+        int likeCount = count != null ? count : 0;
+
+        String updateSql = "UPDATE movies SET like_count = ? WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(updateSql, likeCount, movieId);
+        if (rowsAffected > 0) {
+            logger.info("영화 ID {}의 찜 개수를 user_carts 기준 {}명으로 동기화했습니다.", movieId, likeCount);
+        } else {
+            logger.warn("영화 ID {}의 찜 개수 동기화 실패: 영화를 찾을 수 없습니다.", movieId);
+        }
+        return likeCount;
+    }
+
+    public List<Movie> findTop6RecommendedMoviesByLikeCount() {
         logger.debug("movieRepository.findTop6RecommendedMoviesByLikeCount() 호출: 찜 개수 기준 상위 6개 영화 조회 시도.");
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
                      "FROM movies " +
                      "ORDER BY like_count DESC, created_at DESC " +
                      "LIMIT 6";
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
         logger.info("DB에서 찜 개수 기준 상위 {}개 영화 레코드 성공적으로 가져옴.", list.size());
         return list;
     }
 
-    public List<movie> findRecentMovies(int limit) {
+    public List<Movie> findRecentMovies(int limit) {
         logger.debug("movieRepository.findRecentMovies({}) 호출: 최근 등록된 영화 조회 시도.", limit);
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
                      "FROM movies " +
                      "ORDER BY created_at DESC " +
                      "LIMIT ?";
 
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), limit);
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), limit);
         logger.info("DB에서 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
 
-    public List<movie> findAllRecentMovies() {
+    public List<Movie> findAllRecentMovies() {
         logger.debug("JdbcMovieRepository.findAllRecentMovies() 호출: 모든 최근 등록된 영화 조회 시도.");
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
                      "FROM movies " +
                      "ORDER BY created_at DESC";
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
         logger.info("DB에서 모든 최근 등록된 영화 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
 
-    public List<movie> findAllRecommendedMovies() {
+    public List<Movie> findAllRecommendedMovies() {
         logger.debug("movieRepository.findAllRecommendedMovies() 호출: 모든 추천 랭킹 영화 조회 시도.");
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at " +
                      "FROM movies " +
                      "ORDER BY like_count DESC, created_at DESC";
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
         logger.info("DB에서 모든 추천 랭킹 영화 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
     }
 
     //개봉예정영화 가져오는 거 초과 7일은 너무 목록이 짧아서 14일로 수정함
-    public List<movie> getUpcomingMoviesWithDday() {
+    public List<Movie> getUpcomingMoviesWithDday() {
         String sql = """
             SELECT
                 id,
@@ -293,7 +345,7 @@ public class movieRepository {
             LIMIT 6
             """;
 
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
     }
 
     public void insertGenreMapping(Long movieId, String genre) {
@@ -306,7 +358,7 @@ public class movieRepository {
         }
     }
 
-    public List<movie> findByReleaseDateBetween(LocalDate startDate, LocalDate endDate) { // 07-31: 추가된 메서드
+    public List<Movie> findByReleaseDateBetween(LocalDate startDate, LocalDate endDate) { // 07-31: 추가된 메서드
         logger.debug("movieRepository.findByReleaseDateBetween({}, {}) 호출: 특정 기간 내 영화 조회 시도.", startDate, endDate); // 07-31: 추가된 메서드
         String sql = """
             SELECT
@@ -315,7 +367,7 @@ public class movieRepository {
             WHERE release_date BETWEEN ? AND ?
             ORDER BY release_date ASC
             """;
-        List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class), // 07-31: 추가된 메서드
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), // 07-31: 추가된 메서드
                                           Date.valueOf(startDate), Date.valueOf(endDate)); // 07-31: 추가된 메서드
         logger.info("DB에서 {} ~ {} 기간 내 영화 레코드 {}개 성공적으로 가져옴.", startDate, endDate, list.size()); // 07-31: 추가된 메서드
         return list; // 07-31: 추가된 메서드
@@ -324,14 +376,14 @@ public class movieRepository {
     
     
     //25.08.05 coco030
-    public List<movie> getAllMovies() {
+    public List<Movie> getAllMovies() {
         logger.debug("movieRepository.getAllMovies() 호출: DB에서 모든 영화 조회 시도 (관리 페이지용).");
 
         // 등록한 순서대로 최근 등록한 영화가 상단에 오도록 정렬
         String sql = "SELECT id, title FROM movies ORDER BY id DESC";
 
         try {
-            List<movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(movie.class));
+            List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
             logger.info("DB에서 전체 관리용 영화 레코드 {}개를 성공적으로 가져옴.", list.size());
             return list;
         } catch (Exception e) {

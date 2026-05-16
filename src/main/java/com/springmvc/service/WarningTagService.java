@@ -21,3 +21,6 @@ public interface WarningTagService {
     // (기존 정보 지우고, 새로 받은 정보로 저장)
     void updateMovieWarningTags(long movieId, List<Long> warningTagIds);
 }
+
+
+

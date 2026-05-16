@@ -37,10 +37,10 @@ import com.springmvc.domain.MovieImage;
 import com.springmvc.domain.RecentCommentDTO;
 import com.springmvc.domain.StatDTO;
 import com.springmvc.domain.UserReview;
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.StatRepository;
-import com.springmvc.repository.movieRepository;
+import com.springmvc.repository.MovieRepository;
 import com.springmvc.service.AdminBannerMovieService;
 import com.springmvc.service.MovieImageService;
 import com.springmvc.service.StatService;
@@ -48,23 +48,23 @@ import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
 import com.springmvc.service.WarningTagService;
-import com.springmvc.service.externalMovieApiService;
-import com.springmvc.service.movieService;
-import com.springmvc.service.userCartService;
+import com.springmvc.service.ExternalMovieApiService;
+import com.springmvc.service.MovieService;
+import com.springmvc.service.UserCartService;
 
 @Controller
-public class movieController {
+public class MovieController {
 	
-    private static final Logger logger = LoggerFactory.getLogger(movieController.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
 
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
 
-    private final movieService movieService;
-    private final externalMovieApiService externalMovieApiService;
-    private final userCartService userCartService;
+    private final MovieService movieService;
+    private final ExternalMovieApiService externalMovieApiService;
+    private final UserCartService userCartService;
     private final AdminBannerMovieService adminBannerMovieService;
     private final TmdbApiService tmdbApiService;
-    private final movieRepository movieRepository;
+    private final MovieRepository movieRepository;
     private final ActorRepository actorRepository;
     private final UserReviewService userReviewService;
     private final MovieImageService movieImageService;
@@ -76,12 +76,12 @@ public class movieController {
     private WarningTagService warningTagService; 
     
     @Autowired
-    public movieController(movieService movieService,
-                           externalMovieApiService externalMovieApiService,
-                           userCartService userCartService,
+    public MovieController(MovieService movieService,
+                           ExternalMovieApiService externalMovieApiService,
+                           UserCartService userCartService,
                            AdminBannerMovieService adminBannerMovieService,
                            TmdbApiService tmdbApiService,
-                           movieRepository movieRepository,
+                           MovieRepository movieRepository,
                            ActorRepository actorRepository,
                            UserReviewService userReviewService,
                            MovieImageService movieImageService, 
@@ -116,14 +116,14 @@ public class movieController {
             return "redirect:/accessDenied";
         }
         logger.info("[GET /movies/new] 새 영화 등록 폼 요청.");
-        model.addAttribute("movie", new movie());
+        model.addAttribute("movie", new Movie());
         model.addAttribute("userRole", session.getAttribute("userRole"));
         return "movie/form";
     }
 
     @PostMapping("/movies")
     public String create(
-            @ModelAttribute movie movie,
+            @ModelAttribute Movie movie,
             @RequestParam("posterImage") MultipartFile posterImage,
             HttpServletRequest request,
             HttpSession session,
@@ -280,9 +280,17 @@ public class movieController {
         }
 
         
-        movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
+        Movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
+            if (isBlank(movieFromApi.getRated())) {
+                Integer tmdbIdForRating = tmdbApiService.getTmdbMovieId(imdbId);
+                String certification = tmdbApiService.getCertification(tmdbIdForRating);
+                if (!isBlank(certification)) {
+                    movieFromApi.setRated(certification);
+                }
+            }
+
             movieService.save(movieFromApi); // DB 저장(여기서 id가 할당됨)
 
             Long movieId = movieFromApi.getId(); // save 이후 id 할당됨
@@ -318,7 +326,7 @@ public class movieController {
     @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Model model, HttpSession session) {
         logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
-        movie movie = movieService.findById(id); 
+        Movie movie = movieService.findById(id); 
        
         if (movie == null) {
             logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
@@ -473,12 +481,12 @@ public class movieController {
     @Transactional(readOnly = true)
     public String list(Model model, HttpSession session) {
         logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
-        List<movie> movies = movieService.findAll();
+        List<Movie> movies = movieService.findAll();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("로그인된 일반 회원 ({})의 영화 목록 찜 상태 반영 시작.", loginMember.getId());
-            for (movie movie : movies) {
+            for (Movie movie : movies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
                 logger.debug("  - 영화 ID: {}, 제목: '{}', userCartService.isMovieLiked() 반환값: {}, movie.isLiked() 최종 설정값: {}, likeCount: {}",
@@ -501,12 +509,12 @@ public class movieController {
     public String allRecentMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-recent] 모든 최근 등록 영화 목록 요청.");
 
-        List<movie> allRecentMovies = movieService.getAllRecentMovies(); 
+        List<Movie> allRecentMovies = movieService.getAllRecentMovies(); 
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("로그인된 일반 회원 ({})의 전체 최근 영화 목록 찜 상태 반영 시작.", loginMember.getId());
-            for (movie movie : allRecentMovies) {
+            for (Movie movie : allRecentMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
                 logger.debug("  - 영화 ID: {}, 제목: '{}', 찜 상태: {}", movie.getId(), movie.getTitle(), isMovieLikedByCurrentUser);
@@ -528,12 +536,12 @@ public class movieController {
     public String allUpcomingMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-upcoming] 모든 개봉 예정 영화 목록 요청.");
 
-        List<movie> allUpcomingMovies = movieService.getAllUpcomingMovies();
+        List<Movie> allUpcomingMovies = movieService.getAllUpcomingMovies();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("모든 개봉 예정작 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
-            for (movie movie : allUpcomingMovies) {
+            for (Movie movie : allUpcomingMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
                 logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
@@ -554,12 +562,12 @@ public class movieController {
     public String allRecommendedMovies(Model model, HttpSession session) {
         logger.info("[GET /movies/all-recommended] 모든 찜 랭킹 영화 목록 요청.");
 
-        List<movie> allRecommendedMovies = movieService.getAllRecommendedMovies();
+        List<Movie> allRecommendedMovies = movieService.getAllRecommendedMovies();
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("모든 찜 랭킹 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
-            for (movie movie : allRecommendedMovies) {
+            for (Movie movie : allRecommendedMovies) {
                 boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                 movie.setIsLiked(isMovieLikedByCurrentUser);
                 logger.debug("  - 영화 ID: {}, 찜 상태: {}", movie.getId(), isMovieLikedByCurrentUser);
@@ -585,12 +593,12 @@ public class movieController {
         }
         logger.info("[GET /movies/search-api] API 영화 검색 페이지 또는 검색 결과 요청. 쿼리: {}", query);
         if (query != null && !query.trim().isEmpty()) {
-            List<movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
+            List<Movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
             overrideRatingsWithLocalData(searchResults);
 
             Member loginMember = (Member) session.getAttribute("loginMember");
             if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-                for (movie movie : searchResults) {
+                for (Movie movie : searchResults) {
                     if (movie.getId() != null) {
                         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                         movie.setIsLiked(isLiked);
@@ -619,12 +627,12 @@ public class movieController {
     public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
         logger.info("[GET /search] 헤더 검색 요청. 쿼리: {}", query);
         if (query != null && !query.trim().isEmpty()) {
-            List<movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
+            List<Movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
             overrideRatingsWithLocalData(searchResults);
 
             Member loginMember = (Member) session.getAttribute("loginMember");
             if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-                for (movie movie : searchResults) {
+                for (Movie movie : searchResults) {
                     if (movie.getId() != null) {
                         boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
                         movie.setIsLiked(isLiked);
@@ -653,7 +661,7 @@ public class movieController {
 	        logger.info("[GET /movies/api-external-detail] API 외부 영화 상세 정보 요청. imdbId: {}", imdbId);
 
         try {
-            movie apiMovie = externalMovieApiService.getMovieFromApi(imdbId);
+            Movie apiMovie = externalMovieApiService.getMovieFromApi(imdbId);
             if (apiMovie == null) {
                 logger.warn("API에서 imdbID '{}'에 해당하는 영화 정보를 찾을 수 없습니다.", imdbId);
                 redirectAttributes.addFlashAttribute("errorMessage", "해당 영화 정보를 찾을 수 없습니다.");
@@ -662,7 +670,7 @@ public class movieController {
             
 	           // Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
             	Integer tmdbId = Integer.parseInt(imdbId); //25.12.03 tmdb로 바로 이으면서 숫자로 잇기 처리
-	            movie localMovie = movieService.findByApiId(imdbId);
+	            Movie localMovie = movieService.findByApiId(imdbId);
 	            if (localMovie != null) {
 	            logger.info("DB에서 영화(ID: {})를 찾았습니다. DB 정보를 기반으로 페이지를 구성합니다.", localMovie.getId());
                 
@@ -728,9 +736,9 @@ public class movieController {
         }
     }
 
-    private void overrideRatingsWithLocalData(List<movie> apiMovies) {
-        for (movie apiMovie : apiMovies) {
-            movie localMovie = movieService.findByApiId(apiMovie.getApiId());
+    private void overrideRatingsWithLocalData(List<Movie> apiMovies) {
+        for (Movie apiMovie : apiMovies) {
+            Movie localMovie = movieService.findByApiId(apiMovie.getApiId());
             if (localMovie != null) {
                 apiMovie.setRating(localMovie.getRating());
                 apiMovie.setViolence_score_avg(localMovie.getViolence_score_avg());
@@ -757,11 +765,19 @@ public class movieController {
             return "redirect:/accessDenied";
         }
         logger.info("[GET /movies/{}/edit] 영화 수정 폼 요청: ID = {}", id, id);
-        movie movie = movieService.findById(id);
+        Movie movie = movieService.findById(id);
 
         if (movie == null) {
             logger.warn("[GET /movies/{}/edit] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
             return "redirect:/movies?error=notFound";
+        }
+
+        if (isBlank(movie.getRated()) && !isBlank(movie.getApiId())) {
+            Integer tmdbId = tmdbApiService.getTmdbMovieId(movie.getApiId());
+            String certification = tmdbApiService.getCertification(tmdbId);
+            if (!isBlank(certification)) {
+                movie.setRated(certification);
+            }
         }
 
         model.addAttribute("movie", movie);
@@ -771,7 +787,7 @@ public class movieController {
 
     @PostMapping("/movies/{id}/edit")
     public String update(@PathVariable Long id,
-                          @ModelAttribute movie movie,
+                          @ModelAttribute Movie movie,
                           @RequestParam("posterImage") MultipartFile posterImage,
                           HttpServletRequest request, HttpSession session) {
         if (!isAdmin(session)) {
@@ -781,7 +797,7 @@ public class movieController {
         logger.info("[POST /movies/{}/edit] 영화 업데이트 요청: ID = {}, 제목 = {}", id, movie.getTitle());
         movie.setId(id);
 
-        movie existingMovie = movieService.findById(id);
+        Movie existingMovie = movieService.findById(id);
         String oldPosterPath = existingMovie != null ? existingMovie.getPosterPath() : null;
         movie.setLikeCount(existingMovie != null ? existingMovie.getLikeCount() : 0);
 
@@ -829,7 +845,7 @@ public class movieController {
         }
         logger.info("[POST /movies/{}/delete] 영화 삭제 요청: ID = {}", id, id);
 
-        movie movieToDelete = movieService.findById(id);
+        Movie movieToDelete = movieService.findById(id);
         if (movieToDelete != null && movieToDelete.getPosterPath() != null) {
             if (!movieToDelete.getPosterPath().startsWith("http://") && !movieToDelete.getPosterPath().startsWith("https://")) {
                 try {
@@ -879,8 +895,8 @@ public class movieController {
             return "redirect:/accessDenied";
         }
         logger.info("[GET /admin/banner-movies] 관리자 수동 추천 영화 관리 페이지 요청.");
-        List<movie> allMovies = movieService.findAll();
-        List<movie> currentAdminBannerMovies = adminBannerMovieService.getAdminRecommendedMovies();
+        List<Movie> allMovies = movieService.findAll();
+        List<Movie> currentAdminBannerMovies = adminBannerMovieService.getAdminRecommendedMovies();
 
         model.addAttribute("allMovies", allMovies);
         model.addAttribute("currentAdminBannerMovies", currentAdminBannerMovies);
@@ -931,7 +947,7 @@ public class movieController {
     @GetMapping("/movies/upcoming")
     public String showUpcomingMovies(Model model) {
         System.out.println("업커밍");
-        List<movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
+        List<Movie> upcomingMovies = movieService.getUpcomingMoviesWithDday();
         model.addAttribute("upcomingMovies", upcomingMovies);
         return "movie/upcomingMovies";
     }
@@ -979,3 +995,11 @@ public class movieController {
 
     
 }
+
+
+
+
+
+
+
+

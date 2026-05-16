@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.TasteReportDTO;
 import com.springmvc.domain.UserReview;
-import com.springmvc.domain.movie;
-import com.springmvc.repository.movieRepository;
+import com.springmvc.domain.Movie;
+import com.springmvc.repository.MovieRepository;
 import com.springmvc.service.MemberService;
 import com.springmvc.service.TasteProfileService;
 import com.springmvc.service.UserReviewService;
-import com.springmvc.service.movieService;
-import com.springmvc.service.userCartService;
+import com.springmvc.service.MovieService;
+import com.springmvc.service.UserCartService;
 
 @Controller 
 @RequestMapping("/member") 
@@ -35,16 +35,16 @@ import com.springmvc.service.userCartService;
 public class MemberController {
 	
 	@Autowired
-    private movieService movieService;
+    private MovieService movieService;
 	
 	@Autowired
     private TasteProfileService tasteProfileService;
 
 	@Autowired
-    private userCartService userCartService; 
+    private UserCartService userCartService; 
 	
 	@Autowired
-	private movieRepository movieRepository;
+	private MovieRepository movieRepository;
 	@Autowired
     private UserReviewService userReviewService;
 	
@@ -140,11 +140,11 @@ public class MemberController {
 
         List<UserReview> myReviews = userReviewService.getPagedReviews(memberId, page, pageSize);
         
-        Map<Long, movie> movieMap = new HashMap<>();
+        Map<Long, Movie> movieMap = new HashMap<>();
         for (UserReview r : myReviews) {
             Long movieId = r.getMovieId();
             if (!movieMap.containsKey(movieId)) {
-            	movie m = movieService.findById(movieId); 
+            	Movie m = movieService.findById(movieId); 
             	if (m != null) {
                     movieMap.put(movieId, m);
                 }
@@ -179,7 +179,7 @@ public class MemberController {
         int totalPages = (int) Math.ceil((double) totalCount / size);
         int offset = (page - 1) * size;
 
-        List<movie> likedMovies = userCartService.getLikedMoviesPaged(loginMember.getId(), size, offset);
+        List<Movie> likedMovies = userCartService.getLikedMoviesPaged(loginMember.getId(), size, offset);
 
         model.addAttribute("likedMovies", likedMovies);
         model.addAttribute("currentPage", page);
@@ -201,3 +201,10 @@ public class MemberController {
         return "mypage_taste"; 
     }
 }
+
+
+
+
+
+
+

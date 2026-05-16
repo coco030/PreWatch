@@ -65,7 +65,7 @@
         
         
         
-        <property name="java-output-path" value="/TestSpring/target/classes"/>
+        <property name="java-output-path" value="/PreWatch-main 25.12.03/target/classes"/>
         <property name="context-root" value="PreWatch"/>
                                                                             
     

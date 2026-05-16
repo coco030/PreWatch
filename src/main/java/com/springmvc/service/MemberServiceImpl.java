@@ -62,3 +62,6 @@ public class MemberServiceImpl implements MemberService{
         return memberRepository.findById(id);
     }
 }
+
+
+

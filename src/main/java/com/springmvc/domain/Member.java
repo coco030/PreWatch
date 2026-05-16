@@ -78,3 +78,6 @@ public class Member {
 				+ ", tasteReport=" + tasteReport + ", tasteAnomalyScore=" + tasteAnomalyScore + "]";
 	}
 }
+
+
+

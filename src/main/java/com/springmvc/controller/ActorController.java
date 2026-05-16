@@ -9,16 +9,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.repository.ActorRepository;
 import com.springmvc.service.TmdbApiService;
-import com.springmvc.service.movieService;
+import com.springmvc.service.MovieService;
 
 @Controller
 public class ActorController {
 	
 	@Autowired
-	private movieService movieService;
+	private MovieService movieService;
 
     @Autowired
     private ActorRepository actorRepository;
@@ -41,3 +41,9 @@ public class ActorController {
     }
 
 }
+
+
+
+
+
+

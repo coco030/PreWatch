@@ -33,3 +33,6 @@ public class StatController {
         return "movie_genres 테이블 초기화 완료!";
     }
 }
+
+
+

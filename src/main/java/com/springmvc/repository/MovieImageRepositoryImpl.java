@@ -49,3 +49,7 @@ public class MovieImageRepositoryImpl implements MovieImageRepository {
         jdbcTemplate.update(sql, movieId);
     }
 }
+
+
+
+

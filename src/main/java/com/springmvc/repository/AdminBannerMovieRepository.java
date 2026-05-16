@@ -58,3 +58,7 @@ public class AdminBannerMovieRepository { // (7-24 오후12:41 추가 된 코드
         logger.info("배너에서 영화 ID {} 삭제 완료.", movieId); // (7-24 오후12:41 추가 된 코드)
     }
 }
+
+
+
+

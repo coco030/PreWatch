@@ -23,3 +23,6 @@ public interface MemberService {
  // ID로 회원 정보 조회 기능 선언
     Member findById(String id);
 }
+
+
+

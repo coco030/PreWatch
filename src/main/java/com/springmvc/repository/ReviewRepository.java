@@ -11,3 +11,6 @@ public interface ReviewRepository {
  // 전체 댓글 수 조회 (페이징 계산용)
  int countAllComments(String searchType, String keyword);
 }
+
+
+

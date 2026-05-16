@@ -20,3 +20,7 @@ public interface WarningTagRepository {
     void addWarningTagsToMovie(long movieId, List<Long> warningTagIds);
 
 }
+
+
+
+

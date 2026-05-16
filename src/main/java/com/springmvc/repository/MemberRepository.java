@@ -24,3 +24,6 @@ public interface MemberRepository {
 	void updateTasteProfile(String memberId, String title, String report, double score);
 	Member findById(String id);
 }
+
+
+

@@ -1,8 +1,8 @@
 package com.springmvc.repository; // <-- CalendarUtil의 실제 패키지
 
-import com.springmvc.service.movieService; // movieService의 패키지 확인
-import com.springmvc.domain.movie;       // movie의 실제 패키지
-import com.springmvc.domain.CalendarData; // ⭐ CalendarData의 실제 패키지 ⭐
+import com.springmvc.service.MovieService; // movieService의 패키지 확인
+import com.springmvc.domain.Movie;       // movie의 실제 패키지
+import com.springmvc.domain.CalendarData; // ? CalendarData의 실제 패키지 ?
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +21,10 @@ public class CalendarUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(CalendarUtil.class);
 
-    private final movieService movieService;
+    private final MovieService movieService;
 
     @Autowired
-    public CalendarUtil(movieService movieService) {
+    public CalendarUtil(MovieService movieService) {
         this.movieService = movieService;
     }
 
@@ -38,7 +38,7 @@ public class CalendarUtil {
         LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
 
         logger.debug("movieService.getUpcomingMoviesForMonth 호출 시도: year={}, month={}", year, month);
-        Map<LocalDate, List<movie>> upcomingMoviesByDate = movieService.getUpcomingMoviesForMonth(year, month);
+        Map<LocalDate, List<Movie>> upcomingMoviesByDate = movieService.getUpcomingMoviesForMonth(year, month);
         logger.debug("movieService.getUpcomingMoviesForMonth 반환: {}개 날짜에 영화 정보 있음.", upcomingMoviesByDate.size());
 
         int dayOfWeekValue = firstDayOfMonth.getDayOfWeek().getValue(); // 1(월) ~ 7(일)
@@ -57,7 +57,7 @@ public class CalendarUtil {
                 logger.debug("  - CalendarData 생성: Date={}, isCurrentMonth={}, isToday={}",
                              calendarData.getDate(), calendarData.getCurrentMonthStatus(), calendarData.getTodayStatus());
 
-                List<movie> moviesOnThisDay = upcomingMoviesByDate.get(currentDay);
+                List<Movie> moviesOnThisDay = upcomingMoviesByDate.get(currentDay);
                 if (moviesOnThisDay != null && !moviesOnThisDay.isEmpty()) {
                     calendarData.setMovies(moviesOnThisDay);
                     logger.debug("  - 날짜 {}에 영화 {}개 추가됨.", currentDay, moviesOnThisDay.size());
@@ -73,3 +73,10 @@ public class CalendarUtil {
         return calendarWeeks;
     }
 }
+
+
+
+
+
+
+

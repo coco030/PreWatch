@@ -99,3 +99,6 @@ public class TasteAnalysisDataDTO {
                 + ", movieAvgSexual=" + movieAvgSexual + ", movieId=" + movieId + "]";
     }
 }
+
+
+

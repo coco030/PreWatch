@@ -212,6 +212,68 @@
     transition: all 0.2s ease-in-out;
 	}
 
+    .gallery-nav-btn {
+        position: absolute;
+        top: 50%;
+        z-index: 5;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        transform: translateY(-50%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .gallery-nav-btn:hover {
+        background: rgba(0, 0, 0, 0.75);
+    }
+
+    .gallery-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+
+    .gallery-nav-prev {
+        left: 1rem;
+    }
+
+    .gallery-nav-next {
+        right: 1rem;
+    }
+
+    .gallery-counter {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        z-index: 5;
+        transform: translateX(-50%);
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 576px) {
+        .gallery-nav-btn {
+            width: 38px;
+            height: 38px;
+        }
+
+        .gallery-nav-prev {
+            left: 0.5rem;
+        }
+
+        .gallery-nav-next {
+            right: 0.5rem;
+        }
+    }
+
     </style>
 </head>
 
@@ -250,7 +312,8 @@
                             <c:set var="posterSrc">
                                 <c:choose>
                                     <c:when test="${fn:startsWith(movie.posterPath, 'http')}">${movie.posterPath}</c:when>
-                                    <c:otherwise>${pageContext.request.contextPath}${movie.posterPath}</c:otherwise>
+                                    <c:when test="${fn:startsWith(movie.posterPath, '/resources/')}">${pageContext.request.contextPath}${movie.posterPath}</c:when>
+                                    <c:otherwise>https://image.tmdb.org/t/p/w500${movie.posterPath}</c:otherwise>
                                 </c:choose>
                             </c:set>
                             <img src="${posterSrc}" alt="${movie.title} 포스터" class="main-poster" />
@@ -629,13 +692,26 @@
                                     <div class="row g-2 mt-2">
                                         <c:forEach var="img" items="${movieImages}" varStatus="status">
                                             <div class="col-6 col-md-4 ${status.index >= 6 ? 'd-none more-gallery' : ''}">
-                                                <img src="https://image.tmdb.org/t/p/w500${img.imageUrl}" 
-                                                     alt="스틸컷" 
-                                                     class="img-fluid rounded shadow-sm" 
-                                                     style="cursor:pointer" 
-                                                     data-bs-toggle="modal" 
-                                                     data-bs-target="#imageModal" 
-                                                     data-bs-image="https://image.tmdb.org/t/p/original${img.imageUrl}">
+                                                <c:set var="galleryThumbSrc">
+                                                    <c:choose>
+                                                        <c:when test="${fn:startsWith(img.imageUrl, 'http')}">${img.imageUrl}</c:when>
+                                                        <c:otherwise>https://image.tmdb.org/t/p/w500${img.imageUrl}</c:otherwise>
+                                                    </c:choose>
+                                                </c:set>
+                                                <c:set var="galleryOriginalSrc">
+                                                    <c:choose>
+                                                        <c:when test="${fn:startsWith(img.imageUrl, 'http')}">${img.imageUrl}</c:when>
+                                                        <c:otherwise>https://image.tmdb.org/t/p/original${img.imageUrl}</c:otherwise>
+                                                    </c:choose>
+                                                </c:set>
+                                                <img src="${galleryThumbSrc}"
+                                                     alt="스틸컷"
+                                                     class="img-fluid rounded shadow-sm gallery-image"
+                                                     style="cursor:pointer"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#imageModal"
+                                                     data-gallery-index="${status.index}"
+                                                     data-bs-image="${galleryOriginalSrc}">
                                             </div>
                                         </c:forEach>
                                     </div>
@@ -719,12 +795,19 @@
                         class="btn-close position-absolute top-0 end-0 m-3" 
                         data-bs-dismiss="modal" 
                         aria-label="Close" 
-                        style="filter: brightness(0.7); background-color: rgba(255,255,255,0.6);">
+                        style="filter: brightness(0.7); background-color: rgba(255,255,255,0.6); z-index: 6;">
+                </button>
+                <button type="button" id="modalPrevImage" class="gallery-nav-btn gallery-nav-prev" aria-label="이전 이미지" title="이전 이미지">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" id="modalNextImage" class="gallery-nav-btn gallery-nav-next" aria-label="다음 이미지" title="다음 이미지">
+                    <i class="fas fa-chevron-right"></i>
                 </button>
                 <img id="modalImage" 
                      src="" 
                      class="img-fluid rounded d-block mx-auto" 
                      style="max-height: 95vh; object-fit: contain;">
+                <div id="galleryCounter" class="gallery-counter"></div>
             </div>
         </div>
     </div>
@@ -749,15 +832,6 @@
             likeComponent.data('is-liked', ${movie.isLiked()});
             
             // Hover Effects
-            likeComponent.on({
-                mouseenter: function() {
-                    $(this).find('.like-icon').toggleClass('fas far');
-                },
-                mouseleave: function() {
-                    $(this).find('.like-icon').toggleClass('fas far');
-                }
-            });
-            
             // Click Handler
             likeComponent.on('click', function() {
                 const component = $(this);
@@ -778,7 +852,10 @@
                         }
                     },
                     error: function(xhr) {
-                        alert("오류 발생");
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : "찜 처리 중 오류가 발생했습니다.";
+                        alert(message);
                     },
                     complete: function() {
                         component.removeClass('processing').css('pointer-events', 'auto');
@@ -806,9 +883,45 @@
             $(this).text($(this).text() === '더 보기' ? '간단히 보기' : '더 보기');
         });
 
-        // Image Modal
-        $('[data-bs-toggle="modal"]').on('click', function() {
-            $('#modalImage').attr('src', $(this).data('bs-image'));
+        const galleryImages = $('.gallery-image').map(function() {
+            return $(this).data('bs-image');
+        }).get();
+        let currentGalleryIndex = 0;
+
+        function showGalleryImage(index) {
+            if (!galleryImages.length) return;
+
+            currentGalleryIndex = (index + galleryImages.length) % galleryImages.length;
+            $('#modalImage').attr('src', galleryImages[currentGalleryIndex]);
+            $('#galleryCounter').text((currentGalleryIndex + 1) + ' / ' + galleryImages.length);
+            $('#modalPrevImage, #modalNextImage, #galleryCounter').toggle(galleryImages.length > 1);
+        }
+
+        $('.gallery-image').on('click', function() {
+            const clickedIndex = parseInt($(this).data('gallery-index'), 10);
+            showGalleryImage(Number.isNaN(clickedIndex) ? 0 : clickedIndex);
+        });
+
+        $('#modalPrevImage').on('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showGalleryImage(currentGalleryIndex - 1);
+        });
+
+        $('#modalNextImage').on('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showGalleryImage(currentGalleryIndex + 1);
+        });
+
+        $(document).on('keydown', function(event) {
+            if (!$('#imageModal').hasClass('show') || galleryImages.length <= 1) return;
+
+            if (event.key === 'ArrowLeft') {
+                showGalleryImage(currentGalleryIndex - 1);
+            } else if (event.key === 'ArrowRight') {
+                showGalleryImage(currentGalleryIndex + 1);
+            }
         });
     });
     </script>

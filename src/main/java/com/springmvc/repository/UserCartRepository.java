@@ -1,11 +1,11 @@
 package com.springmvc.repository;
 
-import com.springmvc.domain.movie; // 찜한 영화 정보를 가져올 때 사용될 수 있습니다.
+import com.springmvc.domain.Movie; // 찜한 영화 정보를 가져올 때 사용될 수 있습니다.
 import java.util.List;
 
 // UserCartRepository 인터페이스: 찜(User Cart) 데이터에 접근하는 메서드들을 정의합니다.
 // 목적: 사용자의 찜 목록에 영화를 추가/삭제하거나, 찜 상태를 확인하고, 찜 목록을 조회하는 기능을 제공합니다.
-public interface userCartRepository {
+public interface UserCartRepository {
 
     // addMovieToCart 메서드: 특정 회원의 찜 목록에 영화를 추가합니다. (C - Create)
     void addMovieToCart(String memberId, Long movieId);
@@ -26,3 +26,9 @@ public interface userCartRepository {
     List<Long> findLikedMovieIdsPaged(String memberId, int limit, int offset);
 
 }
+
+
+
+
+
+

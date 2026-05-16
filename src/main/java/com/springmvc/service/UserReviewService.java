@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
-import com.springmvc.repository.movieRepository;
+import com.springmvc.repository.MovieRepository;
 
 
 @Service
@@ -24,7 +24,7 @@ public class UserReviewService {
     private UserReviewRepository userReviewRepository;
     
     @Autowired
-    private movieRepository movieRepository;
+    private MovieRepository movieRepository;
     
     
     // 영화별 리뷰 목록 조회
@@ -100,7 +100,7 @@ public class UserReviewService {
   // 리뷰 내용만 삭제. 전체 삭제가 아니라!! 25.08.09
     @Transactional
     public boolean clearReviewContent(String memberId, Long movieId) {
-        System.out.println("✅ [Service] 내용 삭제 처리: memberId=" + memberId + ", movieId=" + movieId);
+        System.out.println("? [Service] 내용 삭제 처리: memberId=" + memberId + ", movieId=" + movieId);
         return userReviewRepository.clearReviewContent(memberId, movieId);
     }
     
@@ -173,3 +173,7 @@ public class UserReviewService {
     }
 
 }
+
+
+
+

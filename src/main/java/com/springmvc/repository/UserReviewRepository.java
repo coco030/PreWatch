@@ -40,8 +40,8 @@ public class UserReviewRepository {
             review.setMovieId(rs.getLong("movie_id"));
             review.setUserRating(rs.getInt("user_rating"));
             review.setViolenceScore(rs.getInt("violence_score"));
-            review.setHorrorScore(rs.getInt("horror_score"));       // ✅ 공포성 점수
-            review.setSexualScore(rs.getInt("sexual_score"));       // ✅ 선정성 점수
+            review.setHorrorScore(rs.getInt("horror_score"));       // ? 공포성 점수
+            review.setSexualScore(rs.getInt("sexual_score"));       // ? 선정성 점수
             review.setReviewContent(rs.getString("review_content"));
             review.setTags(rs.getString("tags"));
             review.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
@@ -172,8 +172,8 @@ public class UserReviewRepository {
             review.setMovieId(rs.getLong("movie_id"));
             review.setUserRating(rs.getObject("user_rating") != null ? rs.getInt("user_rating") : null);
             review.setViolenceScore(rs.getObject("violence_score") != null ? rs.getInt("violence_score") : null);
-            review.setHorrorScore(rs.getObject("horror_score") != null ? rs.getInt("horror_score") : null); // ✅ 추가됨
-            review.setSexualScore(rs.getObject("sexual_score") != null ? rs.getInt("sexual_score") : null); // ✅ 추가됨
+            review.setHorrorScore(rs.getObject("horror_score") != null ? rs.getInt("horror_score") : null); // ? 추가됨
+            review.setSexualScore(rs.getObject("sexual_score") != null ? rs.getInt("sexual_score") : null); // ? 추가됨
             review.setReviewContent(rs.getString("review_content"));
             review.setTags(rs.getString("tags"));
             java.sql.Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
@@ -186,18 +186,18 @@ public class UserReviewRepository {
     public boolean clearReviewContent(String memberId, Long movieId) {
         String sql = "UPDATE user_reviews SET review_content = NULL WHERE member_id = ? AND movie_id = ?";
         
-        System.out.println("✅ [Repository] DB 업데이트 시도: memberId=" + memberId + ", movieId=" + movieId);
-        System.out.println("✅ [Repository] 실행될 SQL: " + sql); 
+        System.out.println("? [Repository] DB 업데이트 시도: memberId=" + memberId + ", movieId=" + movieId);
+        System.out.println("? [Repository] 실행될 SQL: " + sql); 
 
         int updatedRows = 0;
         try {
             updatedRows = jdbcTemplate.update(sql, memberId, movieId);
         } catch (Exception e) {
-            System.err.println("❌ [Repository] SQL 실행 중 에러 발생!");
+            System.err.println("? [Repository] SQL 실행 중 에러 발생!");
             e.printStackTrace();
         }
         
-        System.out.println("✅ [Repository] 업데이트된 행(row)의 수: " + updatedRows);
+        System.out.println("? [Repository] 업데이트된 행(row)의 수: " + updatedRows);
         
         return updatedRows > 0;
     }
@@ -411,7 +411,7 @@ public class UserReviewRepository {
     }
     ///
 
- // ✅ 유저가 평가한 호러 점수 평균 계산 (user_reviews 기준)
+ // ? 유저가 평가한 호러 점수 평균 계산 (user_reviews 기준)
     public Double getAverageHorrorScore(Long movieId) {
         System.out.println("▶ [user_reviews] 공포 점수 평균 계산 중... movieId: " + movieId);
         String sql = "SELECT AVG(horror_score) FROM user_reviews WHERE movie_id = ? AND horror_score IS NOT NULL";
@@ -420,7 +420,7 @@ public class UserReviewRepository {
         return result;
     }
 
-    // ✅ 유저가 평가한 선정성 점수 평균 계산 (user_reviews 기준)
+    // ? 유저가 평가한 선정성 점수 평균 계산 (user_reviews 기준)
     public Double getAverageSexualScore(Long movieId) {
         System.out.println("▶ [user_reviews] 선정성 점수 평균 계산 중... movieId: " + movieId);
         String sql = "SELECT AVG(sexual_score) FROM user_reviews WHERE movie_id = ? AND sexual_score IS NOT NULL";
@@ -429,7 +429,7 @@ public class UserReviewRepository {
         return result;
     }
 
-    // ✅ 계산된 평균을 movie_stats 테이블에 반영 (없으면 INSERT)
+    // ? 계산된 평균을 movie_stats 테이블에 반영 (없으면 INSERT)
     public void updateHorrorScoreAvg(Long movieId, double avg) {
         System.out.println("▶ [movie_stats] 공포 점수 평균 업데이트 시도... movieId: " + movieId + ", avg: " + avg);
         String updateSql = "UPDATE movie_stats SET horror_score_avg = ? WHERE movie_id = ?";
@@ -458,16 +458,16 @@ public class UserReviewRepository {
         }
     }
     
-    // ✅ 공포 평균값 조회
+    // ? 공포 평균값 조회
     public Double getSavedAverageHorrorScore(Long movieId) {
         String sql = "SELECT horror_score_avg FROM movie_stats WHERE movie_id = ?";
         List<Double> result = jdbcTemplate.query(sql,
             (rs, rowNum) -> rs.getDouble("horror_score_avg"), movieId);
 
-        return result.isEmpty() ? null : result.get(0); // ❗ 값 없으면 null 리턴
+        return result.isEmpty() ? null : result.get(0); // ? 값 없으면 null 리턴
     }
 
-    // ✅ 선정성 평균값 조회
+    // ? 선정성 평균값 조회
     public Double getSavedAverageSexualScore(Long movieId) {
         String sql = "SELECT sexual_score_avg FROM movie_stats WHERE movie_id = ?";
         List<Double> result = jdbcTemplate.query(sql,
@@ -562,3 +562,6 @@ public class UserReviewRepository {
         return jdbcTemplate.queryForList(sql, Long.class, memberId);
     }
 }
+
+
+

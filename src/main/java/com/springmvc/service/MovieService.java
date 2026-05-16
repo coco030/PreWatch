@@ -10,41 +10,41 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.springmvc.domain.RecentCommentDTO;
-import com.springmvc.domain.movie;
+import com.springmvc.domain.Movie;
 import com.springmvc.repository.ReviewRepository;
-import com.springmvc.repository.movieRepository;
+import com.springmvc.repository.MovieRepository;
 
 @Service
-public class movieService {
+public class MovieService {
 
-    private static final Logger logger = LoggerFactory.getLogger(movieService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieService.class);
 
-    private final movieRepository movieRepository;
+    private final MovieRepository movieRepository;
     private final ReviewRepository reviewRepository;
 
-    public movieService(movieRepository movieRepository, ReviewRepository reviewRepository) {
+    public MovieService(MovieRepository movieRepository, ReviewRepository reviewRepository) {
         this.movieRepository = movieRepository;
         this.reviewRepository = reviewRepository;
     }
 
     // 모든 영화 목록 조회
-    public List<movie> findAll() {
+    public List<Movie> findAll() {
         logger.debug("movieService.findAll() 호출.");
-        List<movie> movies = movieRepository.findAll();
+        List<Movie> movies = movieRepository.findAll();
         logger.debug("DB에서 {}개의 영화 목록을 가져왔습니다.", movies.size());
         return movies;
     }
     
     // 모든 추천 랭킹 영화 조회
-    public List<movie> getAllRecommendedMovies() {
+    public List<Movie> getAllRecommendedMovies() {
         logger.debug("movieService.getAllRecommendedMovies() 호출: 모든 추천 랭킹 영화 조회.");
         return movieRepository.findAllRecommendedMovies();
     }
 
     // ID로 영화 조회
-    public movie findById(Long id) {
+    public Movie findById(Long id) {
         logger.debug("movieService.findById({}) 호출.", id);
-        movie movie = movieRepository.findById(id);
+        Movie movie = movieRepository.findById(id);
         if (movie != null) {
             logger.debug("영화 ID {} 찾음: {}", id, movie.getTitle());
         } else {
@@ -59,9 +59,9 @@ public class movieService {
     }
     
     // API ID로 영화 조회
-    public movie findByApiId(String apiId) {
+    public Movie findByApiId(String apiId) {
         logger.debug("movieService.findByApiId({}) 호출.", apiId);
-        movie movie = movieRepository.findByApiId(apiId);
+        Movie movie = movieRepository.findByApiId(apiId);
         if (movie != null) {
             logger.debug("API ID {}에 해당하는 영화 찾음: {}", apiId, movie.getTitle());
         } else {
@@ -71,14 +71,14 @@ public class movieService {
     }
 
     // 영화 저장
-    public void save(movie movie) {
+    public void save(Movie movie) {
         logger.debug("movieService.save() 호출: 영화 제목 = {}", movie.getTitle());
         movieRepository.save(movie);
         logger.info("영화 '{}'가 DB에 저장되었습니다.", movie.getTitle());
 
         Long movieId = movie.getId();
         if (movieId == null) {
-            logger.error("❌ 저장된 영화의 ID가 null입니다. genre 매핑 불가.");
+            logger.error("? 저장된 영화의 ID가 null입니다. genre 매핑 불가.");
             return;
         }
 
@@ -98,7 +98,7 @@ public class movieService {
     }
 
     // 영화 업데이트
-    public void update(movie movie) {
+    public void update(Movie movie) {
         logger.debug("movieService.update() 호출: 영화 ID = {}", movie.getId());
         movieRepository.update(movie);
         logger.info("영화 ID {}가 업데이트되었습니다.", movie.getId());
@@ -112,29 +112,29 @@ public class movieService {
     }
     
     // 특정 월의 개봉 예정 영화 조회
-    public Map<LocalDate, List<movie>> getUpcomingMoviesForMonth(int year, int month) {
+    public Map<LocalDate, List<Movie>> getUpcomingMoviesForMonth(int year, int month) {
         logger.debug("movieService.getUpcomingMoviesForMonth({}, {}) 호출.", year, month);
         
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = LocalDate.of(year, month, startDate.lengthOfMonth());
         
-        List<movie> movies = movieRepository.findByReleaseDateBetween(startDate, endDate);
+        List<Movie> movies = movieRepository.findByReleaseDateBetween(startDate, endDate);
         
-        Map<LocalDate, List<movie>> result = movies.stream()
-                .collect(Collectors.groupingBy(movie::getReleaseDate));
+        Map<LocalDate, List<Movie>> result = movies.stream()
+                .collect(Collectors.groupingBy(Movie::getReleaseDate));
                 
         logger.debug("getUpcomingMoviesForMonth 결과: {}개의 날짜에 영화가 존재합니다.", result.size());
         return result;
     }
 
     // 메인 페이지: 최근 3개 영화 조회
-    public List<movie> getRecentMovies(int limit) {
+    public List<Movie> getRecentMovies(int limit) {
         logger.debug("movieService.getRecentMovies({}) 호출.", limit);
         return movieRepository.findRecentMovies(limit);
     }
 
     // 메인 페이지: 찜 개수 기준 상위 6개 영화 조회
-    public List<movie> getTop6RecommendedMovies() {
+    public List<Movie> getTop6RecommendedMovies() {
         logger.debug("movieService.getTop6RecommendedMovies() 호출.");
         return movieRepository.findTop6RecommendedMoviesByLikeCount();
     }
@@ -146,7 +146,7 @@ public class movieService {
         
         for (RecentCommentDTO comment : allRecentInteractions) {
             if (comment.getMovieId() != null) {
-                movie movieInfo = movieRepository.findTitleAndPosterById(comment.getMovieId());
+                Movie movieInfo = movieRepository.findTitleAndPosterById(comment.getMovieId());
                 if (movieInfo != null) {
                     comment.setMovieName(movieInfo.getTitle());
                     comment.setPosterPath(movieInfo.getPosterPath());
@@ -176,7 +176,7 @@ public class movieService {
 
         for (RecentCommentDTO comment : comments) {
             if (comment.getMovieId() != null) {
-                movie movieInfo = movieRepository.findTitleAndPosterById(comment.getMovieId());
+                Movie movieInfo = movieRepository.findTitleAndPosterById(comment.getMovieId());
                 if (movieInfo != null) {
                     comment.setMovieName(movieInfo.getTitle());
                     comment.setPosterPath(movieInfo.getPosterPath());
@@ -199,19 +199,30 @@ public class movieService {
     }
     
     // 모든 최근 등록 영화 조회
-    public List<movie> getAllRecentMovies() {
+    public List<Movie> getAllRecentMovies() {
         return movieRepository.findAllRecentMovies();
     }
     
     // 모든 개봉 예정 영화 조회
-    public List<movie> getAllUpcomingMovies() {
+    public List<Movie> getAllUpcomingMovies() {
         logger.debug("movieService.getAllUpcomingMovies() 호출: 모든 개봉 예정 영화 조회.");
         return movieRepository.findAllUpcomingMovies();
     }
     
     // D-day를 포함한 개봉 예정 영화 조회
-    public List<movie> getUpcomingMoviesWithDday() {
+    public List<Movie> getUpcomingMoviesWithDday() {
         logger.debug("movieService.getUpcomingMoviesWithDday() 호출.");
         return movieRepository.getUpcomingMoviesWithDday();
     }
 }
+
+
+
+
+
+
+
+
+
+
+

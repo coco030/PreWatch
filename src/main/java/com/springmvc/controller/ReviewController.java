@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.springmvc.domain.Member;
 import com.springmvc.domain.UserReview;
 import com.springmvc.repository.UserReviewRepository;
-import com.springmvc.repository.movieRepository;
+import com.springmvc.repository.MovieRepository;
 import com.springmvc.service.UserReviewService;
 
 @Controller
@@ -28,7 +28,7 @@ import com.springmvc.service.UserReviewService;
 public class ReviewController {
 	
 	@Autowired
-	private movieRepository movieRepository;
+	private MovieRepository movieRepository;
 	
 	@Autowired
 	private UserReviewRepository userReviewRepository;
@@ -119,10 +119,10 @@ public class ReviewController {
     }
     
     // 영화별 리뷰 목록 조회
-    @GetMapping("/movie/{movieId}")  // → /review/movie/{movieId}
+    @GetMapping("/Movie/{movieId}")  // → /review/Movie/{movieId}
     @ResponseBody
     public ResponseEntity<List<UserReview>> getMovieReviews(@PathVariable Long movieId) {
-    	System.out.println(">>>/movie/{movieId}(영화별 리뷰 목록 조회) 호출됨");
+    	System.out.println(">>>/Movie/{movieId}(영화별 리뷰 목록 조회) 호출됨");
     	List<UserReview> reviews = userReviewService.getReviewsByMovie(movieId);
         return ResponseEntity.ok(reviews);
     }
@@ -235,7 +235,7 @@ public class ReviewController {
     @GetMapping("/sensitivity")
     public String getViolenceSensitivity(@RequestParam Long movieId, Model model) {
     	System.out.println(">>> sensitivity(폭력성 주의문구 뷰로 뿌려주기) 호출됨");
-    	// 이미 movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
+    	// 이미 Movie 객체에서 평균을 조회할 수 있으므로 별도 DB조회 불필요
         model.addAttribute("movieId", movieId);
         return "reviewModule/reviewSensitivity"; // → /WEB-INF/views/reviewModule/reviewSensitivity.jsp
     }
@@ -442,7 +442,7 @@ public class ReviewController {
 
         userReviewService.saveHorrorScore(memberId, movieId, horrorScore);
         double avgHorrorScore = userReviewService.getAverageHorrorScore(movieId);
-        System.out.printf("✅ [응답] 공포 평균점수=%.1f (movieId=%d)%n", avgHorrorScore, movieId);
+        System.out.printf("? [응답] 공포 평균점수=%.1f (movieId=%d)%n", avgHorrorScore, movieId);
 
         response.put("avgHorrorScore", avgHorrorScore);
         response.put("success", true);
@@ -470,7 +470,7 @@ public class ReviewController {
 
         userReviewService.saveSexualScore(memberId, movieId, sexualScore);
         double avgSexualScore = userReviewService.getAverageSexualScore(movieId);
-        System.out.printf("✅ [응답] 선정성 평균점수=%.1f (movieId=%d)%n", avgSexualScore, movieId);
+        System.out.printf("? [응답] 선정성 평균점수=%.1f (movieId=%d)%n", avgSexualScore, movieId);
 
         response.put("avgSexualScore", avgSexualScore);
         response.put("success", true);
@@ -485,4 +485,8 @@ public class ReviewController {
 
 
 }
+
+
+
+
 

@@ -195,8 +195,11 @@
                                             <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
                                                 ${movie.posterPath}
                                             </c:when>
-                                            <c:otherwise>
+                                            <c:when test="${fn:startsWith(movie.posterPath, '/resources/')}">
                                                 ${pageContext.request.contextPath}${movie.posterPath}
+                                            </c:when>
+                                            <c:otherwise>
+                                                https://image.tmdb.org/t/p/w342${movie.posterPath}
                                             </c:otherwise>
                                         </c:choose>
                                     </c:when>
