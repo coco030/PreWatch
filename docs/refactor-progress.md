@@ -11,9 +11,9 @@
 ### 1. 리팩토링 실험용 작업본 분리
 
 - 기존 프로젝트를 직접 망가뜨리지 않기 위해 `PreWatch-refactor-lab` 작업본을 별도로 사용한다.
-- Maven 식별자를 실험용 이름으로 분리했다.
-  - `artifactId`: `prewatch-refactor-lab`
-  - `name`: `PreWatch Refactor Lab`
+- GitHub에 올라가는 Maven 식별자는 기존 프로젝트 이름을 유지한다.
+  - `artifactId`: `PreWatch`
+  - `name`: `PreWatch Maven Webapp`
 - 실제 API 키가 들어 있는 `src/main/resources/application.properties`는 로컬 작업본에만 두고, `.gitignore`에 포함되어 GitHub에 올라가지 않도록 유지한다.
 
 ### 2. 추천/취향 분석 알고리즘 문서화
