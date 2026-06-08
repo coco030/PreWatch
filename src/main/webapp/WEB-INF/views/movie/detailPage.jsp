@@ -282,7 +282,14 @@
 
     <!-- Hero Section -->
     <c:if test="${not empty backdropPath and backdropPath ne 'null'}">
-        <c:set var="backdropUrl" value="https://image.tmdb.org/t/p/original${backdropPath}" />
+        <c:choose>
+            <c:when test="${fn:startsWith(backdropPath, 'http')}">
+                <c:set var="backdropUrl" value="${backdropPath}" />
+            </c:when>
+            <c:otherwise>
+                <c:set var="backdropUrl" value="https://image.tmdb.org/t/p/original${backdropPath}" />
+            </c:otherwise>
+        </c:choose>
         <div class="prewatch-hero" style="background-image: url('${backdropUrl}');">
             <div class="prewatch-hero-overlay"></div>
             <div class="container prewatch-hero-content">

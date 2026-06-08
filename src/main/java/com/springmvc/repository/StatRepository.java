@@ -42,14 +42,14 @@ public class StatRepository {
 	    }
 	};
     
-    // 1. 특정 영화의 장르 목록 가져오기
+    // 추천/취향 분석 공통: 영화 ID로 장르 목록을 조회한다.
     public List<String> findGenresByMovieId(long movieId) {
         String sql = "SELECT genre FROM movie_genres WHERE movie_id = ?";
         return jdbcTemplate.queryForList(sql, String.class, movieId);
     }
 
-    // 2. 특정 영화의 기본 정보 및 통계 가져오기 (두 테이블 JOIN)
-
+    // 추천 알고리즘: 기준 영화의 평균 지표와 관람 등급을 조회한다.
+    // movies와 movie_stats에 나뉜 집계 값을 한 DTO로 모으는 진입점이다.
     public StatDTO findMovieStatsById(long movieId) {
         String sql = "SELECT " +
                 "    m.id, " +
@@ -86,7 +86,8 @@ public class StatRepository {
     }
 
 
- // 3. 특정 장르의 평균 점수 계산하기 - 전체 필드 출력
+    // 취향 편차/인사이트: 특정 장르의 평균 지표를 계산한다.
+    // 사용자의 점수가 장르 평균과 얼마나 다른지 비교할 때 사용한다.
     public StatDTO getGenreAverageScores(String genre) {
         String sql = "SELECT " +
                      "    mg.genre AS genre, " +  
@@ -105,7 +106,7 @@ public class StatRepository {
 
     
 
-    // 유저 상세 점수 분석
+    // 통계 화면/분석 보조: 사용자가 남긴 원본 점수만 조회한다.
     public List<UserReviewScoreDTO> findUserReviewScoresForAnalysis(String memberId) {
         String sql = "SELECT " +
                      "    user_rating as userRating, " +
@@ -120,7 +121,8 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(UserReviewScoreDTO.class));
     }
     
-    // 유저 상세 프로필 
+    // 취향 분석 핵심 입력: 사용자의 평가 점수와 영화 평균 지표를 함께 조회한다.
+    // StatServiceImpl.calculateUserDeviationScores의 기준 데이터다.
     public List<TasteAnalysisDataDTO> findTasteAnalysisData(String memberId) {
         String sql = "SELECT " +
                      "    ur.movie_id AS movieId, " + // 이 부분이 DTO의 movieId 필드와 매핑
@@ -141,6 +143,7 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
     }
 
+    // 비로그인 추천: 기준 영화와 장르/등급이 맞는 후보를 찾고 지표 차이로 정렬한다.
     public List<StatDTO> findSimilarMoviesWithGenres(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -198,7 +201,7 @@ public class StatRepository {
         });
     }
 
-    // 로그인 사용자를 위한 개선된 추천 쿼리 (가중치 반영)
+    // 로그인 추천: 사용자 취향 편차로 조정된 기준 점수와 가중치를 반영해 후보를 찾는다.
     public List<StatDTO> findSimilarMoviesForLoggedInUser(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -281,6 +284,7 @@ public class StatRepository {
     }
     
   
+    // 취향 분석 보조: 전체 영화의 평균 지표를 조회한다.
     public Map<String, Double> findGlobalAverageScores() {
         String sql = "SELECT " +
                      "  COALESCE(AVG(m.rating), 5.0) as avg_rating, " +
@@ -301,7 +305,7 @@ public class StatRepository {
         });
     }
     
-    // 찜기능과 연계
+    // 잠재 욕망 분석: 평가/찜 영화 ID 목록을 장르 목록으로 변환한다.
     public Map<Long, List<String>> findGenresByMovieIds(List<Long> movieIds) {
         if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
         
@@ -321,7 +325,7 @@ public class StatRepository {
                
     }
     
-    //영화 ID 리스트를 받아, runtime의 평균을 계산
+    // 잠재 욕망 분석: 평가 목록과 찜 목록의 평균 러닝타임 차이를 계산한다.
     public Double findAverageRuntimeByMovieIds(List<Long> movieIds) {
         if (movieIds == null || movieIds.isEmpty()) return 0.0;
         
@@ -360,7 +364,7 @@ public class StatRepository {
         return sum / runtimes.size();
     }
     
-	//영화 ID 리스트를 받아, 등장하는 감독별로 영화 수를 카운트하여 맵으로 반환
+	// 잠재 욕망 분석: 찜 목록이 특정 감독에게 쏠리는지 확인한다.
 	 public Map<String, Long> findDirectorCountsByMovieIds(List<Long> movieIds) {
 	     if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
 	
@@ -383,7 +387,7 @@ public class StatRepository {
 	     });
 	 }
 
-	//영화 ID 리스트를 받아, 전체 평점(movies.rating)의 평균을 계산
+	// 잠재 욕망 분석: 평가 목록의 평균 만족도 기준선을 계산한다.
 	 public Double findAverageRatingByMovieIds(List<Long> movieIds) {
 	     if (movieIds == null || movieIds.isEmpty()) return 0.0;
 	     
@@ -394,7 +398,7 @@ public class StatRepository {
 	     return avg == null ? 0.0 : avg;
 	 }
  
-	//영화 ID 리스트를 받아, 각 영화의 평점을 맵으로 반환
+	// 잠재 욕망 분석: 찜 목록 안의 낮은 평점/호불호 영화를 판별한다.
 	public Map<Long, Double> findRatingsByMovieIds(List<Long> movieIds) {
 	    if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
 	    
@@ -415,6 +419,7 @@ public class StatRepository {
 	   
 		}
 
+    // 잠재 욕망 분석: 평가 목록과 찜 목록의 배우 세대 차이를 계산한다.
 	public double findAverageActorBirthYearByMovieIds(List<Long> movieIds) {
 	    if (movieIds == null || movieIds.isEmpty()) {
 	        return 0.0;

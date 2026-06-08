@@ -39,6 +39,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         List<TasteAnalysisDataDTO> reviewedMoviesData = statRepository.findTasteAnalysisData(memberId);
         
         
+        // 1. 평가 데이터가 부족하면 분석 대신 초기 안내 리포트를 저장한다.
         if (reviewedMoviesData == null || reviewedMoviesData.size() < 5) {
             TasteReportDTO initialReport = new TasteReportDTO();
             initialReport.setInitialReport(true);
@@ -51,11 +52,11 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 
         TasteReportDTO reportDTO = new TasteReportDTO();
 
-        // 1. 핵심 분석 지표 계산
+        // 2. 핵심 취향 지표를 계산한다.
         Map<String, Double> deviationScores = statService.calculateUserDeviationScores(memberId);
         double consistencyScore = calculateConsistency(reviewedMoviesData);
         
-        // 2. Repository에서 모든 추가 데이터 조회
+        // 3. 리포트 문구에 필요한 장르/인물/활동 패턴 데이터를 조회한다.
         String signatureGenre = userReviewRepository.findSignatureGenre(memberId);
         Map<String, Object> mostReviewedActor = actorRepository.findMostFrequentActorForMember(memberId);
         Map<String, Object> highlyRatedActor = actorRepository.findHighlyRatedActorForMember(memberId);
@@ -65,13 +66,13 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         Map<String, Double> metaPreference = userReviewRepository.findMoviePreferenceMeta(memberId);
         List<String> topGenres = findTopGenres(reviewedMoviesData, 3);
       
-        // 3. 잠재 욕망 분석 (새로운 로직)
+        // 4. 평가 이력과 찜 목록의 차이로 잠재 욕망 메시지를 만든다.
         PotentialDesire desire = analyzePotentialDesire(memberId);
         if (desire != null) {
             reportDTO.setPotentialDesire(desire);
         }
 
-        // 4. 조회된 데이터를 구조화된 DTO에 채우기
+        // 5. 조회/계산된 값을 화면 출력용 DTO에 채운다.
         FrequentPersons persons = reportDTO.getFrequentPersons();
         if (mostReviewedActor != null) { persons.setMostReviewedActor(new Person((Long) mostReviewedActor.get("id"), (String) mostReviewedActor.get("name"), (String) mostReviewedActor.get("profile_image_url"))); }
         if (highlyRatedActor != null) { persons.setHighlyRatedActor(new Person((Long) highlyRatedActor.get("id"), (String) highlyRatedActor.get("name"), (String) highlyRatedActor.get("profile_image_url"))); }
@@ -94,15 +95,14 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         
         createRecommendation(reportDTO, deviationScores);
         
-        // 5. DB에 일부 정보 업데이트
+        // 6. 마이페이지에서 바로 보여줄 요약 정보를 회원 테이블에 저장한다.
         memberRepository.updateTasteProfile(memberId, reportDTO.getTitle(), reportDTO.getKeywords().getStyle(), 0.0);
         return reportDTO;
     }
 
 
    
-    //심즈체로 구현한 찜과 관련된 메서드
-
+    // 평가 이력과 찜 목록의 차이를 비교해 사용자의 다음 관심사를 추정한다.
 	private PotentialDesire analyzePotentialDesire(String memberId) {
         // STEP 1: 데이터 준비
         List<Long> reviewedMovieIds = userReviewRepository.findMovieIdsByMemberId(memberId);
@@ -230,6 +230,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 	}
 
 
+    // 취향 리포트 하단의 안전한 추천/모험적 추천 문구를 생성한다.
 	private void createRecommendation(TasteReportDTO reportDTO, Map<String, Double> deviationScores) { // <-- 파라미터 추가
 	    Recommendation rec = reportDTO.getRecommendation();
 	    List<String> topGenres = reportDTO.getKeywords().getTopGenres();
@@ -257,7 +258,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 	    rec.setAdventurousChoice(String.format("가끔은 익숙한 <strong>%s</strong> 장르에서 벗어나, 정반대의 매력을 가진 <strong>%s</strong> 장르의 대표작을 감상하며 새로운 자극을 느껴보는 것은 어떨까요?", topGenre, adventurousGenre));
 	}
 
-	// createRecommendation을 위한 헬퍼 메서드 추가 (이건 그대로 두시면 됩니다)
+	// 대표 장르와 대비되는 장르를 제안해 모험적 추천 문구에 사용한다.
 	private String findOppositeGenre(String genre) {
 	    if (List.of("Action", "War", "Crime").contains(genre)) return "Romance";
 	    if (List.of("Romance", "Drama", "Family").contains(genre)) return "Thriller";
@@ -303,7 +304,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         return "10분 미만의 실험적 영상이나 초단편 영화에 관심을 갖고 있는 것으로 보입니다.";
     }
 
-    
+    // 평가한 영화들의 장르 빈도를 계산해 대표 장르 후보를 만든다.
     private List<String> findTopGenres(List<TasteAnalysisDataDTO> reviews, int limit) {
         Map<String, Integer> genreCounts = new HashMap<>();
         for (TasteAnalysisDataDTO review : reviews) {
@@ -316,6 +317,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         return genreCounts.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey).collect(Collectors.toList());
     }
 
+    // 사용자가 점수를 얼마나 일관적으로 주는지 계산한다.
     private double calculateConsistency(List<TasteAnalysisDataDTO> reviewedMovies) {
         if (reviewedMovies.size() < 2) return 5.0;
         List<Integer> myRatings = reviewedMovies.stream().map(TasteAnalysisDataDTO::getMyUserRating).filter(r -> r != null).collect(Collectors.toList());
@@ -324,6 +326,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         return Math.max(0, 10 - (stdDev * 3.33));
     }
 
+    // 취향 편차 조합에서 눈에 띄는 해석 문장을 하나 뽑는다.
     private String findSpecialInsight(Map<String, Double> deviationScores) {
         boolean lovesThriller = deviationScores.getOrDefault("스릴", 0.0) > 1.0;
         boolean hatesViolence = deviationScores.getOrDefault("액션", 0.0) < -1.0;
@@ -361,6 +364,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         return statService.calculateUserDeviationScores(memberId);
     }
     
+    // 일관성, 대표 장르, 작품성 편차를 바탕으로 취향 스타일명을 정한다.
     private Map<String, String> analyzeUserStyle(double consistency, Map<String, Double> deviation, List<String> topGenres) {
         String styleType = "균형잡힌 시선";
         String styleDescription = "뚜렷한 호불호 없이 여러 요소를 균형 있게 즐기며, 영화의 전체적인 조화를 중요하게 생각합니다.";

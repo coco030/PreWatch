@@ -18,6 +18,7 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -106,6 +107,10 @@ public class MovieController {
     private boolean isMember(HttpSession session) {
         String userRole = (String) session.getAttribute("userRole");
         return "MEMBER".equals(userRole);
+    }
+
+    private boolean isSignedInUser(HttpSession session) {
+        return isAdmin(session) || isMember(session);
     }
 
     // --- Create (생성) 작업 ---
@@ -258,6 +263,67 @@ public class MovieController {
         return value == null || value.trim().isEmpty();
     }
 
+    private Integer parseTmdbId(String apiId) {
+        if (isBlank(apiId)) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(apiId.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("API ID가 숫자 형식이 아닙니다: {}", apiId);
+            return null;
+        }
+    }
+
+    private Movie saveApiMovieIfAbsent(String apiId, Movie apiMovie, boolean saveCastAndCrew) {
+        Movie localMovie = movieService.findByApiId(apiId);
+        if (localMovie != null) {
+            return localMovie;
+        }
+
+        if (isBlank(apiMovie.getRated())) {
+            Integer tmdbIdForRating = parseTmdbId(apiId);
+            if (tmdbIdForRating != null) {
+                String certification = tmdbApiService.getCertification(tmdbIdForRating);
+                if (!isBlank(certification)) {
+                    apiMovie.setRated(certification);
+                }
+            }
+        }
+
+        try {
+            movieService.save(apiMovie);
+        } catch (DuplicateKeyException e) {
+            logger.info("API ID {} 영화가 이미 저장되어 다시 조회합니다.", apiId);
+        }
+
+        Movie savedMovie = movieService.findByApiId(apiMovie.getApiId());
+        if (savedMovie == null) {
+            savedMovie = apiMovie;
+        }
+
+        if (saveCastAndCrew && savedMovie.getId() != null) {
+            saveCastAndCrewIfPossible(apiId, savedMovie.getId());
+        }
+
+        return savedMovie;
+    }
+
+    private void saveCastAndCrewIfPossible(String apiId, Long movieId) {
+        Integer tmdbId = parseTmdbId(apiId);
+        if (tmdbId == null || movieId == null) {
+            return;
+        }
+
+        try {
+            List<Map<String, String>> castAndCrew = tmdbApiService.getCastAndCrew(tmdbId);
+            tmdbApiService.saveCastAndCrewBasic(movieId, castAndCrew);
+        } catch (Exception e) {
+            logger.warn("출연진 자동 저장 실패: apiId={}, movieId={}, message={}", apiId, movieId, e.getMessage());
+        }
+    }
+
    
     // 외부 API에서 영화 상세 정보 가져와 등록 처리
     @PostMapping("/movies/import-api-detail")
@@ -270,19 +336,28 @@ public class MovieController {
 
         
         // coco030 추가 25.08.04
-        if (movieService.existsByApiId(imdbId)) {
+        Movie existingMovie = movieService.findByApiId(imdbId);
+        if (existingMovie != null) {
             logger.warn("[POST /movies/import-api-detail] 이미 등록된 영화입니다. imdbID = {}", imdbId);
 
             // 모델에 에러 메시지를 담는다. 주소창 피라미터로 보임
             model.addAttribute("errorMessage", "이미 등록된 영화입니다.");
             
-            return "redirect:/movies/search-api";
+            return "redirect:/movies/" + existingMovie.getId();
         }
 
         
         Movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
 
         if (movieFromApi != null) {
+            Movie savedMovie = saveApiMovieIfAbsent(imdbId, movieFromApi, true);
+            if (savedMovie.getId() != null) {
+                logger.info("API 영화 '{}' (ID: {}) DB 등록 완료.", savedMovie.getTitle(), savedMovie.getApiId());
+                return "redirect:/movies/" + savedMovie.getId();
+            }
+
+            logger.warn("[POST /movies/import-api-detail] API 영화 저장 후 ID를 확인하지 못했습니다. 기존 등록 흐름을 계속 진행합니다. imdbID = {}", imdbId);
+
             if (isBlank(movieFromApi.getRated())) {
                 Integer tmdbIdForRating = tmdbApiService.getTmdbMovieId(imdbId);
                 String certification = tmdbApiService.getCertification(tmdbIdForRating);
@@ -354,13 +429,7 @@ public class MovieController {
         }
    
 
-        // 1. 배경 이미지 가져오기
         String backdropPath = null;
-        if (tmdbId != null) {
-            backdropPath = tmdbApiService.getBackdropPath(tmdbId);
-        }
-        model.addAttribute("backdropPath", backdropPath);
-        logger.info("[Backdrop] 영화 ID: {}의 backdropPath 조회 결과: {}", id, backdropPath);
         
          // 찜 상태
         Member loginMember = (Member) session.getAttribute("loginMember");
@@ -427,7 +496,7 @@ public class MovieController {
 
     
         List<Map<String, String>> tmdbCastList = new ArrayList<>();
-        if (tmdbId != null) {
+        if (dbCastList.isEmpty() && tmdbId != null) {
             tmdbCastList = tmdbApiService.getCastAndCrew(tmdbId);
         }
         model.addAttribute("tmdbCastList", tmdbCastList);
@@ -448,7 +517,12 @@ public class MovieController {
             movie.getId(), movie.getApiId(), movieImages.size());
         if (!movieImages.isEmpty()) {
             logger.debug("첫 번째 이미지 URL: {}", movieImages.get(0).getImageUrl());
+            backdropPath = movieImages.get(0).getImageUrl();
+        } else if (tmdbId != null) {
+            backdropPath = tmdbApiService.getBackdropPath(tmdbId);
         }
+        model.addAttribute("backdropPath", backdropPath);
+        logger.info("[Backdrop] 영화 ID: {}의 backdropPath 조회 결과: {}", id, backdropPath);
         System.out.println("[DEBUG] 이미지 갤러리 호출 결과 - movieId: " + movie.getId()
             + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
         model.addAttribute("movieImages", movieImages);
@@ -656,8 +730,13 @@ public class MovieController {
     }
 
 	    @GetMapping("/movies/api-external-detail")
-	    @Transactional(readOnly = true)
+	    @Transactional
 	    public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+            Movie existingMovie = movieService.findByApiId(imdbId);
+            if (existingMovie != null) {
+                return "redirect:/movies/" + existingMovie.getId();
+            }
+
 	        logger.info("[GET /movies/api-external-detail] API 외부 영화 상세 정보 요청. imdbId: {}", imdbId);
 
         try {
@@ -669,6 +748,14 @@ public class MovieController {
             }
             
 	           // Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
+            if (isSignedInUser(session)) {
+                Movie savedMovie = saveApiMovieIfAbsent(imdbId, apiMovie, true);
+                if (savedMovie.getId() != null) {
+                    return "redirect:/movies/" + savedMovie.getId();
+                }
+                logger.warn("[GET /movies/api-external-detail] API 영화 저장 후 ID를 확인하지 못했습니다. API 상세 표시로 이어갑니다. imdbID = {}", imdbId);
+            }
+
             	Integer tmdbId = Integer.parseInt(imdbId); //25.12.03 tmdb로 바로 이으면서 숫자로 잇기 처리
 	            Movie localMovie = movieService.findByApiId(imdbId);
 	            if (localMovie != null) {

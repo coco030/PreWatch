@@ -31,13 +31,42 @@ public class ActorController {
     @GetMapping({"/actors/{id}", "/directors/{id}"})
     public String actorOrDirectorDetail(@PathVariable Long id, Model model) {
         Map<String, Object> person = actorRepository.findActorDetail(id);
+        refreshPersonDetailIfNeeded(id, person);
+        person = actorRepository.findActorDetail(id);
         model.addAttribute("actor", person);
 
         // 추가: 출연/제작 참여 영화 목록
         List<Map<String, Object>> movieList = actorRepository.findMoviesByActorId(id);
         model.addAttribute("movieList", movieList);
 
-        return "movie/actor_detail"; // 공통 뷰
+        return "movie/actor_detail";
+    }
+
+    private void refreshPersonDetailIfNeeded(Long actorId, Map<String, Object> person) {
+        if (person == null || person.get("birthday") != null) {
+            return;
+        }
+
+        Object tmdbIdValue = person.get("tmdb_id");
+        if (tmdbIdValue == null) {
+            return;
+        }
+
+        Integer tmdbId;
+        if (tmdbIdValue instanceof Number) {
+            tmdbId = ((Number) tmdbIdValue).intValue();
+        } else {
+            try {
+                tmdbId = Integer.parseInt(tmdbIdValue.toString());
+            } catch (NumberFormatException e) {
+                return;
+            }
+        }
+
+        Map<String, Object> details = tmdbApiService.getPersonDetailFromTmdb(tmdbId);
+        if (details != null) {
+            actorRepository.updateActorDetails(actorId, details);
+        }
     }
 
 }

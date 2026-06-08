@@ -10,12 +10,14 @@
 <script>
     const userRating = Number("${myReview.userRating}");
 </script>
+<div class="rating-guide-wrap">
 <div id="star-rating" class="d-flex align-items-center" style="font-size: 1.5rem;">
     <c:forEach begin="1" end="5" var="i">
         <span class="star-wrapper me-1" data-index="${i}">
             <span class="half left-half" data-value="${i * 2 - 1}"></span>
             <span class="half right-half" data-value="${i * 2}"></span>
-            <i class="fa-regular fa-star"></i>
+            <span class="rating-icon rating-icon-empty" aria-hidden="true">★</span>
+            <span class="rating-icon rating-icon-fill" aria-hidden="true">★</span>
         </span>
     </c:forEach>
 
@@ -25,6 +27,8 @@
         </c:if>
     </div>
 </div>
+<div class="rating-guide-bubble" id="user-rating-guide" aria-live="polite"></div>
+</div>
 
 <style>
     #star-rating {
@@ -32,9 +36,17 @@
         height: auto;  
     }
 
+    .rating-guide-wrap {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+    }
+
     .star-wrapper {
         position: relative;
         display: inline-block;
+        width: 1.08em;
+        height: 1.08em;
         cursor: pointer;
         vertical-align: middle; 
         line-height: 1;     
@@ -50,6 +62,29 @@
 
     .left-half { left: 0; }
     .right-half { right: 0; }
+
+    #star-rating .rating-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        font-size: 1em;
+        line-height: 1;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    #star-rating .rating-icon-empty {
+        color: #ddd;
+    }
+
+    #star-rating .rating-icon-fill {
+        color: #ffc107;
+        width: 0;
+        transition: width 0.12s ease;
+    }
 
     /* 별 아이콘 스타일 - 크기 및 색상 개선 */
     .fa-regular.fa-star { 
@@ -71,6 +106,48 @@
         margin-top: 1px;       /* 미세한 수직 정렬 보정 */
     }
 
+    #user-rating-guide.rating-guide-bubble {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 30;
+        width: max-content;
+        max-width: min(360px, calc(100vw - 32px));
+        box-sizing: border-box;
+        padding: 7px 10px;
+        border: 1px solid #dedede;
+        border-radius: 6px;
+        background: #fff;
+        color: #444;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        font-size: 0.82rem;
+        line-height: 1.35;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-2px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    #user-rating-guide.rating-guide-bubble.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    #user-rating-guide.rating-guide-bubble::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        left: 18px;
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-left: 1px solid #dedede;
+        border-top: 1px solid #dedede;
+        transform: rotate(45deg);
+    }
+
     /* 반응형: 작은 화면에서 별점 크기 더 축소 */
     @media (max-width: 576px) {
         #star-rating {
@@ -79,6 +156,11 @@
         
         #rating-label {
             font-size: 0.8rem;
+        }
+
+        #user-rating-guide.rating-guide-bubble {
+            max-width: calc(100vw - 32px);
+            font-size: 0.78rem;
         }
     }
 </style>
@@ -90,8 +172,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const contextPath = '${pageContext.request.contextPath}';
     const starRatingContainer = document.getElementById("star-rating");
     const stars = starRatingContainer.querySelectorAll(".half");
-    const icons = starRatingContainer.querySelectorAll("i");
+    const icons = starRatingContainer.querySelectorAll(".rating-icon-fill");
     const label = document.getElementById("rating-label");
+    const guide = document.getElementById("user-rating-guide");
+    const ratingGuideMessages = [
+        { max: 1, text: "다신 보고 싶지 않아요." },
+        { max: 2, text: "좋았던 점을 찾기 어려운 영화예요." },
+        { max: 4, text: "아쉬운 점이 더 크게 남는 영화예요." },
+        { max: 6, text: "무난하지만 강한 인상은 적은 편이에요." },
+        { max: 8, text: "꽤 만족스럽고 추천할 만해요." },
+        { max: 10, text: "취향에 잘 맞고 다시 보고 싶은 영화예요." }
+    ];
 
 
     let currentRating = Number("${myReview.userRating}") || 0;
@@ -104,6 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             label.textContent = "평가하기";
         }
+        hideRatingGuide();
     }
 
 
@@ -115,6 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const previewRating = parseInt(this.dataset.value);
             updateStars(previewRating);
             label.textContent = previewRating + " / 10";
+            showRatingGuide(previewRating);
         });
     });
 
@@ -136,6 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             updateStars(currentRating);
             label.textContent = currentRating + " / 10";
+            showRatingGuide(currentRating);
 
             const formData = new URLSearchParams();
             formData.append("movieId", movieId);
@@ -166,16 +260,40 @@ document.addEventListener("DOMContentLoaded", function () {
         icons.forEach((icon, idx) => {
             const starFullValue = (idx + 1) * 2;
             const starHalfValue = starFullValue - 1;
-            icon.className = 'fa-star'; 
-
+            let width = "0%";
             if (rating >= starFullValue) {
-                icon.classList.add("fa-solid"); 
+                width = "100%";
             } else if (rating === starHalfValue) {
-                icon.classList.add("fa-solid", "fa-star-half-stroke"); 
-            } else {
-                icon.classList.add("fa-regular"); 
+                width = "50%";
             }
+            icon.style.width = width;
         });
+    }
+
+    function showRatingGuide(score) {
+        if (!guide) {
+            return;
+        }
+        const message = getRatingGuideText(score);
+        if (!message) {
+            hideRatingGuide();
+            return;
+        }
+        guide.textContent = message;
+        guide.classList.add("is-visible");
+    }
+
+    function hideRatingGuide() {
+        if (!guide) {
+            return;
+        }
+        guide.textContent = "";
+        guide.classList.remove("is-visible");
+    }
+
+    function getRatingGuideText(score) {
+        const guideMessage = ratingGuideMessages.find(item => score <= item.max);
+        return guideMessage ? guideMessage.text : "";
     }
 });
 </script>

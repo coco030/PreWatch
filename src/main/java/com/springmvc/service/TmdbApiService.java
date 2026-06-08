@@ -14,6 +14,7 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TmdbApiService {
@@ -21,6 +22,12 @@ public class TmdbApiService {
     private final ActorRepository actorRepository;
 
     private static final int MAX_CAST_COUNT = 11;
+    private static final String NO_BACKDROP_PATH = "";
+
+    private final Map<Integer, List<Map<String, String>>> castAndCrewCache = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> backdropImageUrlsCache = new ConcurrentHashMap<>();
+    private final Map<Integer, String> backdropPathCache = new ConcurrentHashMap<>();
+    private final Map<String, Double> tmdbRatingCache = new ConcurrentHashMap<>();
 
 
     private final String tmdbApiKey;
@@ -74,12 +81,22 @@ public class TmdbApiService {
     }
 
     public List<Map<String, String>> getCastAndCrew(Integer tmdbMovieId) {
+        if (tmdbMovieId == null) {
+            return new ArrayList<>();
+        }
+
+        List<Map<String, String>> cached = castAndCrewCache.get(tmdbMovieId);
+        if (cached != null) {
+            return copyCastAndCrew(cached);
+        }
+
         String url = UriComponentsBuilder
                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/credits")
                 .queryParam("api_key", this.tmdbApiKey) 
                 .toUriString();
 
         List<Map<String, String>> result = new ArrayList<>();
+        boolean fetched = false;
         try {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(json);
@@ -108,8 +125,12 @@ public class TmdbApiService {
                     break;
                 }
             }
+            fetched = true;
         } catch (Exception e) {
             System.out.println("[ERROR] TMDB 출연진 정보 파싱 실패: movieId=" + tmdbMovieId);
+        }
+        if (fetched) {
+            castAndCrewCache.put(tmdbMovieId, copyCastAndCrew(result));
         }
         return result;
     }
@@ -153,6 +174,14 @@ public class TmdbApiService {
     }
 
     public void saveCastAndCrew(Long movieId, List<Map<String, String>> castAndCrew) {
+        saveCastAndCrew(movieId, castAndCrew, true);
+    }
+
+    public void saveCastAndCrewBasic(Long movieId, List<Map<String, String>> castAndCrew) {
+        saveCastAndCrew(movieId, castAndCrew, false);
+    }
+
+    private void saveCastAndCrew(Long movieId, List<Map<String, String>> castAndCrew, boolean updatePersonDetails) {
         int displayOrder = 0;
         System.out.println("saveCastAndCrew: movieId=" + movieId + ", castAndCrew.size=" + castAndCrew.size());
 
@@ -167,7 +196,7 @@ public class TmdbApiService {
                 System.out.println("[ERROR] 배우 DB 저장 실패, 매핑 생략 name=" + name);
                 continue;
             }
-            if (tmdbId != null) {
+            if (updatePersonDetails && tmdbId != null) {
                 Map<String, Object> details = getPersonDetailFromTmdb(tmdbId);
                 if (details != null) {
                     actorRepository.updateActorDetails(actorId, details);
@@ -181,6 +210,14 @@ public class TmdbApiService {
     private String getKoreanJobName(String job) {
         Map<String, String> jobMap = Map.ofEntries(Map.entry("Director", "감독"), Map.entry("Producer", "프로듀서"), Map.entry("Executive Producer", "총괄 프로듀서"), Map.entry("Writer", "작가"), Map.entry("Screenplay", "각본"), Map.entry("Story", "원작"), Map.entry("Original Music Composer", "음악"), Map.entry("Sound Re-Recording Mixer", "음향 믹싱"), Map.entry("Sound Editor", "음향 편집"), Map.entry("Editor", "편집"), Map.entry("Director of Photography", "촬영 감독"), Map.entry("Cinematography", "촬영"), Map.entry("Costume Designer", "의상 디자이너"), Map.entry("Makeup Artist", "메이크업"), Map.entry("Production Design", "미술"), Map.entry("Art Direction", "아트 디렉션"), Map.entry("Set Decoration", "세트 장식"), Map.entry("Visual Effects Supervisor", "VFX 감독"), Map.entry("Animation", "애니메이션"), Map.entry("Casting", "캐스팅"), Map.entry("Stunt Coordinator", "스턴트 조정"), Map.entry("Lighting Technician", "조명"), Map.entry("Sound Designer", "사운드 디자인"));
         return jobMap.getOrDefault(job, job);
+    }
+
+    private List<Map<String, String>> copyCastAndCrew(List<Map<String, String>> source) {
+        List<Map<String, String>> copy = new ArrayList<>();
+        for (Map<String, String> person : source) {
+            copy.add(new HashMap<>(person));
+        }
+        return copy;
     }
 
     public Map<String, Object> getMovieDetailByImdbId(String apiId) {
@@ -432,8 +469,19 @@ public class TmdbApiService {
 
     public List<String> getBackdropImageUrls(String apiId) {
         List<String> urls = new ArrayList<>();
+        if (apiId == null || apiId.isBlank()) {
+            return urls;
+        }
+
+        String cacheKey = apiId.trim();
+        List<String> cached = backdropImageUrlsCache.get(cacheKey);
+        if (cached != null) {
+            return new ArrayList<>(cached);
+        }
+
+        boolean fetched = false;
         try {
-            Integer tmdbMovieId = getTmdbMovieId(apiId);
+            Integer tmdbMovieId = getTmdbMovieId(cacheKey);
             if (tmdbMovieId == null) return urls;
 
             String url = UriComponentsBuilder
@@ -453,8 +501,12 @@ public class TmdbApiService {
                     count++;
                 }
             }
+            fetched = true;
         } catch (Exception e) {
             System.out.println("[ERROR] 이미지 조회 실패: " + apiId + ", msg=" + e.getMessage());
+        }
+        if (fetched) {
+            backdropImageUrlsCache.put(cacheKey, new ArrayList<>(urls));
         }
         return urls;
     }
@@ -464,39 +516,60 @@ public class TmdbApiService {
             return null;
         }
 
+        String cached = backdropPathCache.get(tmdbMovieId);
+        if (cached != null) {
+            return NO_BACKDROP_PATH.equals(cached) ? null : cached;
+        }
+
         String url = UriComponentsBuilder
                 .fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbMovieId)
                 .queryParam("api_key", this.tmdbApiKey)
                 .toUriString();
-        
+
+        boolean fetched = false;
+        String backdropPath = null;
         try {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(json);
-            String backdropPath = root.path("backdrop_path").asText(null);
+            backdropPath = root.path("backdrop_path").asText(null);
             if (backdropPath != null && !backdropPath.isEmpty() && !backdropPath.equals("null")) {
-                return backdropPath;
+                fetched = true;
+            } else {
+                backdropPath = null;
+                fetched = true;
             }
         } catch (Exception e) {
             System.out.println("[ERROR] TMDB backdrop_path 조회 실패: tmdbId=" + tmdbMovieId);
         }
-        return null;
+        if (fetched) {
+            backdropPathCache.put(tmdbMovieId, backdropPath == null ? NO_BACKDROP_PATH : backdropPath);
+        }
+        return backdropPath;
     }
 
     // 영화의 TMDB 평점만 가져오는 메소드
     public double getTmdbRating(String tmdbId) {
-        if (tmdbId == null || tmdbId.isEmpty()) return 0.0;
+        if (tmdbId == null || tmdbId.isBlank()) return 0.0;
 
-        String apiUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/movie/" + tmdbId)
+        String cacheKey = tmdbId.trim();
+        Double cached = tmdbRatingCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        String apiUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/movie/" + cacheKey)
                 // omdbSearchApiKey -> tmdbApiKey
                 .queryParam("api_key", this.tmdbApiKey)
                 .build().toUriString();
         try {
             JsonNode root = restTemplate.getForObject(apiUrl, JsonNode.class);
             if (root.has("vote_average")) {
-                return root.get("vote_average").asDouble();
+                double rating = root.get("vote_average").asDouble();
+                tmdbRatingCache.put(cacheKey, rating);
+                return rating;
             }
         } catch (Exception e) {
-            System.out.println("[WARN] TMDB 평점 조회 실패 (ID: " + tmdbId + "): " + e.getMessage());
+            System.out.println("[WARN] TMDB 평점 조회 실패 (ID: " + cacheKey + "): " + e.getMessage());
         }
         return 0.0;
     }

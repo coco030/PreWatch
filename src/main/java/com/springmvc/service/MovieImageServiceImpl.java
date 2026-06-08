@@ -34,8 +34,18 @@ public class MovieImageServiceImpl implements MovieImageService {
         List<MovieImage> results = new ArrayList<>();
         int order = 0;
         for (String url : urls) {
-            results.add(new MovieImage(null, url, "backdrop", order++));
+            results.add(new MovieImage(movieId, url, "backdrop", order++));
         }
+
+        if (movieId != null && !results.isEmpty()) {
+            try {
+                movieImageRepository.saveImages(results);
+                return movieImageRepository.findImagesByMovieId(movieId);
+            } catch (Exception e) {
+                System.out.println("[WARN] TMDB 이미지 캐시 저장 실패: movieId=" + movieId + ", msg=" + e.getMessage());
+            }
+        }
+
         return results;
     }
 
