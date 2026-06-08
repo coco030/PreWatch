@@ -113,6 +113,13 @@ public class MovieController {
         return isAdmin(session) || isMember(session);
     }
 
+    private long logDetailStep(long movieId, String stepName, long stepStartedAt) {
+        long now = System.nanoTime();
+        long elapsedMs = (now - stepStartedAt) / 1_000_000;
+        logger.info("[영화 상세 성능] movieId={}, step='{}', elapsedMs={}ms", movieId, stepName, elapsedMs);
+        return now;
+    }
+
     // --- Create (생성) 작업 ---
     @GetMapping("/movies/new")
     public String createForm(Model model, HttpSession session) {
@@ -401,10 +408,16 @@ public class MovieController {
     @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Model model, HttpSession session) {
         logger.info("[GET /movies/{}] 영화 상세 정보 요청: ID = {}", id, id);
+        long detailStartedAt = System.nanoTime();
+        long stepStartedAt = detailStartedAt;
+
         Movie movie = movieService.findById(id); 
+        stepStartedAt = logDetailStep(id, "기본 영화 조회", stepStartedAt);
        
         if (movie == null) {
             logger.warn("[GET /movies/{}] ID {}에 해당하는 영화가 DB에 없습니다. 목록으로 리다이렉트.", id, id);
+            logger.info("[영화 상세 성능] movieId={}, totalElapsedMs={}ms, result=notFound",
+                    id, (System.nanoTime() - detailStartedAt) / 1_000_000);
             return "redirect:/movies?error=notFound";
         }
             
@@ -427,6 +440,7 @@ public class MovieController {
         } else {
             logger.warn("[TMDB] 영화 ID: {}에 apiId가 없어 TMDB 연동 작업을 건너뜁니다.", id);
         }
+        stepStartedAt = logDetailStep(id, "TMDB ID 파싱", stepStartedAt);
    
 
         String backdropPath = null;
@@ -440,20 +454,24 @@ public class MovieController {
         } else {
             movie.setIsLiked(false);
         }
+        stepStartedAt = logDetailStep(id, "찜 상태 조회", stepStartedAt);
          
         double avgHorror = userReviewService.getAverageHorrorScore(id);
         double avgSexual = userReviewService.getAverageSexualScore(id);     
         model.addAttribute("avgHorrorScore", avgHorror);
         model.addAttribute("avgSexualScore", avgSexual);
         System.out.println("평균 호러/평균 선정성 값 :" + avgHorror + avgSexual);
+        stepStartedAt = logDetailStep(id, "공포/선정성 평균 조회", stepStartedAt);
 
         List<UserReview> reviewList = userReviewService.getReviewsByMovie(id);
         model.addAttribute("reviewList", reviewList);
         System.out.println("리뷰 전체 리스트");
+        stepStartedAt = logDetailStep(id, "리뷰 목록 조회", stepStartedAt);
         
         StatDTO stat = statRepository.findMovieStatsById(id);
         List<String> genres = statRepository.findGenresByMovieId(id);
         stat.setGenres(genres);
+        stepStartedAt = logDetailStep(id, "통계/장르 조회", stepStartedAt);
 
         List<StatDTO> recommended;
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -471,6 +489,7 @@ public class MovieController {
             logger.info("비로그인 사용자를 위한 게스트 추천 영화 {} 개 조회 완료", 
                         recommended.size());
         }
+        stepStartedAt = logDetailStep(id, "추천 영화 계산", stepStartedAt);
         
   
         
@@ -480,6 +499,7 @@ public class MovieController {
             movie.setTmdbRating(externalRating);
             System.out.println("[DEBUG] TMDB 평점 세팅: " + externalRating); // 로그 확인용
        }
+        stepStartedAt = logDetailStep(id, "TMDB 평점 보정", stepStartedAt);
 
 
         model.addAttribute("stat", stat); 
@@ -511,6 +531,7 @@ public class MovieController {
         }
         model.addAttribute("castInfo", castInfo);
         System.out.println("출연진 정보");
+        stepStartedAt = logDetailStep(id, "출연진 조회", stepStartedAt);
 
         List<MovieImage> movieImages = movieImageService.getImagesForMovie(movie.getId(), movie.getApiId());
         logger.info("[이미지 갤러리] 영화 ID: {}, API ID: {}, 가져온 이미지 수: {}", 
@@ -527,6 +548,7 @@ public class MovieController {
             + ", apiId: " + movie.getApiId() + ", 이미지 개수: " + movieImages.size());
         model.addAttribute("movieImages", movieImages);
         System.out.println("갤러리 스틸컷 :" + movieImages);
+        stepStartedAt = logDetailStep(id, "이미지/백드롭 조회", stepStartedAt);
 
         List<InsightMessage> insights = statService.generateInsights(id);
         model.addAttribute("insights", insights);
@@ -534,6 +556,7 @@ public class MovieController {
         model.addAttribute("today", LocalDate.now());
         logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
         System.out.println("통계 분석 메시지  :" + insights);
+        stepStartedAt = logDetailStep(id, "인사이트 생성", stepStartedAt);
 
         logger.debug("상세 페이지 로드 - 영화 ID: {}, 제목: '{}', DB에서 가져온 likeCount: {}", 
                 movie.getId(), movie.getTitle(), movie.getLikeCount());
@@ -544,6 +567,9 @@ public class MovieController {
             System.out.println("주의 요소 정보: " + groupedWarnings);
         }
         model.addAttribute("groupedWarnings", groupedWarnings);
+        stepStartedAt = logDetailStep(id, "주의요소 조회", stepStartedAt);
+        logger.info("[영화 상세 성능] movieId={}, totalElapsedMs={}ms",
+                id, (System.nanoTime() - detailStartedAt) / 1_000_000);
 
         return "movie/detailPage";
     }
