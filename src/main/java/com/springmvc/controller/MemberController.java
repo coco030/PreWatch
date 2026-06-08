@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.springmvc.domain.Member;
 import com.springmvc.domain.TasteReportDTO;
@@ -72,6 +74,19 @@ public class MemberController {
 
     // processJoin 메서드: "/member/join" 경로에 대한 POST 요청 처리
     // 목적: 사용자 입력 회원 정보를 받아 회원가입 처리. ID 중복 시 에러 메시지 표시
+    @GetMapping("/check-id")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkId(@RequestParam(value = "id", required = false) String id) {
+        String trimmedId = id == null ? "" : id.trim();
+        boolean empty = trimmedId.isEmpty();
+        boolean available = !empty && !memberService.existsById(trimmedId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("empty", empty);
+        response.put("available", available);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/join")
     public String processJoin(@ModelAttribute Member member, Model model) {
     	System.out.println("[MemberController] 회원가입 처리 시도: id=" + member.getId());

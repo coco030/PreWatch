@@ -18,7 +18,7 @@
         <h2 class="mb-4">🎉 가입을 축하드립니다!</h2>
 
         <div class="d-grid gap-2">
-            <a href="${pageContext.request.contextPath}" class="btn btn-outline-secondary">홈으로 가기</a>
+            <a href="${pageContext.request.contextPath}" class="btn btn-outline-secondary" target="_top">홈으로 가기</a>
             <a href="${pageContext.request.contextPath}/auth/login" class="btn btn-outline-primary">로그인하기</a>
         </div>
     </div>

@@ -13,6 +13,16 @@
         box-shadow: 0 16px 48px rgba(33, 37, 41, 0.24);
     }
 
+    .auth-frame-header {
+        justify-content: flex-end;
+        padding: 0.75rem 0.75rem 0;
+        border-bottom: 0;
+    }
+
+    .auth-frame-header .modal-title {
+        display: none !important;
+    }
+
     .auth-frame-body {
         height: min(680px, calc(100vh - 96px));
         min-height: 520px;
@@ -45,8 +55,8 @@
 <div class="modal fade" id="authFrameModal" tabindex="-1" aria-labelledby="authFrameModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered auth-frame-dialog">
         <div class="modal-content auth-frame-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="authFrameModalLabel">로그인</h5>
+            <div class="modal-header auth-frame-header">
+                <h5 class="modal-title fw-bold visually-hidden" id="authFrameModalLabel">로그인</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
             </div>
             <div class="modal-body auth-frame-body">
@@ -81,7 +91,7 @@
         window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
-    function syncAuthFrameTitle() {
+    function syncAuthFrameState() {
         const frame = document.getElementById('authFrame');
         const modalTitle = document.getElementById('authFrameModalLabel');
         if (!frame || !modalTitle || !frame.contentWindow) {
@@ -89,13 +99,25 @@
         }
 
         try {
+            const href = frame.contentWindow.location.href;
+            if (!href || href === 'about:blank') {
+                return;
+            }
+
             const path = frame.contentWindow.location.pathname;
+            const isAuthFramePage = path.indexOf('/member/join') !== -1
+                || path.indexOf('/auth/login') !== -1
+                || path.indexOf('/auth/login-success') !== -1;
+
+            if (!isAuthFramePage) {
+                window.location.href = href;
+                return;
+            }
+
             if (path.indexOf('/member/join') !== -1) {
                 modalTitle.textContent = '회원가입';
             } else if (path.indexOf('/auth/login') !== -1) {
                 modalTitle.textContent = '로그인';
-            } else if (path.indexOf('/member') === -1 && path.indexOf('/auth') === -1 && path.indexOf('join') !== -1) {
-                modalTitle.textContent = '가입 완료';
             }
         } catch (error) {
             // Same-origin pages can be read; ignore if the browser blocks access.
@@ -129,7 +151,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const frame = document.getElementById('authFrame');
         if (frame) {
-            frame.addEventListener('load', syncAuthFrameTitle);
+            frame.addEventListener('load', syncAuthFrameState);
         }
     });
 })();

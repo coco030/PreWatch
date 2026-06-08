@@ -11,6 +11,25 @@
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        html.embedded-auth-root body,
+        body.embedded-auth-page {
+            overflow-x: hidden;
+        }
+
+        html.embedded-auth-root body .embedded-auth-hide,
+        body.embedded-auth-page .embedded-auth-hide {
+            display: none !important;
+        }
+    </style>
+    <script>
+        if (window !== window.parent) {
+            document.documentElement.classList.add("embedded-auth-root");
+            document.addEventListener("DOMContentLoaded", function () {
+                document.body.classList.add("embedded-auth-page");
+            });
+        }
+    </script>
 </head>
 <body class="bg-light">
 
@@ -59,8 +78,8 @@
 				    </p>
 				</div>
 				
-				<div class="text-center mt-3">
-				    <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary w-100 py-2">
+				<div class="text-center mt-3 embedded-auth-hide">
+				    <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary w-100 py-2" target="_top">
 				        홈으로 돌아가기
 				    </a>
 				</div>
