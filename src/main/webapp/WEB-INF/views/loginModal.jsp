@@ -40,6 +40,7 @@
           </div>
           
           <button type="submit" class="btn btn-primary w-100 py-2">로그인</button>
+          <a href="${pageContext.request.contextPath}/member/join" class="btn btn-outline-secondary w-100 py-2 mt-2">회원가입</a>
         </form>
       </div>
     </div>
@@ -51,26 +52,41 @@
   const loginModal = document.getElementById('loginModal');
 
   if (loginModal) {
-    loginModal.addEventListener('show.bs.modal', function (event) {
-      const trigger = event.relatedTarget;
-
-      const title = trigger.getAttribute('data-title') || '로그인';
-      const message = trigger.getAttribute('data-message') || '';
-
+    function configureLoginModal(title, message) {
       const modalTitle = loginModal.querySelector('.modal-title');
       const messageTag = loginModal.querySelector('.login-message');
 
       if (modalTitle) {
-        modalTitle.textContent = title;
+        modalTitle.textContent = title || '로그인';
       }
 
       if (messageTag) {
-        if (message.trim() !== '') {
+        if ((message || '').trim() !== '') {
           messageTag.textContent = message;
           messageTag.style.display = 'block';
         } else {
           messageTag.style.display = 'none';
         }
+      }
+    }
+
+    window.openPrewatchLoginModal = function(options) {
+      const modalOptions = options || {};
+      configureLoginModal(modalOptions.title, modalOptions.message);
+
+      if (window.bootstrap && window.bootstrap.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(loginModal).show();
+      }
+    };
+
+    loginModal.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+
+      if (trigger) {
+        configureLoginModal(
+          trigger.getAttribute('data-title') || '로그인',
+          trigger.getAttribute('data-message') || ''
+        );
       }
     });
   }

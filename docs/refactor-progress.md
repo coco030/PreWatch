@@ -91,6 +91,22 @@
   - `src/main/webapp/WEB-INF/views/reviewModule/horrorScoreForm.jsp`
   - `src/main/webapp/WEB-INF/views/reviewModule/sexualScoreForm.jsp`
 
+### 9. 리뷰 점수 UI 공통 CSS/JS 분리
+
+- 네 개 점수 JSP에 반복되던 CSS와 JavaScript를 공통 파일로 분리했다.
+- 만족도/폭력성/공포/선정성 JSP 파일은 유지하고, 각 파일에는 색상, 저장 URL, 전송 필드명, 안내 문구 같은 설정만 남겼다.
+- 점수 저장 AJAX, 반칸 hover, 아이콘 채움, 말풍선 표시 로직은 `rating-score.js`에서 공통 처리한다.
+- 말풍선과 아이콘 스타일은 `rating-score.css`에서 공통 처리한다.
+- 상세 페이지에서 공통 CSS/JS를 한 번만 로드한다.
+- 관련 파일:
+  - `src/main/webapp/resources/css/rating-score.css`
+  - `src/main/webapp/resources/js/rating-score.js`
+  - `src/main/webapp/WEB-INF/views/movie/detailPage.jsp`
+  - `src/main/webapp/WEB-INF/views/reviewModule/userRatingForm.jsp`
+  - `src/main/webapp/WEB-INF/views/reviewModule/violenceScoreForm.jsp`
+  - `src/main/webapp/WEB-INF/views/reviewModule/horrorScoreForm.jsp`
+  - `src/main/webapp/WEB-INF/views/reviewModule/sexualScoreForm.jsp`
+
 ## 현재 보류한 판단
 
 - 영화 집계 점수 컬럼을 `movies`와 `movie_stats` 중 어디에 둘지는 아직 바꾸지 않는다.
@@ -112,11 +128,11 @@
   - 만족도/폭력성/공포/선정성 점수 저장 AJAX가 정상 동작하는지
   - 말풍선이 아래 요소를 밀지 않는지
 
-### 2순위: 리뷰 점수 UI 중복 정리
+### 2순위: 홈 화면 안정화
 
-- 네 개 JSP에 비슷한 CSS와 JavaScript가 반복되어 있다.
-- 말풍선 문구와 동작이 안정되면 공통 CSS/JS 또는 공통 JSP 조각으로 정리할 수 있다.
-- 단, 지금은 화면 확인 전이므로 바로 합치지 않는다.
+- `home.jsp`에서 주석 처리된 통계 요소를 JavaScript가 계속 찾는 부분을 정리한다.
+- `HomeController`와 `GlobalControllerAdvice`에서 `globalStats`를 중복 조회하는 흐름을 확인한다.
+- 메인 화면을 크게 바꾸기 전에 작은 오류와 중복 조회부터 줄인다.
 
 ### 3순위: 추천/취향 분석 SQL 책임 표시
 
@@ -157,3 +173,22 @@
   5. 점수 입력 안내 말풍선 추가
 - 변경 후 최소 확인 명령:
   - `mvn -q -DskipTests package`
+
+### 10. 상세 페이지 평가/주의 요소와 로그인 진입 UX 개선
+
+- 상세 페이지의 주의 요소 아이콘에 PC hover용 말풍선을 추가하고, 클릭 시 전체 주의 요소 펼치기는 유지했다.
+- 터치 기기에서는 주의 요소 말풍선을 숨기고, 아이콘 탭으로 전체 목록을 펼치는 흐름을 유지했다.
+- 만족도/폭력성/공포/선정성 점수 입력 공통 JS를 모바일 터치 입력에 맞게 보완했다.
+- 비로그인 상태에서 평가나 찜을 시도할 때 alert 대신 로그인 모달을 열도록 바꿨다.
+- 로그인 모달에 회원가입 버튼을 추가하고, 비로그인 리뷰 입력 문구를 `리뷰작성을 해주시겠어요?`로 변경했다.
+- 헤더의 로그인/회원가입 링크는 기존 `login.jsp`, `joinForm.jsp` 페이지를 작은 iframe 모달 안에 띄우도록 변경했다.
+- 관련 파일:
+  - `src/main/webapp/WEB-INF/views/authFrameModal.jsp`
+  - `src/main/webapp/WEB-INF/views/layout/header.jsp`
+  - `src/main/webapp/WEB-INF/views/layout/header-right.jsp`
+  - `src/main/webapp/WEB-INF/views/loginModal.jsp`
+  - `src/main/webapp/WEB-INF/views/movie/detailPage.jsp`
+  - `src/main/webapp/WEB-INF/views/reviewModule/reviewContentForm.jsp`
+  - `src/main/webapp/resources/css/layout.css`
+  - `src/main/webapp/resources/css/rating-score.css`
+  - `src/main/webapp/resources/js/rating-score.js`

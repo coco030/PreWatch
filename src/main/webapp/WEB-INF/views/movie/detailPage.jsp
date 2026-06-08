@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+    <link rel="stylesheet" href="<c:url value='/resources/css/rating-score.css'/>">
+    <script src="<c:url value='/resources/js/rating-score.js'/>"></script>
     
     <style>
         body {
@@ -140,11 +142,98 @@
         .icon-group {
             display: inline-flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         
         .icon-group img {
             width: 28px;
             height: 28px;
+        }
+
+        .warning-icon-tooltip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            outline: none;
+        }
+
+        .warning-icon-tooltip:hover,
+        .warning-icon-tooltip:focus {
+            background-color: #f1f3f5;
+        }
+
+        .warning-tooltip-bubble {
+            --warning-tooltip-shift-x: 0px;
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 10px);
+            transform: translateX(calc(-50% + var(--warning-tooltip-shift-x))) translateY(4px);
+            width: max-content;
+            max-width: min(300px, calc(100vw - 24px));
+            padding: 10px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #212529;
+            box-shadow: 0 8px 20px rgba(33, 37, 41, 0.16);
+            font-size: 0.85rem;
+            line-height: 1.45;
+            text-align: left;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+            z-index: 20;
+        }
+
+        .warning-tooltip-bubble::after {
+            content: "";
+            position: absolute;
+            left: calc(50% - var(--warning-tooltip-shift-x));
+            top: 100%;
+            transform: translateX(-50%);
+            border-width: 6px 6px 0 6px;
+            border-style: solid;
+            border-color: #fff transparent transparent transparent;
+        }
+
+        .warning-icon-tooltip.is-tooltip-ready:hover .warning-tooltip-bubble,
+        .warning-icon-tooltip.is-tooltip-ready:focus .warning-tooltip-bubble {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(calc(-50% + var(--warning-tooltip-shift-x))) translateY(0);
+        }
+
+        .warning-tooltip-title {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .warning-tooltip-line {
+            display: block;
+            white-space: normal;
+            overflow-wrap: break-word;
+        }
+
+        .warning-tooltip-line + .warning-tooltip-line {
+            margin-top: 4px;
+        }
+
+        .warning-tooltip-hint {
+            display: block;
+            margin-top: 8px;
+            padding-top: 7px;
+            border-top: 1px solid #f1f3f5;
+            color: #6c757d;
+            font-size: 0.78rem;
+            white-space: normal;
+            overflow-wrap: break-word;
         }
         
         .details-content {
@@ -274,6 +363,12 @@
         }
     }
 
+    @media (hover: none), (pointer: coarse) {
+        .warning-tooltip-bubble {
+            display: none;
+        }
+    }
+
     </style>
 </head>
 
@@ -379,7 +474,8 @@
                             <div id="warningSummary" class="warning-section-compact">
                                 <div class="icon-group">
                                     <c:forEach items="${groupedWarnings}" var="entry">
-                                        <c:choose>
+                                        <span class="warning-icon-tooltip" tabindex="0" aria-label="${entry.key}">
+                                            <c:choose>
                                             <c:when test="${entry.key == '공포'}">
                                                 <img src="${pageContext.request.contextPath}/resources/images/movies/ghost.png" alt="공포" title="공포">
                                             </c:when>
@@ -401,7 +497,15 @@
                                             <c:otherwise>
                                                 <img src="${pageContext.request.contextPath}/resources/images/movies/free-icon-chat-box-3221863.png" alt="기타" title="기타">
                                             </c:otherwise>
-                                        </c:choose>
+                                            </c:choose>
+                                            <span class="warning-tooltip-bubble" role="tooltip">
+                                                <span class="warning-tooltip-title"><c:out value="${entry.key}" /></span>
+                                                <c:forEach items="${entry.value}" var="sentence">
+                                                    <span class="warning-tooltip-line"><c:out value="${sentence}" /></span>
+                                                </c:forEach>
+                                                <span class="warning-tooltip-hint">클릭하면 전체 주의 요소를 펼쳐볼 수 있어요.</span>
+                                            </span>
+                                        </span>
                                     </c:forEach>
                                 </div>
                             </div>
@@ -829,6 +933,54 @@
     <script>
     $(document).ready(function() {
         // Warning Details Toggle
+        $('#warningSummary .warning-icon-tooltip img').removeAttr('title');
+
+        function fitWarningTooltip(trigger) {
+            const bubble = trigger.querySelector('.warning-tooltip-bubble');
+            const container = document.getElementById('warningSummary');
+            if (!bubble || !container) {
+                return;
+            }
+
+            trigger.classList.remove('is-tooltip-ready');
+            const containerRect = container.getBoundingClientRect();
+            const maxWidth = Math.max(120, Math.min(300, containerRect.width - 16));
+            bubble.style.maxWidth = maxWidth + 'px';
+            bubble.style.setProperty('--warning-tooltip-shift-x', '0px');
+
+            requestAnimationFrame(function() {
+                const nextContainerRect = container.getBoundingClientRect();
+                const bubbleRect = bubble.getBoundingClientRect();
+                const leftLimit = Math.max(nextContainerRect.left + 8, 8);
+                const rightLimit = Math.min(nextContainerRect.right - 8, window.innerWidth - 8);
+                let shiftX = 0;
+
+                if (bubbleRect.left < leftLimit) {
+                    shiftX = leftLimit - bubbleRect.left;
+                } else if (bubbleRect.right > rightLimit) {
+                    shiftX = rightLimit - bubbleRect.right;
+                }
+
+                bubble.style.setProperty('--warning-tooltip-shift-x', Math.round(shiftX) + 'px');
+                trigger.classList.add('is-tooltip-ready');
+            });
+        }
+
+        $('#warningSummary').on('mouseenter focusin', '.warning-icon-tooltip', function() {
+            fitWarningTooltip(this);
+        });
+
+        $('#warningSummary').on('mouseleave focusout', '.warning-icon-tooltip', function() {
+            this.classList.remove('is-tooltip-ready');
+        });
+
+        $(window).on('resize', function() {
+            const activeTooltip = $('#warningSummary .warning-icon-tooltip:hover, #warningSummary .warning-icon-tooltip:focus').get(0);
+            if (activeTooltip) {
+                fitWarningTooltip(activeTooltip);
+            }
+        });
+
         $('#warningSummary').on('click', function() {
             $('#warningDetails').slideToggle(200);
         });
@@ -880,7 +1032,11 @@
                 $(this).find('.like-icon').removeClass('fas').addClass('far');
             },
             click: function() {
-                alert('로그인해야 찜을 할 수 있어요.');
+                if (window.openPrewatchLoginModal) {
+                    window.openPrewatchLoginModal({
+                        message: '찜하려면 로그인이 필요해요.'
+                    });
+                }
             }
         });
 

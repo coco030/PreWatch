@@ -10,3 +10,7 @@
     <jsp:include page="/WEB-INF/views/layout/header-center.jsp" />
     <jsp:include page="/WEB-INF/views/layout/header-right.jsp" />
 </div>
+
+<c:if test="${empty sessionScope.loginMember}">
+    <jsp:include page="/WEB-INF/views/authFrameModal.jsp" />
+</c:if>

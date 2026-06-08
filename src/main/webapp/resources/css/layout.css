@@ -266,6 +266,42 @@
     font-weight: 600;
 }
 
+.header-right-wrapper .header-auth-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid #d9dce5;
+    border-radius: 7px;
+    background-color: #fff;
+    color: #4f5565;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(33, 37, 41, 0.06);
+}
+
+.header-right-wrapper .header-auth-link:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background-color: #f7f8ff;
+    font-weight: 600;
+}
+
+.header-right-wrapper .header-auth-link-primary {
+    border-color: #667eea;
+    background-color: #667eea;
+    color: #fff;
+}
+
+.header-right-wrapper .header-auth-link-primary:hover {
+    border-color: #5d68d9;
+    background-color: #5d68d9;
+    color: #fff;
+}
+
 /* 사용자 이름 출력: 버튼 아님, 자연스럽게 텍스트 처리 */
 .header-right-wrapper span {
     margin-left: 12px;
@@ -273,4 +309,3 @@
     font-weight: 500;
     color: #444;
 }
-

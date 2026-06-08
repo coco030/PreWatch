@@ -13,8 +13,14 @@ if (loginMemberObj != null) {
 <div class="header-right-wrapper">
     <% if (loginMember == null) { %>
         <!-- 비로그인 상태 -->
-        <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
-        <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
+        <a href="${pageContext.request.contextPath}/member/join"
+           class="header-auth-link"
+           data-auth-frame-url="${pageContext.request.contextPath}/member/join"
+           data-auth-frame-title="회원가입">회원가입</a>
+        <a href="${pageContext.request.contextPath}/auth/login"
+           class="header-auth-link header-auth-link-primary"
+           data-auth-frame-url="${pageContext.request.contextPath}/auth/login"
+           data-auth-frame-title="로그인">로그인</a>
         
     <% } else { %>
         <!-- 로그인 상태 -->

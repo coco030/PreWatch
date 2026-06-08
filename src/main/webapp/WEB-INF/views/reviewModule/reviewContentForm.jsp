@@ -37,8 +37,8 @@
 
 <%-- 2. 비로그인 --%>
 <c:if test="${empty loginMember}">
-    <div id="reviewWriteBox" class="mb-3" style="max-width: 600px; width: 100%; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#loginModal">
-        <textarea id="reviewContentInput" class="form-control border-0 border-bottom rounded-0 px-1 py-2" rows="1" placeholder="로그인 후 리뷰 작성이 가능합니다." style="width: 100%; resize: none; overflow-y: hidden; background-color: transparent;" readonly></textarea>
+    <div id="reviewWriteBox" class="mb-3" style="max-width: 600px; width: 100%; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#loginModal" data-message="리뷰를 작성하려면 로그인이 필요해요.">
+        <textarea id="reviewContentInput" class="form-control border-0 border-bottom rounded-0 px-1 py-2" rows="1" placeholder="리뷰작성을 해주시겠어요?" style="width: 100%; resize: none; overflow-y: hidden; background-color: transparent;" readonly></textarea>
         <div class="text-end mt-2">
             <button class="btn btn-dark btn-sm" disabled>리뷰 저장</button>
         </div>
