@@ -1,9 +1,11 @@
 package com.springmvc.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,11 @@ public class UserCartService {
     @Transactional(readOnly = true)
     public boolean isMovieLiked(String memberId, Long movieId) {
         return userCartRepository.isMovieInCart(memberId, movieId);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> getLikedMovieIdSet(String memberId) {
+        return new HashSet<>(userCartRepository.findMovieIdsInCartByMemberId(memberId));
     }
 
     /**

@@ -70,6 +70,10 @@ public class MovieService {
         return movie;
     }
 
+    public List<Movie> findSearchSummariesByApiIds(List<String> apiIds) {
+        return movieRepository.findSearchSummariesByApiIds(apiIds);
+    }
+
     // 영화 저장
     public void save(Movie movie) {
         logger.debug("movieService.save() 호출: 영화 제목 = {}", movie.getTitle());

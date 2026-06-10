@@ -6,6 +6,7 @@ import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpSession;
 
@@ -104,22 +105,11 @@ public class HomeController {
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
             logger.debug("홈 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 시작.", loginMember.getId());
-            for (Movie movie : recentMovies) {
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                movie.setIsLiked(isMovieLikedByCurrentUser);
-            }
-            for (Movie movie : recommendedMovies) {
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                movie.setIsLiked(isMovieLikedByCurrentUser);
-            }
-            for (Movie movie : adminRecommendedMovies) {
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                movie.setIsLiked(isMovieLikedByCurrentUser);
-            }
-            for (Movie movie : upcomingMovies) {
-                boolean isMovieLikedByCurrentUser = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                movie.setIsLiked(isMovieLikedByCurrentUser);
-            }
+            Set<Long> likedMovieIds = userCartService.getLikedMovieIdSet(loginMember.getId());
+            applyLikedStatus(recentMovies, likedMovieIds);
+            applyLikedStatus(recommendedMovies, likedMovieIds);
+            applyLikedStatus(adminRecommendedMovies, likedMovieIds);
+            applyLikedStatus(upcomingMovies, likedMovieIds);
             logger.debug("홈 페이지 - 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
         } else {
             logger.debug("홈 페이지 - 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
@@ -128,6 +118,12 @@ public class HomeController {
         model.addAttribute("userRole", session.getAttribute("userRole"));
         logger.info("홈 뷰 진입");
         return "home";
+    }
+
+    private void applyLikedStatus(List<Movie> movies, Set<Long> likedMovieIds) {
+        for (Movie movie : movies) {
+            movie.setIsLiked(movie.getId() != null && likedMovieIds.contains(movie.getId()));
+        }
     }
     
 // 07-31: AJAX 요청을 처리하는 캘린더 데이터 엔드포인트 (JSON 반환)

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -119,6 +120,13 @@ public class MovieController {
         long now = System.nanoTime();
         long elapsedMs = (now - stepStartedAt) / 1_000_000;
         logger.info("[영화 상세 성능] movieId={}, step='{}', elapsedMs={}ms", movieId, stepName, elapsedMs);
+        return now;
+    }
+
+    private long logSearchStep(String query, String stepName, long stepStartedAt) {
+        long now = System.nanoTime();
+        long elapsedMs = (now - stepStartedAt) / 1_000_000;
+        logger.info("[영화 검색 성능] query='{}', step='{}', elapsedMs={}ms", query, stepName, elapsedMs);
         return now;
     }
 
@@ -715,10 +723,15 @@ public class MovieController {
     public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
         logger.info("[GET /search] 헤더 검색 요청. 쿼리: {}", query);
         if (query != null && !query.trim().isEmpty()) {
+            long startedAt = System.nanoTime();
+            long stepStartedAt = startedAt;
             MovieSearchResult searchResult = externalMovieApiService.searchMoviesForUserCards(query, 1, 0, USER_SEARCH_PAGE_SIZE);
+            stepStartedAt = logSearchStep(query, "외부 API 카드 검색", stepStartedAt);
             List<Movie> searchResults = searchResult.getMovies();
             overrideRatingsWithLocalData(searchResults);
+            stepStartedAt = logSearchStep(query, "저장된 영화 정보 보정", stepStartedAt);
             applyLikedStatusToSearchResults(searchResults, session);
+            stepStartedAt = logSearchStep(query, "찜 상태 반영", stepStartedAt);
 
             model.addAttribute("apiMovies", searchResults);
             model.addAttribute("searchPerformed", true);
@@ -726,6 +739,8 @@ public class MovieController {
             model.addAttribute("hasMoreSearchResults", searchResult.isHasMore());
             model.addAttribute("nextSearchPage", searchResult.getNextPage());
             model.addAttribute("nextSearchOffset", searchResult.getNextOffset());
+            logger.info("[영화 검색 성능] query='{}', totalElapsedMs={}ms, resultCount={}",
+                    query, (System.nanoTime() - startedAt) / 1_000_000, searchResults.size());
         } else {
             model.addAttribute("searchPerformed", false);
         }
@@ -746,16 +761,23 @@ public class MovieController {
             return new ResponseEntity<>(Map.of("message", "검색어를 입력해주세요."), HttpStatus.BAD_REQUEST);
         }
 
+        long startedAt = System.nanoTime();
+        long stepStartedAt = startedAt;
         MovieSearchResult searchResult = externalMovieApiService.searchMoviesForUserCards(query, page, offset, USER_SEARCH_PAGE_SIZE);
+        stepStartedAt = logSearchStep(query, "더보기 외부 API 카드 검색", stepStartedAt);
         List<Movie> searchResults = searchResult.getMovies();
         overrideRatingsWithLocalData(searchResults);
+        stepStartedAt = logSearchStep(query, "더보기 저장된 영화 정보 보정", stepStartedAt);
         applyLikedStatusToSearchResults(searchResults, session);
+        stepStartedAt = logSearchStep(query, "더보기 찜 상태 반영", stepStartedAt);
 
         Map<String, Object> response = new HashMap<>();
         response.put("movies", toSearchMovieCards(searchResults));
         response.put("hasMore", searchResult.isHasMore());
         response.put("nextPage", searchResult.getNextPage());
         response.put("nextOffset", searchResult.getNextOffset());
+        logger.info("[영화 검색 성능] query='{}', moreTotalElapsedMs={}ms, resultCount={}",
+                query, (System.nanoTime() - startedAt) / 1_000_000, searchResults.size());
         return ResponseEntity.ok(response);
     }
 
@@ -767,14 +789,17 @@ public class MovieController {
             return ResponseEntity.ok(Map.of("certifications", new HashMap<String, String>()));
         }
 
+        List<String> requestedApiIds = collectApiIds(apiIds);
+        Map<String, Movie> localMoviesByApiId = getLocalMoviesByApiId(requestedApiIds);
+
         Map<String, String> certifications = new HashMap<>();
-        for (String apiId : apiIds) {
-            if (isBlank(apiId) || certifications.containsKey(apiId)) {
+        for (String apiId : requestedApiIds) {
+            if (certifications.containsKey(apiId)) {
                 continue;
             }
 
             String certification = null;
-            Movie localMovie = movieService.findByApiId(apiId);
+            Movie localMovie = localMoviesByApiId.get(apiId);
             if (localMovie != null && !isBlank(localMovie.getRated())) {
                 certification = localMovie.getRated();
             } else {
@@ -885,8 +910,10 @@ public class MovieController {
     }
 
     private void overrideRatingsWithLocalData(List<Movie> apiMovies) {
+        Map<String, Movie> localMoviesByApiId = getLocalMoviesByApiId(collectApiIds(apiMovies));
+
         for (Movie apiMovie : apiMovies) {
-            Movie localMovie = movieService.findByApiId(apiMovie.getApiId());
+            Movie localMovie = localMoviesByApiId.get(apiMovie.getApiId());
             if (localMovie != null) {
                 apiMovie.setRating(localMovie.getRating());
                 apiMovie.setViolence_score_avg(localMovie.getViolence_score_avg());
@@ -901,6 +928,37 @@ public class MovieController {
         }
     }
 
+    private List<String> collectApiIds(List<?> items) {
+        List<String> apiIds = new ArrayList<>();
+        for (Object item : items) {
+            String apiId = null;
+            if (item instanceof Movie) {
+                apiId = ((Movie) item).getApiId();
+            } else if (item instanceof String) {
+                apiId = (String) item;
+            }
+
+            if (!isBlank(apiId) && !apiIds.contains(apiId)) {
+                apiIds.add(apiId);
+            }
+        }
+        return apiIds;
+    }
+
+    private Map<String, Movie> getLocalMoviesByApiId(List<String> apiIds) {
+        Map<String, Movie> localMoviesByApiId = new HashMap<>();
+        if (apiIds.isEmpty()) {
+            return localMoviesByApiId;
+        }
+
+        for (Movie localMovie : movieService.findSearchSummariesByApiIds(apiIds)) {
+            if (!isBlank(localMovie.getApiId())) {
+                localMoviesByApiId.put(localMovie.getApiId(), localMovie);
+            }
+        }
+        return localMoviesByApiId;
+    }
+
     private void applyLikedStatusToSearchResults(List<Movie> movies, HttpSession session) {
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember == null || !"MEMBER".equals(loginMember.getRole())) {
@@ -911,13 +969,9 @@ public class MovieController {
             return;
         }
 
+        Set<Long> likedMovieIds = userCartService.getLikedMovieIdSet(loginMember.getId());
         for (Movie movie : movies) {
-            if (movie.getId() != null) {
-                boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                movie.setIsLiked(isLiked);
-            } else {
-                movie.setIsLiked(false);
-            }
+            movie.setIsLiked(movie.getId() != null && likedMovieIds.contains(movie.getId()));
         }
         logger.debug("검색 결과에 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
     }

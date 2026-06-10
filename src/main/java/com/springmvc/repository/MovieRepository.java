@@ -99,7 +99,7 @@ public class MovieRepository {
 
     public Movie findByApiId(String apiId) {
         logger.debug("movieRepository.findByApiId({}) 호출: DB에서 API ID로 영화 조회 시도.", apiId);
-        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count FROM movies WHERE api_id = ?";
+        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count, runtime, rated FROM movies WHERE api_id = ?";
         try {
             Movie movie = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(Movie.class), apiId);
             fillMissingDirector(movie);
@@ -112,6 +112,20 @@ public class MovieRepository {
             logger.error("DB 영화 API ID '{}' 조회 중 오류 발생: {}", apiId, e.getMessage(), e);
             throw new RuntimeException("영화 조회 실패", e);
         }
+    }
+
+    public List<Movie> findSearchSummariesByApiIds(List<String> apiIds) {
+        if (apiIds == null || apiIds.isEmpty()) {
+            return List.of();
+        }
+
+        String placeholders = String.join(",", apiIds.stream().map(id -> "?").toArray(String[]::new));
+        String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count, runtime, rated " +
+                     "FROM movies WHERE api_id IN (" + placeholders + ")";
+
+        List<Movie> movies = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), apiIds.toArray());
+        logger.debug("검색 결과 보정용 저장 영화 {}개 조회 완료. apiId 요청 수={}", movies.size(), apiIds.size());
+        return movies;
     }
 
     public List<Movie> findAllUpcomingMovies() {
