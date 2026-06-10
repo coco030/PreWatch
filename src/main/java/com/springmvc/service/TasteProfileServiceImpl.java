@@ -36,6 +36,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
 
     @Override
     public TasteReportDTO updateUserTasteProfile(String memberId) {
+        // 취향 리포트 생성의 진입점이다. 조회/계산/문구 조립/회원 요약 저장을 한 번에 묶는다.
         List<TasteAnalysisDataDTO> reviewedMoviesData = statRepository.findTasteAnalysisData(memberId);
         
         
@@ -104,7 +105,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
    
     // 평가 이력과 찜 목록의 차이를 비교해 사용자의 다음 관심사를 추정한다.
 	private PotentialDesire analyzePotentialDesire(String memberId) {
-        // STEP 1: 데이터 준비
+        // 평가 이력은 이미 경험한 취향, 찜 목록은 아직 시도하지 않은 관심사로 본다.
         List<Long> reviewedMovieIds = userReviewRepository.findMovieIdsByMemberId(memberId);
         List<Long> cartMovieIds = userCartRepository.findMovieIdsInCartByMemberId(memberId);
 
@@ -114,7 +115,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
         
         List<PotentialDesire> foundDesires = new ArrayList<PotentialDesire>();
 
-        // [사전 계산]
+        // 여러 시나리오에서 반복해서 쓰는 기준값을 먼저 계산한다.
         double avgReviewedRating = statRepository.findAverageRatingByMovieIds(reviewedMovieIds);
         double avgReviewedRuntime = statRepository.findAverageRuntimeByMovieIds(reviewedMovieIds);
         double avgCartRuntime = statRepository.findAverageRuntimeByMovieIds(cartMovieIds);
@@ -185,7 +186,7 @@ public class TasteProfileServiceImpl implements TasteProfileService {
             }
         }
 
-        // STEP 3: 수집된 결과 처리
+        // 발견된 시나리오 중 중요도가 높은 메시지를 우선 보여준다.
         if (foundDesires.isEmpty()) {
             return new PotentialDesire("[분석 완료: 확고한 취향의 소유자]", "당신의 감상 기록과 욕망 목록은 거의 완벽하게 일치합니다. 한눈을 파는 법이 없군요. 당신은 무엇을 원하는지 정확히 알고 있습니다.", 1);
         } else {

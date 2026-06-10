@@ -143,7 +143,7 @@ public class StatRepository {
         return namedParameterJdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(TasteAnalysisDataDTO.class));
     }
 
-    // 비로그인 추천: 기준 영화와 장르/등급이 맞는 후보를 찾고 지표 차이로 정렬한다.
+    // 추천 후보 조회: 비로그인 사용자는 기준 영화의 장르/등급/평균 지표만으로 가까운 영화를 찾는다.
     public List<StatDTO> findSimilarMoviesWithGenres(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -201,7 +201,7 @@ public class StatRepository {
         });
     }
 
-    // 로그인 추천: 사용자 취향 편차로 조정된 기준 점수와 가중치를 반영해 후보를 찾는다.
+    // 추천 후보 조회: 로그인 사용자는 취향 편차 가중치를 더해 후보 영화와의 거리 점수를 계산한다.
     public List<StatDTO> findSimilarMoviesForLoggedInUser(
             double userRatingAvg,
             double violenceScoreAvg,
@@ -284,7 +284,7 @@ public class StatRepository {
     }
     
   
-    // 취향 분석 보조: 전체 영화의 평균 지표를 조회한다.
+    // 취향 분석 보조: 사용자 점수와 비교할 전체 영화 평균 기준선을 조회한다.
     public Map<String, Double> findGlobalAverageScores() {
         String sql = "SELECT " +
                      "  COALESCE(AVG(m.rating), 5.0) as avg_rating, " +
@@ -305,7 +305,7 @@ public class StatRepository {
         });
     }
     
-    // 잠재 욕망 분석: 평가/찜 영화 ID 목록을 장르 목록으로 변환한다.
+    // 취향 리포트 보조: 평가/찜 영화 ID 목록을 장르 목록으로 변환한다.
     public Map<Long, List<String>> findGenresByMovieIds(List<Long> movieIds) {
         if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
         
@@ -325,7 +325,7 @@ public class StatRepository {
                
     }
     
-    // 잠재 욕망 분석: 평가 목록과 찜 목록의 평균 러닝타임 차이를 계산한다.
+    // 취향 리포트 보조: 평가 목록과 찜 목록의 평균 러닝타임 차이를 계산한다.
     public Double findAverageRuntimeByMovieIds(List<Long> movieIds) {
         if (movieIds == null || movieIds.isEmpty()) return 0.0;
         
@@ -364,7 +364,7 @@ public class StatRepository {
         return sum / runtimes.size();
     }
     
-	// 잠재 욕망 분석: 찜 목록이 특정 감독에게 쏠리는지 확인한다.
+	// 취향 리포트 보조: 찜 목록이 특정 감독에게 쏠리는지 확인한다.
 	 public Map<String, Long> findDirectorCountsByMovieIds(List<Long> movieIds) {
 	     if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
 	
@@ -387,7 +387,7 @@ public class StatRepository {
 	     });
 	 }
 
-	// 잠재 욕망 분석: 평가 목록의 평균 만족도 기준선을 계산한다.
+	// 취향 리포트 보조: 평가 목록의 평균 만족도 기준선을 계산한다.
 	 public Double findAverageRatingByMovieIds(List<Long> movieIds) {
 	     if (movieIds == null || movieIds.isEmpty()) return 0.0;
 	     
@@ -398,7 +398,7 @@ public class StatRepository {
 	     return avg == null ? 0.0 : avg;
 	 }
  
-	// 잠재 욕망 분석: 찜 목록 안의 낮은 평점/호불호 영화를 판별한다.
+	// 취향 리포트 보조: 찜 목록 안의 낮은 평점/호불호 영화를 판별한다.
 	public Map<Long, Double> findRatingsByMovieIds(List<Long> movieIds) {
 	    if (movieIds == null || movieIds.isEmpty()) return Collections.emptyMap();
 	    
@@ -419,7 +419,7 @@ public class StatRepository {
 	   
 		}
 
-    // 잠재 욕망 분석: 평가 목록과 찜 목록의 배우 세대 차이를 계산한다.
+    // 취향 리포트 보조: 평가 목록과 찜 목록의 배우 세대 차이를 계산한다.
 	public double findAverageActorBirthYearByMovieIds(List<Long> movieIds) {
 	    if (movieIds == null || movieIds.isEmpty()) {
 	        return 0.0;

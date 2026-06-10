@@ -89,6 +89,7 @@ public class StatServiceImpl implements StatService {
 
     @Override
     public List<InsightMessage> generateInsights(long movieId) {
+        // 상세 페이지 인사이트: 기준 영화의 지표를 같은 장르 평균과 비교해 짧은 해석 문구를 만든다.
         StatDTO movieStats = statRepository.findMovieStatsById(movieId);
         if (movieStats == null) {
             return Collections.singletonList(new InsightMessage("영화 정보를 분석할 수 없습니다."));
@@ -248,6 +249,7 @@ public class StatServiceImpl implements StatService {
 
     @Override
     public List<StatDTO> recommendForGuest(long movieId) {
+        // 비로그인 추천: 기준 영화 자체의 평균 지표와 관람등급만 사용한다.
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
         stat.setGenres(genres);
@@ -272,6 +274,7 @@ public class StatServiceImpl implements StatService {
     
     @Override
     public List<StatDTO> recommendForLoggedInUser(long movieId, String memberId) {
+        // 로그인 추천: 사용자의 평가 편차를 기준 영화 점수에 반영한 뒤 후보 조회에 넘긴다.
         System.out.println("[DEBUG] 편차 계산 시작 - memberId: " + memberId);
         StatDTO stat = statRepository.findMovieStatsById(movieId);
         List<String> genres = statRepository.findGenresByMovieId(movieId);
@@ -318,6 +321,7 @@ public class StatServiceImpl implements StatService {
 
     @Override
     public Map<String, Double> calculateUserDeviationScores(String memberId) {
+        // 취향 편차 계산: 사용자가 준 점수와 영화/장르 평균의 차이를 추천 가중치로 요약한다.
         System.out.println("\n===== [START] 사용자 취향 편차 계산 (MEMBER ID: " + memberId + ") =====");
 
         List<TasteAnalysisDataDTO> reviewedMovies = statRepository.findTasteAnalysisData(memberId);

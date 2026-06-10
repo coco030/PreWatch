@@ -230,6 +230,17 @@
   - `src/main/java/com/springmvc/controller/HomeController.java`
   - `src/main/webapp/WEB-INF/views/home.jsp`
 
+### 14. 추천/취향 분석 SQL 책임 표시
+
+- 추천 후보 조회 SQL과 취향 리포트 보조 조회 SQL의 역할을 메서드 주석으로 구분했다.
+- `StatServiceImpl`에서 상세 인사이트, 비로그인 추천, 로그인 추천, 사용자 편차 계산의 진입점을 표시했다.
+- `TasteProfileServiceImpl`에서 취향 리포트 생성 흐름과 잠재 욕망 분석의 데이터 기준을 표시했다.
+- 계산식, 임계값, SQL 결과는 변경하지 않았다.
+- 관련 파일:
+  - `src/main/java/com/springmvc/repository/StatRepository.java`
+  - `src/main/java/com/springmvc/service/StatServiceImpl.java`
+  - `src/main/java/com/springmvc/service/TasteProfileServiceImpl.java`
+
 ## 아이디어 메모
 
 - 검색어에 제외 조건을 자연어처럼 섞어 쓰는 기능을 검토한다.
