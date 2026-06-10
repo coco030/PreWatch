@@ -3,6 +3,7 @@ package com.springmvc.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,27 @@ public class ExternalMovieApiService {
 
     //TMDB 검색용
     private final String OMDB_BASE_URL = "https://api.themoviedb.org/3/search/movie";
+    private static final Map<Integer, String> TMDB_MOVIE_GENRES_BY_ID = Map.ofEntries(
+            Map.entry(28, "액션"),
+            Map.entry(12, "모험"),
+            Map.entry(16, "애니메이션"),
+            Map.entry(35, "코미디"),
+            Map.entry(80, "범죄"),
+            Map.entry(99, "다큐멘터리"),
+            Map.entry(18, "드라마"),
+            Map.entry(10751, "가족"),
+            Map.entry(14, "판타지"),
+            Map.entry(36, "역사"),
+            Map.entry(27, "공포"),
+            Map.entry(10402, "음악"),
+            Map.entry(9648, "미스터리"),
+            Map.entry(10749, "로맨스"),
+            Map.entry(878, "SF"),
+            Map.entry(10770, "TV 영화"),
+            Map.entry(53, "스릴러"),
+            Map.entry(10752, "전쟁"),
+            Map.entry(37, "서부")
+    );
 
     // 3. 생성자
     public ExternalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey,
@@ -278,12 +300,24 @@ public class ExternalMovieApiService {
             movie.setPosterPath("https://image.tmdb.org/t/p/w500" + posterPath);
         }
 
-        Integer parsedTmdbId = parseTmdbId(tmdbId);
-        if (parsedTmdbId != null) {
-            movie.setRated(tmdbApiService.getCertification(parsedTmdbId));
-        }
+        movie.setGenre(resolveGenreNames(movieNode.path("genre_ids")));
 
         return movie;
+    }
+
+    private String resolveGenreNames(JsonNode genreIdsNode) {
+        if (genreIdsNode == null || !genreIdsNode.isArray()) {
+            return "";
+        }
+
+        List<String> genres = new ArrayList<>();
+        for (JsonNode genreIdNode : genreIdsNode) {
+            String genreName = TMDB_MOVIE_GENRES_BY_ID.get(genreIdNode.asInt());
+            if (!isBlank(genreName)) {
+                genres.add(genreName);
+            }
+        }
+        return String.join(", ", genres);
     }
 
     private boolean isBlank(String value) {

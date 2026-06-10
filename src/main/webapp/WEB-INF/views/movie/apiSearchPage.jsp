@@ -227,6 +227,15 @@
             text-overflow: ellipsis;
         }
 
+        .user-search-genre {
+            color: #868e96;
+            font-size: 0.76rem;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .user-search-title {
             display: block;
             color: #212529;
@@ -424,12 +433,17 @@
                                         </div>
                                     </div>
                                     <div class="user-search-meta">
-                                        <div class="user-search-rated">
+                                        <div class="user-search-rated" data-api-id="${apiMovie.apiId}">
                                             <c:choose>
                                                 <c:when test="${not empty apiMovie.rated and apiMovie.rated ne 'N/A'}">${apiMovie.rated}</c:when>
-                                                <c:otherwise>등급 미정</c:otherwise>
+                                                <c:otherwise>등급 확인 중</c:otherwise>
                                             </c:choose>
                                         </div>
+                                        <c:if test="${not empty apiMovie.genre}">
+                                            <div class="user-search-genre" title="${apiMovie.genre}">
+                                                ${apiMovie.genre}
+                                            </div>
+                                        </c:if>
                                         <a href="${detailUrl}" class="user-search-title" title="${apiMovie.title}">
                                             ${apiMovie.title}
                                         </a>
@@ -500,7 +514,8 @@
         const apiId = movie && movie.apiId ? movie.apiId : '';
         const title = movie && movie.title ? movie.title : '제목 없음';
         const posterPath = getSearchPosterPath(movie && movie.posterPath);
-        const rated = movie && movie.rated && movie.rated !== 'N/A' ? movie.rated : '등급 미정';
+        const rated = movie && movie.rated && movie.rated !== 'N/A' ? movie.rated : '등급 확인 중';
+        const genre = movie && movie.genre ? movie.genre : '';
         const detailUrl = getSearchDetailUrl(apiId);
         const isLiked = !!(movie && movie.liked);
         const likeButtonHtml = searchUserRole === 'MEMBER'
@@ -519,10 +534,53 @@
             + '        </div>'
             + '    </div>'
             + '    <div class="user-search-meta">'
-            + '        <div class="user-search-rated">' + escapeSearchHtml(rated) + '</div>'
+            + '        <div class="user-search-rated" data-api-id="' + escapeSearchHtml(apiId) + '">' + escapeSearchHtml(rated) + '</div>'
+            + (genre ? '        <div class="user-search-genre" title="' + escapeSearchHtml(genre) + '">' + escapeSearchHtml(genre) + '</div>' : '')
             + '        <a href="' + escapeSearchHtml(detailUrl) + '" class="user-search-title" title="' + escapeSearchHtml(title) + '">' + escapeSearchHtml(title) + '</a>'
             + '    </div>'
             + '</div>';
+    }
+
+    function loadSearchCertifications(root) {
+        const scope = root || document;
+        const ratedElements = Array.from(scope.querySelectorAll('.user-search-rated[data-api-id]'))
+            .filter(function (element) {
+                return element.dataset.apiId && element.textContent.trim() === '등급 확인 중';
+            });
+
+        if (ratedElements.length === 0) {
+            return;
+        }
+
+        const apiIds = Array.from(new Set(ratedElements.map(function (element) {
+            return element.dataset.apiId;
+        })));
+
+        fetch(searchContextPath + '/search/certifications?' + new URLSearchParams(apiIds.map(function (apiId) {
+            return ['apiIds', apiId];
+        })).toString(), {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok) {
+                    throw body;
+                }
+                return body;
+            });
+        })
+        .then(function (result) {
+            const certifications = result.certifications || {};
+            ratedElements.forEach(function (element) {
+                const certification = certifications[element.dataset.apiId];
+                element.textContent = certification || '등급 미정';
+            });
+        })
+        .catch(function () {
+            ratedElements.forEach(function (element) {
+                element.textContent = '등급 미정';
+            });
+        });
     }
 
     document.addEventListener('click', function (event) {
@@ -627,9 +685,14 @@
             })
             .then(function (result) {
                 const movies = result.movies || [];
+                const fragment = document.createDocumentFragment();
                 movies.forEach(function (movie) {
-                    searchGrid.insertAdjacentHTML('beforeend', createSearchCard(movie));
+                    const template = document.createElement('template');
+                    template.innerHTML = createSearchCard(movie).trim();
+                    fragment.appendChild(template.content.firstElementChild);
                 });
+                searchGrid.appendChild(fragment);
+                loadSearchCertifications(searchGrid);
 
                 if (result.hasMore) {
                     searchMoreButton.dataset.nextPage = result.nextPage;
@@ -648,6 +711,8 @@
             });
         });
     }
+
+    loadSearchCertifications(document);
     </script>
 </body>
 </html>

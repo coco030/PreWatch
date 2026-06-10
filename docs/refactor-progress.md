@@ -210,10 +210,23 @@
   - `src/main/java/com/springmvc/service/TmdbApiService.java`
   - `src/main/webapp/WEB-INF/views/movie/apiSearchPage.jsp`
 
+### 12. 검색 화면 체감 속도 개선
+
+- 사용자 검색 결과를 만들 때 카드마다 관람등급 API를 즉시 조회하지 않게 했다.
+- 검색 결과 화면은 먼저 포스터, 제목, 장르를 보여주고, 관람등급은 화면이 뜬 뒤 별도 요청으로 채운다.
+- 장르는 TMDB 검색 응답에 포함된 `genre_ids`를 사용하되, 장르명 변환은 로컬 매핑으로 처리해 추가 API 호출을 만들지 않는다.
+- 이 변경은 검색 결과 순서나 추천 알고리즘을 바꾸지 않고, 첫 화면이 뜨기 전 대기 시간을 줄이기 위한 것이다.
+- 관련 파일:
+  - `src/main/java/com/springmvc/controller/MovieController.java`
+  - `src/main/java/com/springmvc/service/ExternalMovieApiService.java`
+  - `src/main/webapp/WEB-INF/views/movie/apiSearchPage.jsp`
+
 ## 아이디어 메모
 
 - 검색어에 제외 조건을 자연어처럼 섞어 쓰는 기능을 검토한다.
 - 예: 검색창에 `공포 제외`, `전연령가 제외`처럼 입력하면 해당 장르나 등급 조건을 검색 결과에서 제외한다.
 - 공포 장르는 예시일 뿐이고, 장르/등급/필터 조건 전반에 적용할 수 있는 방식으로 본다.
+- 장르는 한국어와 영어 입력을 모두 고려한다. 예를 들어 `공포 제외`, `호러 제외`, `horror 제외`를 같은 장르 제외 조건으로 해석할 수 있게 별칭 기준을 둔다.
+- 검색어 자체도 한국어/영어 제목을 모두 받을 수 있게 두되, 결과 표시 언어는 현재처럼 한국어를 우선한다.
 - 처음에는 복잡한 추천 알고리즘으로 연결하지 않고, 검색 조건 파싱과 제외 필터 정도로 작게 시작한다.
 - 나중에 제외 조건이 늘어나면 `공포 제외`, `전연령가 제외`, `청불 제외` 같은 검색 칩 UI로 분리할 수 있다.

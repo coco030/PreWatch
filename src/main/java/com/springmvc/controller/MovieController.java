@@ -759,6 +759,39 @@ public class MovieController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/search/certifications")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> searchMovieCertifications(@RequestParam(value = "apiIds", required = false) List<String> apiIds) {
+        if (apiIds == null || apiIds.isEmpty()) {
+            return ResponseEntity.ok(Map.of("certifications", new HashMap<String, String>()));
+        }
+
+        Map<String, String> certifications = new HashMap<>();
+        for (String apiId : apiIds) {
+            if (isBlank(apiId) || certifications.containsKey(apiId)) {
+                continue;
+            }
+
+            String certification = null;
+            Movie localMovie = movieService.findByApiId(apiId);
+            if (localMovie != null && !isBlank(localMovie.getRated())) {
+                certification = localMovie.getRated();
+            } else {
+                Integer tmdbId = parseTmdbId(apiId);
+                if (tmdbId != null) {
+                    certification = tmdbApiService.getCertification(tmdbId);
+                }
+            }
+
+            if (!isBlank(certification)) {
+                certifications.put(apiId, certification);
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("certifications", certifications));
+    }
+
 	    @GetMapping("/movies/api-external-detail")
 	    @Transactional
 	    public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
@@ -897,6 +930,7 @@ public class MovieController {
             card.put("title", movie.getTitle());
             card.put("posterPath", movie.getPosterPath());
             card.put("rated", movie.getRated());
+            card.put("genre", movie.getGenre());
             card.put("liked", movie.isLiked());
             cards.add(card);
         }
