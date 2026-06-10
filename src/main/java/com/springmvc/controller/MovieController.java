@@ -44,7 +44,9 @@ import com.springmvc.repository.ActorRepository;
 import com.springmvc.repository.StatRepository;
 import com.springmvc.repository.MovieRepository;
 import com.springmvc.service.AdminBannerMovieService;
+import com.springmvc.service.MovieActivityService;
 import com.springmvc.service.MovieImageService;
+import com.springmvc.service.SearchActivityService;
 import com.springmvc.service.StatService;
 import com.springmvc.service.ExternalMovieApiService.MovieSearchResult;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
@@ -62,6 +64,7 @@ public class MovieController {
 
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
     private static final int USER_SEARCH_PAGE_SIZE = 12;
+    private static final List<String> POSTER_PROTECTION_MODES = List.of("off", "horror", "adult", "horror_adult", "all");
 
     private final MovieService movieService;
     private final ExternalMovieApiService externalMovieApiService;
@@ -73,6 +76,8 @@ public class MovieController {
     private final UserReviewService userReviewService;
     private final MovieImageService movieImageService;
     private final StatService statService;
+    private final SearchActivityService searchActivityService;
+    private final MovieActivityService movieActivityService;
 
     @Autowired
     private StatRepository statRepository;
@@ -89,7 +94,9 @@ public class MovieController {
                            ActorRepository actorRepository,
                            UserReviewService userReviewService,
                            MovieImageService movieImageService, 
-                           StatService statService) {
+                           StatService statService,
+                           SearchActivityService searchActivityService,
+                           MovieActivityService movieActivityService) {
         this.movieService = movieService;
         this.externalMovieApiService = externalMovieApiService;
         this.userCartService = userCartService;
@@ -100,16 +107,21 @@ public class MovieController {
         this.userReviewService = userReviewService;
         this.movieImageService = movieImageService;
         this.statService = statService;
+        this.searchActivityService = searchActivityService;
+        this.movieActivityService = movieActivityService;
+    }
+
+    private String currentUserRole(HttpSession session) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        return loginMember != null ? loginMember.getRole() : null;
     }
 
     private boolean isAdmin(HttpSession session) {
-        String userRole = (String) session.getAttribute("userRole");
-        return "ADMIN".equals(userRole);
+        return "ADMIN".equals(currentUserRole(session));
     }
 
     private boolean isMember(HttpSession session) {
-        String userRole = (String) session.getAttribute("userRole");
-        return "MEMBER".equals(userRole);
+        return "MEMBER".equals(currentUserRole(session));
     }
 
     private boolean isSignedInUser(HttpSession session) {
@@ -139,7 +151,7 @@ public class MovieController {
         }
         logger.info("[GET /movies/new] 새 영화 등록 폼 요청.");
         model.addAttribute("movie", new Movie());
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         return "movie/form";
     }
 
@@ -161,7 +173,7 @@ public class MovieController {
         // 중복 등록 방지
         if (movie.getApiId() != null && movieService.existsByApiId(movie.getApiId())) {
             model.addAttribute("movie", movie);
-            model.addAttribute("userRole", session.getAttribute("userRole"));
+            model.addAttribute("userRole", currentUserRole(session));
             model.addAttribute("errorMessage", "이미 등록된 영화입니다.");
             return "movie/form";
         }
@@ -228,7 +240,7 @@ public class MovieController {
             
             if (isBlank(movie.getTitle())) {
                 model.addAttribute("movie", movie);
-                model.addAttribute("userRole", session.getAttribute("userRole"));
+                model.addAttribute("userRole", currentUserRole(session));
                 model.addAttribute("errorMessage", "제목 정보를 불러오지 못했습니다. 수동 입력이 필요합니다.");
                 return "movie/form";
             }
@@ -291,6 +303,15 @@ public class MovieController {
             logger.warn("API ID가 숫자 형식이 아닙니다: {}", apiId);
             return null;
         }
+    }
+
+    private String normalizePosterMode(String posterMode) {
+        if (isBlank(posterMode)) {
+            return "off";
+        }
+
+        String normalized = posterMode.trim().toLowerCase();
+        return POSTER_PROTECTION_MODES.contains(normalized) ? normalized : "off";
     }
 
     private Movie saveApiMovieIfAbsent(String apiId, Movie apiMovie, boolean saveCastAndCrew) {
@@ -430,6 +451,8 @@ public class MovieController {
                     id, (System.nanoTime() - detailStartedAt) / 1_000_000);
             return "redirect:/movies?error=notFound";
         }
+        movieActivityService.recordDetailView(movie.getId());
+        stepStartedAt = logDetailStep(id, "상세 조회 활동 기록", stepStartedAt);
             
   
         //  tmdbId를 여기서 한 번만 조회해서 여러 곳에서 재사용
@@ -562,7 +585,7 @@ public class MovieController {
 
         List<InsightMessage> insights = statService.generateInsights(id);
         model.addAttribute("insights", insights);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         model.addAttribute("today", LocalDate.now());
         logger.debug("[GET /movies/{}] movieService.findById({}) 호출 완료.", id, id);
         System.out.println("통계 분석 메시지  :" + insights);
@@ -608,7 +631,7 @@ public class MovieController {
         }
 
         model.addAttribute("movies", movies);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
         return "movie/list";
     }
@@ -635,7 +658,7 @@ public class MovieController {
         }
 
         model.addAttribute("recentMovies", allRecentMovies);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         logger.debug("[GET /movies/all-recent] movieService.getAllRecentMovies() 호출 완료.");
         return "movie/recentMoviesList"; 
     }
@@ -662,7 +685,7 @@ public class MovieController {
         }
 
         model.addAttribute("upcomingMovies", allUpcomingMovies);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         logger.debug("[GET /movies/all-upcoming] 모든 개봉 예정작 데이터 로딩 완료.");
         return "movie/upcomingMoviesList";
     }
@@ -688,7 +711,7 @@ public class MovieController {
         }
 
         model.addAttribute("recommendedMovies", allRecommendedMovies);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         logger.debug("[GET /movies/all-recommended] 모든 찜 랭킹 영화 데이터 로딩 완료.");
         return "movie/recommendedMoviesList"; 
     }
@@ -713,16 +736,22 @@ public class MovieController {
         } else {
             model.addAttribute("searchPerformed", false);
         }
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         return "movie/apiSearchPage";
     }
 
 
     @GetMapping("/search")
     @Transactional(readOnly = true)
-    public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
+    public String searchMoviesFromHeader(
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(value = "posterMode", required = false, defaultValue = "off") String posterMode,
+            Model model,
+            HttpSession session) {
         logger.info("[GET /search] 헤더 검색 요청. 쿼리: {}", query);
+        String normalizedPosterMode = normalizePosterMode(posterMode);
         if (query != null && !query.trim().isEmpty()) {
+            searchActivityService.record(query);
             long startedAt = System.nanoTime();
             long stepStartedAt = startedAt;
             MovieSearchResult searchResult = externalMovieApiService.searchMoviesForUserCards(query, 1, 0, USER_SEARCH_PAGE_SIZE);
@@ -739,12 +768,14 @@ public class MovieController {
             model.addAttribute("hasMoreSearchResults", searchResult.isHasMore());
             model.addAttribute("nextSearchPage", searchResult.getNextPage());
             model.addAttribute("nextSearchOffset", searchResult.getNextOffset());
+            model.addAttribute("posterMode", normalizedPosterMode);
             logger.info("[영화 검색 성능] query='{}', totalElapsedMs={}ms, resultCount={}",
                     query, (System.nanoTime() - startedAt) / 1_000_000, searchResults.size());
         } else {
             model.addAttribute("searchPerformed", false);
+            model.addAttribute("posterMode", normalizedPosterMode);
         }
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         return "movie/apiSearchPage";
     }
 
@@ -898,7 +929,7 @@ public class MovieController {
             }
 
             model.addAttribute("movie", apiMovie);
-            model.addAttribute("userRole", session.getAttribute("userRole"));
+            model.addAttribute("userRole", currentUserRole(session));
 
             return "movie/detailPage";
 
@@ -1020,7 +1051,7 @@ public class MovieController {
         }
 
         model.addAttribute("movie", movie);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         return "movie/form";
     }
 
@@ -1184,7 +1215,7 @@ public class MovieController {
 
         model.addAttribute("allMovies", allMovies);
         model.addAttribute("currentAdminBannerMovies", currentAdminBannerMovies);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         return "admin/bannerMovieManage";
     }
     @PostMapping("/admin/banner-movies/add")
@@ -1272,7 +1303,7 @@ public class MovieController {
         model.addAttribute("sortDirection", sortDirection);
         model.addAttribute("searchType", searchType);
         model.addAttribute("keyword", keyword);
-        model.addAttribute("userRole", session.getAttribute("userRole"));
+        model.addAttribute("userRole", currentUserRole(session));
         
         return "movie/allRecentCommentList";
     }

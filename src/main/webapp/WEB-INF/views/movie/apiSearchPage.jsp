@@ -9,7 +9,7 @@
     <title>영화 검색</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>?v=home-overview-20260611">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,16 +21,52 @@
 
         .container {
             width: 90%;
+            max-width: 1320px;
             margin: 20px auto;
-            padding: 20px;
+            padding: 24px;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e7ecf3;
+            border-radius: 10px;
+            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
         }
 
-        h2 {
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+        .search-result-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #d8dee8;
+        }
+
+        .search-result-label {
+            display: block;
+            color: #6c63d9;
+            font-size: 0.86rem;
+            font-weight: 800;
+        }
+
+        .search-result-header h2 {
+            margin: 4px 0 0;
+            color: #1f2937;
+            font-size: 2.1rem;
+            font-weight: 850;
+            letter-spacing: 0;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+        }
+
+        .search-result-count {
+            flex: 0 0 auto;
+            min-height: 34px;
+            padding: 7px 13px;
+            border-radius: 999px;
+            background: #f2f4ff;
+            color: #5d68d9;
+            font-size: 0.9rem;
+            font-weight: 800;
         }
 
         .error-message {
@@ -163,9 +199,55 @@
             transform: scale(1.04);
         }
 
+        .user-search-poster.is-poster-protected img {
+            filter: blur(14px) saturate(0.7);
+            transform: scale(1.08);
+        }
+
+        .poster-privacy-cover {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(248, 250, 252, 0.76);
+            text-align: center;
+        }
+
+        .user-search-poster.is-poster-protected .poster-privacy-cover {
+            display: flex;
+        }
+
+        .user-search-poster.is-poster-protected .user-search-overlay {
+            display: none;
+        }
+
+        .poster-privacy-cover span {
+            color: #334155;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .poster-privacy-view {
+            min-height: 30px;
+            padding: 0 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background: #fff;
+            color: #475569;
+            font-size: 0.76rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
         .user-search-overlay {
             position: absolute;
             inset: 0;
+            z-index: 3;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -204,6 +286,14 @@
         }
 
         .poster-action-button.is-liked {
+            color: #dc3545;
+        }
+
+        .search-like-button:hover,
+        .search-like-button:focus,
+        .search-like-button.is-hover-preview,
+        .search-like-button.is-liked {
+            background: #fff1f2;
             color: #dc3545;
         }
 
@@ -295,6 +385,14 @@
                 height: 34px;
             }
 
+            .search-result-header {
+                align-items: flex-start;
+            }
+
+            .search-result-header h2 {
+                font-size: 1.55rem;
+            }
+
             .user-search-meta {
                 font-size: 0.78rem;
             }
@@ -305,24 +403,31 @@
     <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
     <div class="container">
-        <c:if test="${userRole == 'ADMIN'}">
+        <c:if test="${userRole eq 'ADMIN'}">
             <p class="back-link"><a href="<c:url value='/movies'/>" class="back-button">내 영화 관리페이지로 돌아가기</a></p>
         </c:if> 
-        <hr>
 
         <c:if test="${searchPerformed}">
             <c:if test="${not empty param.error && param.error == 'detailNotFound'}">
                 <p class="error-message">선택하신 영화의 상세 정보를 가져오거나 등록할 수 없었습니다.</p>
             </c:if>
 
-            <h2>"${query}" 검색 결과</h2>
+            <div class="search-result-header">
+                <div>
+                    <span class="search-result-label">검색 결과</span>
+                    <h2><c:out value="${query}" /></h2>
+                </div>
+                <c:if test="${not empty apiMovies}">
+                    <span class="search-result-count">${fn:length(apiMovies)}편</span>
+                </c:if>
+            </div>
             <c:if test="${empty apiMovies}">
                 <p class="no-results">검색 결과가 없습니다. 다른 키워드로 검색해보세요.</p>
             </c:if>
 
             <c:if test="${not empty apiMovies}">
                 <c:choose>
-                    <c:when test="${userRole == 'ADMIN'}">
+                    <c:when test="${userRole eq 'ADMIN'}">
                         <table class="movie-table">
                             <thead>
                                 <tr>
@@ -394,13 +499,32 @@
                     </c:when>
                     <c:otherwise>
                         <c:url var="placeholderPosterUrl" value="/resources/images/movies/256px-No-Image-Placeholder.png"/>
+                        <c:set var="searchPosterMode" value="${empty posterMode ? 'off' : posterMode}" />
                         <div class="user-search-grid" id="userSearchGrid">
                             <c:forEach var="apiMovie" items="${apiMovies}">
                                 <c:url var="detailUrl" value="/movies/api-external-detail">
                                     <c:param name="imdbId" value="${apiMovie.apiId}" />
                                 </c:url>
+                                <c:set var="normalizedGenre" value="${empty apiMovie.genre ? '' : fn:toLowerCase(apiMovie.genre)}" />
+                                <c:set var="normalizedRated" value="${empty apiMovie.rated ? '' : fn:toLowerCase(apiMovie.rated)}" />
+                                <c:set var="isHorrorPosterTarget" value="${fn:contains(normalizedGenre, 'horror')
+                                    or fn:contains(normalizedGenre, 'thriller')
+                                    or fn:contains(apiMovie.genre, '공포')
+                                    or fn:contains(apiMovie.genre, '호러')
+                                    or fn:contains(apiMovie.genre, '스릴러')}" />
+                                <c:set var="isAdultPosterTarget" value="${fn:contains(apiMovie.rated, '청소년')
+                                    or fn:contains(apiMovie.rated, '청불')
+                                    or fn:contains(normalizedRated, '18')
+                                    or fn:contains(normalizedRated, '19')
+                                    or normalizedRated eq 'r'
+                                    or normalizedRated eq 'nc-17'}" />
+                                <c:set var="isPosterProtected" value="${searchPosterMode eq 'all'
+                                    or ((searchPosterMode eq 'horror' or searchPosterMode eq 'horror_adult') and isHorrorPosterTarget)
+                                    or ((searchPosterMode eq 'adult' or searchPosterMode eq 'horror_adult') and isAdultPosterTarget)}" />
                                 <div class="user-search-card" data-detail-url="${detailUrl}" role="link" tabindex="0">
-                                    <div class="user-search-poster">
+                                    <div class="user-search-poster ${isPosterProtected ? 'is-poster-protected' : ''}"
+                                         data-genre="${fn:escapeXml(apiMovie.genre)}"
+                                         data-rated="${fn:escapeXml(apiMovie.rated)}">
                                         <c:choose>
                                             <c:when test="${not empty apiMovie.posterPath and apiMovie.posterPath ne 'N/A'}">
                                                 <img src="${apiMovie.posterPath}" alt="${apiMovie.title} 포스터" />
@@ -409,6 +533,10 @@
                                                 <img src="${placeholderPosterUrl}" alt="기본 포스터" />
                                             </c:otherwise>
                                         </c:choose>
+                                        <div class="poster-privacy-cover">
+                                            <span>포스터를 가렸어요</span>
+                                            <button type="button" class="poster-privacy-view">보기</button>
+                                        </div>
                                         <div class="user-search-overlay">
                                             <c:choose>
                                                 <c:when test="${userRole == 'MEMBER'}">
@@ -475,6 +603,7 @@
     const searchPlaceholderPoster = '${placeholderPosterUrl}';
     const searchUserRole = '${userRole}';
     const searchQuery = new URLSearchParams(window.location.search).get('query') || '';
+    let searchPosterMode = '${empty posterMode ? "off" : posterMode}';
     const searchGrid = document.getElementById('userSearchGrid');
     const searchMoreWrapper = document.getElementById('searchMoreWrapper');
     const searchMoreButton = document.getElementById('searchMoreButton');
@@ -510,6 +639,73 @@
         return searchContextPath + '/movies/api-external-detail?imdbId=' + encodeURIComponent(apiId || '');
     }
 
+    function normalizeSearchText(value) {
+        return String(value || '').toLowerCase();
+    }
+
+    function isHorrorOrThrillerGenre(genre) {
+        const normalized = normalizeSearchText(genre);
+        return normalized.includes('horror')
+            || normalized.includes('thriller')
+            || normalized.includes('공포')
+            || normalized.includes('호러')
+            || normalized.includes('스릴러');
+    }
+
+    function isAdultRating(rated) {
+        const normalized = normalizeSearchText(rated);
+        return normalized.includes('청소년')
+            || normalized.includes('청불')
+            || normalized.includes('18')
+            || normalized.includes('19')
+            || normalized === 'r'
+            || normalized === 'nc-17';
+    }
+
+    function shouldProtectSearchPoster(genre, rated) {
+        if (searchPosterMode === 'all') {
+            return true;
+        }
+        if (searchPosterMode === 'horror_adult') {
+            return isHorrorOrThrillerGenre(genre) || isAdultRating(rated);
+        }
+        if (searchPosterMode === 'horror') {
+            return isHorrorOrThrillerGenre(genre);
+        }
+        if (searchPosterMode === 'adult') {
+            return isAdultRating(rated);
+        }
+        return false;
+    }
+
+    window.addEventListener('prewatch:posterModeChanged', function (event) {
+        searchPosterMode = event.detail && event.detail.posterMode ? event.detail.posterMode : 'off';
+        applySearchPosterProtection(document);
+    });
+
+    function setLikeHoverPreview(button, isPreview) {
+        if (!button || button.classList.contains('is-liked') || button.disabled) {
+            return;
+        }
+
+        const icon = button.querySelector('i');
+        button.classList.toggle('is-hover-preview', isPreview);
+        if (icon) {
+            icon.className = 'bi ' + (isPreview ? 'bi-heart-fill' : 'bi-heart');
+        }
+    }
+
+    function applySearchPosterProtection(root) {
+        const scope = root || document;
+        Array.from(scope.querySelectorAll('.user-search-poster')).forEach(function (poster) {
+            if (poster.classList.contains('is-poster-revealed')) {
+                return;
+            }
+            const shouldProtect = shouldProtectSearchPoster(poster.dataset.genre, poster.dataset.rated);
+            poster.classList.toggle('is-poster-protected', shouldProtect);
+        });
+    }
+
     function createSearchCard(movie) {
         const apiId = movie && movie.apiId ? movie.apiId : '';
         const title = movie && movie.title ? movie.title : '제목 없음';
@@ -518,14 +714,19 @@
         const genre = movie && movie.genre ? movie.genre : '';
         const detailUrl = getSearchDetailUrl(apiId);
         const isLiked = !!(movie && movie.liked);
+        const protectedClass = shouldProtectSearchPoster(genre, rated) ? ' is-poster-protected' : '';
         const likeButtonHtml = searchUserRole === 'MEMBER'
             ? '<button type="button" class="poster-action-button search-like-button ' + (isLiked ? 'is-liked' : '') + '" data-api-id="' + escapeSearchHtml(apiId) + '" aria-label="보고싶어요"><i class="bi ' + (isLiked ? 'bi-heart-fill' : 'bi-heart') + '"></i></button>'
             : '<button type="button" class="poster-action-button search-login-required" aria-label="로그인 후 보고싶어요"><i class="bi bi-heart"></i></button>';
 
         return ''
             + '<div class="user-search-card" data-detail-url="' + escapeSearchHtml(detailUrl) + '" role="link" tabindex="0">'
-            + '    <div class="user-search-poster">'
+            + '    <div class="user-search-poster' + protectedClass + '" data-genre="' + escapeSearchHtml(genre) + '" data-rated="' + escapeSearchHtml(rated) + '">'
             + '        <img src="' + escapeSearchHtml(posterPath) + '" alt="' + escapeSearchHtml(title) + ' 포스터" />'
+            + '        <div class="poster-privacy-cover">'
+            + '            <span>포스터를 가렸어요</span>'
+            + '            <button type="button" class="poster-privacy-view">보기</button>'
+            + '        </div>'
             + '        <div class="user-search-overlay">'
             +              likeButtonHtml
             + '            <a href="' + escapeSearchHtml(detailUrl) + '" class="poster-action-button" aria-label="영화 정보 보기">'
@@ -573,17 +774,42 @@
             const certifications = result.certifications || {};
             ratedElements.forEach(function (element) {
                 const certification = certifications[element.dataset.apiId];
-                element.textContent = certification || '등급 미정';
+                const ratingText = certification || '등급 미정';
+                element.textContent = ratingText;
+                const card = element.closest('.user-search-card');
+                const poster = card ? card.querySelector('.user-search-poster') : null;
+                if (poster) {
+                    poster.dataset.rated = ratingText;
+                }
             });
+            applySearchPosterProtection(scope);
         })
         .catch(function () {
             ratedElements.forEach(function (element) {
                 element.textContent = '등급 미정';
+                const card = element.closest('.user-search-card');
+                const poster = card ? card.querySelector('.user-search-poster') : null;
+                if (poster) {
+                    poster.dataset.rated = '등급 미정';
+                }
             });
+            applySearchPosterProtection(scope);
         });
     }
 
     document.addEventListener('click', function (event) {
+        const revealButton = event.target.closest('.poster-privacy-view');
+        if (revealButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const poster = revealButton.closest('.user-search-poster');
+            if (poster) {
+                poster.classList.remove('is-poster-protected');
+                poster.classList.add('is-poster-revealed');
+            }
+            return;
+        }
+
         const loginButton = event.target.closest('.search-login-required');
         if (loginButton) {
             event.preventDefault();
@@ -620,6 +846,7 @@
             .then(function (result) {
                 const isLiked = result.status === 'added';
                 const icon = likeButton.querySelector('i');
+                likeButton.classList.remove('is-hover-preview');
                 likeButton.classList.toggle('is-liked', isLiked);
                 if (icon) {
                     icon.className = 'bi ' + (isLiked ? 'bi-heart-fill' : 'bi-heart');
@@ -641,6 +868,22 @@
         }
 
         window.location.href = card.dataset.detailUrl;
+    });
+
+    document.addEventListener('pointerover', function (event) {
+        const likeButton = event.target.closest('.search-like-button');
+        if (!likeButton || likeButton.contains(event.relatedTarget)) {
+            return;
+        }
+        setLikeHoverPreview(likeButton, true);
+    });
+
+    document.addEventListener('pointerout', function (event) {
+        const likeButton = event.target.closest('.search-like-button');
+        if (!likeButton || likeButton.contains(event.relatedTarget)) {
+            return;
+        }
+        setLikeHoverPreview(likeButton, false);
     });
 
     document.addEventListener('keydown', function (event) {
@@ -693,6 +936,7 @@
                 });
                 searchGrid.appendChild(fragment);
                 loadSearchCertifications(searchGrid);
+                applySearchPosterProtection(searchGrid);
 
                 if (result.hasMore) {
                     searchMoreButton.dataset.nextPage = result.nextPage;
@@ -712,6 +956,7 @@
         });
     }
 
+    applySearchPosterProtection(document);
     loadSearchCertifications(document);
     </script>
 </body>

@@ -18,6 +18,8 @@ DROP TABLE IF EXISTS movie_images;          -- 영화-이미지 연결
 DROP TABLE IF EXISTS admin_banner_movies;   -- 관리자 추천 배너
 DROP TABLE IF EXISTS user_reviews;          -- 유저 리뷰
 DROP TABLE IF EXISTS user_carts;            -- 유저 찜
+DROP TABLE IF EXISTS search_activity;       -- 최근 검색어 집계
+DROP TABLE IF EXISTS movie_view_activity;   -- 최근 상세 조회 영화 집계
 DROP TABLE IF EXISTS movie_stats;           -- 영화별 통계
 DROP TABLE IF EXISTS movies;                -- 영화 테이블
 DROP TABLE IF EXISTS member;                -- 회원 테이블
@@ -87,6 +89,21 @@ CREATE TABLE user_carts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (member_id, movie_id),   
     FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
+);
+
+-- 7-1. 최근 검색어 집계 테이블
+CREATE TABLE search_activity (
+    keyword VARCHAR(80) PRIMARY KEY,
+    search_count INT NOT NULL DEFAULT 1,
+    last_searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 7-2. 최근 상세 조회 영화 집계 테이블
+CREATE TABLE movie_view_activity (
+    movie_id BIGINT PRIMARY KEY,
+    view_count INT NOT NULL DEFAULT 1,
+    last_viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
 
@@ -184,6 +201,8 @@ SELECT * FROM member;
 SELECT * FROM movies;
 SELECT * FROM user_reviews;
 SELECT * FROM user_carts;
+SELECT * FROM search_activity;
+SELECT * FROM movie_view_activity;
 SELECT * FROM admin_banner_movies;
 SELECT * FROM movie_stats;      
 SELECT * FROM actors;         

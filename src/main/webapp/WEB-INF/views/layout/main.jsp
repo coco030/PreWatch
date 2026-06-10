@@ -5,7 +5,7 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>">
+    <link rel="stylesheet" href="<c:url value='/resources/css/layout.css'/>?v=home-overview-20260611">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -49,309 +49,477 @@
 <body class="bg">
   <div class="container py-4">
 
-   <!-- 최근 등록된 영화 -->
-	<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="section-title gothic-a1-regular mb-0">최근 등록된 영화</h2>
-    <a href="<c:url value='/movies/all-recent'/>" class="btn">더 보기></a>
-	</div>
-	
-	<div class="row g-4 justify-content-center">
-	  <c:forEach var="movie" items="${movies}" begin="0" end="2">
-	    <div class="col-6 col-md-4 col-lg-4">
-	      <div class="movie-card">
-	        <div class="rank-badge">NEW</div>
-	        <a href="<c:url value='/movies/${movie.id}'/>">
-	          <c:set var="posterSrc">
-	            <c:choose>
-	              <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-	                <c:choose>
-	                  <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-	                    ${movie.posterPath}
-	                  </c:when>
-	                  <c:otherwise>
-	                    ${pageContext.request.contextPath}${movie.posterPath}
-	                  </c:otherwise>
-	                </c:choose>
-	              </c:when>
-	              <c:otherwise>
-	                ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-	              </c:otherwise>
-	            </c:choose>
-	          </c:set>
-	          <img src="${posterSrc}" alt="${movie.title} 포스터" />
-	          <div class="p-3">
-	            <h5 class="fw-bold">${movie.title}</h5>
-	            <p class="text-muted mb-1">${movie.year} | ${movie.genre}</p>
-	            <p class="text-muted mb-0">평점: 
-				    <c:choose>
-				        <%-- 사용자 평점이 있을 때 --%>
-				        <c:when test="${movie.rating > 0.0}">
-				            <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
-				        </c:when>
-				        <%-- 사용자 평점 없으면 TMDB 평점 조용히 표시 --%>
-				        <c:when test="${movie.tmdbRating > 0.0}">
-				            <fmt:formatNumber value="${movie.tmdbRating}" pattern="#0.0" />
-				        </c:when>
-				        <%-- 둘 다 없으면 --%>
-				        <c:otherwise>N/A</c:otherwise>
-				    </c:choose>
-				</p>
-	          </div>
-	        </a>
-	      </div>
-	    </div>
-	  </c:forEach>
-	</div> <!-- // row div 닫힘 -->
-
-
-    <!-- 배너 버튼 -->
-    <div class="banner-section">
-      <div class="d-flex flex-wrap justify-content-center">
-        <a href="#upcoming-movies" class="banner-button">개봉 예정작</a>
-        <a href="#recommended-ranking" class="banner-button">추천 랭킹</a>
-        <a href="#admin-recommended-movies" class="banner-button">추천 영화</a>
-        <a href="#recent-comments" class="banner-button">최근 댓글</a>
-        <a href="#calendar-section" class="banner-button">캘린더</a>
-        <c:choose>
-          <c:when test="${not empty loginMember}">
-            <a href="<c:url value='/member/mypage_taste'/>" class="banner-button">나의 취향 분석</a>
-          </c:when>
-          <c:otherwise>
-            <!-- id="iframeLoginModal"인 모달. -->
-            <span class="banner-button" 
-                  data-bs-toggle="modal" 
-                  data-message="이 기능은 로그인 후 이용하실 수 있어요"
-                  data-bs-target="#loginModal"
-                  style="cursor: pointer;">
-              나의 영화 취향 분석
-            </span>
-          </c:otherwise>
-        </c:choose>
-      </div>
-    </div>
-	 <!-- 개봉 예정작 -->
-        <div class="d-flex justify-content-between align-items-center mb-3" id="upcoming-movies" style="margin-top: 30px;">
-      <h2 class="section-title mb-0">개봉 예정작</h2>
-        <a href="<c:url value='/movies/all-upcoming'/>" class="btn">더 보기></a>
-    </div>
-    <div class="section-divider"></div> <jsp:include page="/WEB-INF/views/movie/upcomingMovies.jsp" />
-	
-	 <div class="d-flex justify-content-between align-items-center mb-3" id="recommended-ranking" style="margin-top: 30px;">
-        <h2 class="section-title mb-0">PreWatch 추천 랭킹</h2>
-        <a href="<c:url value='/movies/all-recommended'/>" class="btn">더 보기></a>
-    </div>
-    <div class="section-divider"></div> 
-    <div class="row g-3 justify-content-center">
-        <c:set var="rank" value="0" />
-        <c:forEach var="movie" items="${recommendedMovies}">
-            <c:set var="rank" value="${rank + 1}" />
-            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                <div class="movie-card">
-                    <div class="rank-badge">${rank}</div>
-                    <a href="<c:url value='/movies/${movie.id}'/>">
-                        <c:set var="posterSrc">
-                            <c:choose>
-                                <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                                    <c:choose>
-                                        <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                                            ${movie.posterPath}
-                                        </c:when>
-                                        <c:otherwise>
-                                            ${pageContext.request.contextPath}${movie.posterPath}
-                                        </c:otherwise>
-                                    </c:choose>
-                                </c:when>
-                                <c:otherwise>
-                                    ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                                </c:otherwise>
-                            </c:choose>
-                        </c:set>
-                        <img src="${posterSrc}" alt="${movie.title} 포스터" />
-                        <div class="p-2">
-                            <h5 class="fw-semibold small">${movie.title}</h5>
-                            <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
-                            <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
-                        </div>
-                    </a>
-                </div>
+    <section class="home-overview" id="recent-comments" aria-label="PreWatch 홈 요약">
+      <div class="home-overview-grid">
+        <div class="home-feed-panel">
+          <div class="home-panel-heading">
+            <div>
+              <span class="home-eyebrow">최근 리뷰</span>
+              <h2>지금 올라온 영화 이야기</h2>
+              <p>만족도만이 아니라 폭력성, 공포, 선정성까지 함께 보고 볼 영화를 골라보세요.</p>
             </div>
-        </c:forEach>
-    </div>
+            <a href="<c:url value='/movies/all-recent-comments'/>" class="home-panel-link">전체 보기</a>
+          </div>
 
-	 <h2 class="section-title" id="admin-recommended-movies" style="margin-top: 30px;">PreWatch 추천 영화</h2>
-    <div class="section-divider"></div> 
-    <c:choose>
-        <c:when test="${not empty adminRecommendedMovies}">
-            <div class="row g-3 justify-content-center">
-                <c:set var="rank" value="0" />
-                <c:forEach var="movie" items="${adminRecommendedMovies}">
-                    <c:set var="rank" value="${rank + 1}" />
-                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                        <div class="movie-card">
-                            <div class="rank-badge">${rank}</div>
-                            <a href="<c:url value='/movies/${movie.id}'/>">
-                                <c:set var="posterSrc">
-                                    <c:choose>
-                                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
-                                            <c:choose>
-                                                <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
-                                                    ${movie.posterPath}
-                                                </c:when>
-                                                <c:otherwise>
-                                                    ${pageContext.request.contextPath}${movie.posterPath}
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </c:when>
-                                        <c:otherwise>
-                                            ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
-                                        </c:otherwise>
-                                    </c:choose>
-                                </c:set>
-                                <img src="${posterSrc}" alt="${movie.title} 포스터" />
-                                <div class="p-2">
-                                    <h5 class="fw-semibold small">${movie.title}</h5>
-                                    <p class="text-muted small mb-1">${movie.year} | ${movie.genre}</p>
-                                    <p class="text-muted small mb-1">찜 : ${movie.likeCount}</p>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
+          <div class="home-index-panel" aria-label="PreWatch 평가지수">
+            <div class="home-index-heading">
+              <strong>PreWatch 평가지수</strong>
+              <span>영화를 보기 전 체감 난이도를 나눠 볼 수 있어요.</span>
+            </div>
+
+            <div class="home-index-grid">
+              <div class="home-index-card home-index-rating">
+                <i class="bi bi-star-fill"></i>
+                <strong>만족도</strong>
+                <span>재미와 재관람 의향</span>
+                <em><fmt:formatNumber value="${globalStats.totalUserRatingCount}" pattern="#,##0" />개</em>
+              </div>
+              <div class="home-index-card home-index-violence">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>폭력성</strong>
+                <span>액션과 잔혹 묘사 체감</span>
+                <em><fmt:formatNumber value="${globalStats.totalViolenceScoreCount}" pattern="#,##0" />개</em>
+              </div>
+              <div class="home-index-card home-index-horror">
+                <i class="bi bi-emoji-dizzy-fill"></i>
+                <strong>공포</strong>
+                <span>긴장감과 불안감</span>
+                <em><fmt:formatNumber value="${globalStats.totalHorrorScoreCount}" pattern="#,##0" />개</em>
+              </div>
+              <div class="home-index-card home-index-sexual">
+                <i class="bi bi-eye-fill"></i>
+                <strong>선정성</strong>
+                <span>가족 시청 시 주의</span>
+                <em><fmt:formatNumber value="${globalStats.totalSexualScoreCount}" pattern="#,##0" />개</em>
+              </div>
+            </div>
+          </div>
+
+          <div class="home-taste-cta" aria-label="나의 취향 분석">
+            <div class="home-taste-copy">
+              <strong>영화 5편을 평가하면 취향 리포트가 열려요</strong>
+              <span>대표 장르, 점수 성향, 자주 만난 배우와 감독, 찜 목록에 남은 관심사까지 함께 분석합니다.</span>
+            </div>
+            <div class="home-taste-actions">
+              <c:choose>
+                <c:when test="${not empty loginMember}">
+                  <a href="<c:url value='/member/mypage_taste'/>">취향 리포트 보기</a>
+                </c:when>
+                <c:otherwise>
+                  <button type="button"
+                          data-bs-toggle="modal"
+                          data-message="로그인 후 영화를 평가하면 취향 리포트를 만들 수 있어요"
+                          data-bs-target="#loginModal">
+                    로그인하고 시작하기
+                  </button>
+                </c:otherwise>
+              </c:choose>
+              <a href="#recommended-ranking" class="home-taste-secondary">평가할 영화 찾기</a>
+            </div>
+          </div>
+
+          <div class="home-review-list">
+            <c:choose>
+              <c:when test="${not empty recentComments}">
+                <c:forEach var="review" items="${recentComments}">
+                  <c:set var="reviewPosterSrc">
+                    <c:choose>
+                      <c:when test="${not empty review.posterPath and review.posterPath ne 'N/A'}">
+                        <c:choose>
+                          <c:when test="${fn:startsWith(review.posterPath, 'http://') or fn:startsWith(review.posterPath, 'https://')}">
+                            ${review.posterPath}
+                          </c:when>
+                          <c:otherwise>
+                            ${pageContext.request.contextPath}${review.posterPath}
+                          </c:otherwise>
+                        </c:choose>
+                      </c:when>
+                      <c:otherwise>
+                        ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                      </c:otherwise>
+                    </c:choose>
+                  </c:set>
+                  <a href="${pageContext.request.contextPath}/movies/${review.movieId}" class="home-review-link">
+                    <img src="${reviewPosterSrc}" alt="${review.movieName} 포스터" />
+                    <span class="home-review-copy">
+                      <span class="home-review-meta">${review.memberId} · 만족도 ${review.userRating}/10</span>
+                      <strong>${review.movieName}</strong>
+                      <span>${review.reviewContent}</span>
+                    </span>
+                  </a>
                 </c:forEach>
-            </div>
-        </c:when>
-        <c:otherwise>
-            <div class="no-movie-box">
-                아직 추천 영화가 없습니다.
-            </div>
-        </c:otherwise>
-    </c:choose>
-    
-    <div id="recent-comments" style="margin-top: 30px;">
-    <c:import url="/movies/commentCard" />
-    </div>
-<div class="calendar-container" id="calendar-section">
-        <div class="calendar-header">
-            <div class="calendar-nav-left"> <button type="button" class="calendar-nav" onclick="changeMonth(${currentYear}, ${currentMonth - 1})">&lt; 이전 달</button>
-            </div>
-
-            <span id="currentMonthDisplay" class="calendar-month-display">${currentYear}년 ${currentMonth}월</span> <div class="calendar-nav-right"> <button type="button" class="calendar-nav" onclick="changeMonth(${currentYear}, ${currentMonth + 1})">다음 달 &gt;</button>
-            </div>
+              </c:when>
+              <c:otherwise>
+                <div class="home-empty-note">
+                  아직 최근 리뷰가 없습니다. 영화를 평가하면 이곳에 리뷰가 채워집니다.
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
         </div>
 
-        <table class="calendar-table"><%-- 07-31 추가 --%>
-            <thead>
-                <tr>
-                    <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
-                </tr>
-            </thead>
-            <tbody id="calendarBody">
-                <c:forEach var="week" items="${calendarWeeks}">
-                    <tr>
-                        <c:forEach var="dayData" items="${week}">
-                            <td class="${dayData.todayStatus ? 'today' : ''} ${!dayData.currentMonthStatus ? 'other-month' : ''}"> <span class="day-number">
-                                    ${dayData.date.dayOfMonth} </span>
-                                <div class="movie-poster-container">
-                                    <c:set var="moviesOnThisDay" value="${dayData.movies}" />
-                                    <c:if test="${not empty moviesOnThisDay}">
-                                        <c:set var="posterCount" value="${fn:length(moviesOnThisDay)}" />
-                                        <c:forEach var="movie" items="${moviesOnThisDay}">
-                                            <a href="<c:url value='/movies/${movie.id}'/>">
-                                                <img src="<c:url value='${movie.posterPath}'/>" alt="${movie.title} 포스터"
-                                                     class="movie-poster
-                                                        <c:if test="${posterCount == 2}">small</c:if>
-                                                        <c:if test="${posterCount >= 3}">smaller</c:if>
-                                                     ">
-                                            </a>
-                                        </c:forEach>
-                                    </c:if>
-                                </div>
-                            </td>
-                        </c:forEach>
-                    </tr>
-                </c:forEach>
-            </tbody>
-        </table>
-    </div>
+        <aside class="home-rail" aria-label="영화 요약 목록">
+          <div class="home-rail-panel">
+            <div class="home-rail-heading">
+              <h3>많이 찜한 영화</h3>
+              <a href="<c:url value='/movies/all-recommended'/>">더 보기</a>
+            </div>
+            <div class="home-rank-list">
+              <c:set var="topRank" value="0" />
+              <c:forEach var="movie" items="${recommendedMovies}" begin="0" end="2">
+                <c:set var="topRank" value="${topRank + 1}" />
+                <c:set var="rankPosterSrc">
+                  <c:choose>
+                    <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                      <c:choose>
+                        <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                          ${movie.posterPath}
+                        </c:when>
+                        <c:otherwise>
+                          ${pageContext.request.contextPath}${movie.posterPath}
+                        </c:otherwise>
+                      </c:choose>
+                    </c:when>
+                    <c:otherwise>
+                      ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                    </c:otherwise>
+                  </c:choose>
+                </c:set>
+                <a href="<c:url value='/movies/${movie.id}'/>" class="home-rank-row">
+                  <span class="home-rank-number">${topRank}</span>
+                  <img src="${rankPosterSrc}" alt="${movie.title} 포스터" />
+                  <span>
+                    <strong>${movie.title}</strong>
+                    <em>
+                      <c:choose>
+                        <c:when test="${not empty movie.rated}">${movie.rated}</c:when>
+                        <c:otherwise>등급 미정</c:otherwise>
+                      </c:choose>
+                      · 평점 <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
+                    </em>
+                  </span>
+                </a>
+              </c:forEach>
+            </div>
+          </div>
+
+          <div class="home-rail-panel">
+            <div class="home-rail-heading">
+              <h3>지금 사람들은 무엇을 검색할까요?</h3>
+              <span class="home-rail-caption">최근 검색어</span>
+            </div>
+            <c:choose>
+              <c:when test="${not empty recentSearchKeywords}">
+                <div class="home-search-keywords" id="homeSearchKeywords">
+                  <c:forEach var="keyword" items="${recentSearchKeywords}">
+                    <c:url var="keywordSearchUrl" value="/search">
+                      <c:param name="query" value="${keyword}" />
+                    </c:url>
+                    <span class="home-search-keyword-item" data-keyword="${fn:escapeXml(keyword)}">
+                      <a href="${keywordSearchUrl}" class="home-search-keyword"><c:out value="${keyword}" /></a>
+                      <button type="button" class="home-search-keyword-remove" aria-label="${fn:escapeXml(keyword)} 검색어 숨기기">&times;</button>
+                    </span>
+                  </c:forEach>
+                </div>
+                <div class="home-empty-note home-search-hidden-empty" id="homeSearchHiddenEmpty">
+                  이 브라우저에서 숨긴 검색어입니다. 다른 사람의 검색어 기록은 삭제되지 않습니다.
+                </div>
+              </c:when>
+              <c:otherwise>
+                <div class="home-empty-note">검색어가 쌓이면 이곳에 표시됩니다.</div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+
+          <div class="home-rail-panel">
+            <div class="home-rail-heading">
+              <h3>사람들이 관심 있게 본 영화</h3>
+              <span class="home-rail-caption">관심 영화</span>
+            </div>
+            <c:choose>
+              <c:when test="${not empty recentViewedMovies}">
+                <div class="home-rank-list">
+                  <c:set var="viewRank" value="0" />
+                  <c:forEach var="movie" items="${recentViewedMovies}">
+                    <c:set var="viewRank" value="${viewRank + 1}" />
+                    <c:set var="viewPosterSrc">
+                      <c:choose>
+                        <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                          <c:choose>
+                            <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                              ${movie.posterPath}
+                            </c:when>
+                            <c:otherwise>
+                              ${pageContext.request.contextPath}${movie.posterPath}
+                            </c:otherwise>
+                          </c:choose>
+                        </c:when>
+                        <c:otherwise>
+                          ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                        </c:otherwise>
+                      </c:choose>
+                    </c:set>
+                    <a href="<c:url value='/movies/${movie.id}'/>" class="home-rank-row">
+                      <span class="home-rank-number">${viewRank}</span>
+                      <img src="${viewPosterSrc}" alt="${movie.title} 포스터" />
+                      <span>
+                        <strong>${movie.title}</strong>
+                        <em>
+                          <c:choose>
+                            <c:when test="${not empty movie.rated}">${movie.rated}</c:when>
+                            <c:otherwise>등급 미정</c:otherwise>
+                          </c:choose>
+                          · 평점 <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
+                        </em>
+                      </span>
+                    </a>
+                  </c:forEach>
+                </div>
+              </c:when>
+              <c:otherwise>
+                <div class="home-empty-note">아직 표시할 영화가 없어요.</div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+
+    <nav class="home-quick-actions" aria-label="홈 바로가기">
+      <a href="#home-schedule-panel">개봉 일정</a>
+      <a href="#recommended-ranking">인기 영화</a>
+      <a href="#admin-recommended-movies">추천 영화</a>
+      <c:choose>
+        <c:when test="${not empty loginMember}">
+          <a href="<c:url value='/member/mypage_taste'/>">나의 취향 분석</a>
+        </c:when>
+        <c:otherwise>
+          <button type="button"
+                  data-bs-toggle="modal"
+                  data-message="이 기능은 로그인 후 이용하실 수 있어요"
+                  data-bs-target="#loginModal">
+            나의 취향 분석
+          </button>
+        </c:otherwise>
+      </c:choose>
+    </nav>
+
+    <section class="home-board-grid" aria-label="영화 보드">
+      <article class="home-board-panel home-schedule-panel" id="home-schedule-panel">
+        <div class="home-board-heading">
+          <div>
+            <span class="home-eyebrow home-eyebrow-blue">개봉 일정</span>
+            <h2>이번 주 볼 만한 개봉작</h2>
+          </div>
+          <a href="<c:url value='/movies/all-upcoming'/>">전체 보기</a>
+        </div>
+
+        <div class="home-release-timeline">
+          <c:choose>
+            <c:when test="${not empty upcomingMovies}">
+              <c:forEach var="movie" items="${upcomingMovies}" begin="0" end="4">
+                <c:set var="timelinePosterSrc">
+                  <c:choose>
+                    <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                      <c:choose>
+                        <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                          ${movie.posterPath}
+                        </c:when>
+                        <c:otherwise>
+                          ${pageContext.request.contextPath}${movie.posterPath}
+                        </c:otherwise>
+                      </c:choose>
+                    </c:when>
+                    <c:otherwise>
+                      ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                    </c:otherwise>
+                  </c:choose>
+                </c:set>
+                <a href="<c:url value='/movies/${movie.id}'/>" class="home-release-item">
+                  <span class="home-release-dot"></span>
+                  <span class="home-release-branch"></span>
+                  <span class="home-release-card">
+                    <img src="${timelinePosterSrc}" alt="${movie.title} 포스터" />
+                    <span class="home-release-copy">
+                      <span class="home-release-date">${movie.formattedReleaseDate}</span>
+                      <strong>${movie.title}</strong>
+                      <em>
+                        <c:choose>
+                          <c:when test="${movie.dday > 0}">D-${movie.dday}</c:when>
+                          <c:when test="${movie.dday == 0}">D-DAY</c:when>
+                          <c:otherwise>D+${-movie.dday}</c:otherwise>
+                        </c:choose>
+                        ·
+                        <c:choose>
+                          <c:when test="${not empty movie.rated}">${movie.rated}</c:when>
+                          <c:otherwise>등급 미정</c:otherwise>
+                        </c:choose>
+                      </em>
+                    </span>
+                  </span>
+                </a>
+              </c:forEach>
+            </c:when>
+            <c:otherwise>
+              <div class="home-empty-note">표시할 개봉 일정이 없습니다.</div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </article>
+
+      <article class="home-board-panel" id="recommended-ranking">
+        <div class="home-board-heading">
+          <div>
+            <span class="home-eyebrow home-eyebrow-orange">인기 영화</span>
+            <h2>PreWatch 추천 랭킹</h2>
+          </div>
+          <a href="<c:url value='/movies/all-recommended'/>">전체 보기</a>
+        </div>
+
+        <div class="home-poster-grid">
+          <c:set var="rank" value="0" />
+          <c:forEach var="movie" items="${recommendedMovies}">
+            <c:set var="rank" value="${rank + 1}" />
+            <c:set var="posterSrc">
+              <c:choose>
+                <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                  <c:choose>
+                    <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                      ${movie.posterPath}
+                    </c:when>
+                    <c:otherwise>
+                      ${pageContext.request.contextPath}${movie.posterPath}
+                    </c:otherwise>
+                  </c:choose>
+                </c:when>
+                <c:otherwise>
+                  ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                </c:otherwise>
+              </c:choose>
+            </c:set>
+            <a href="<c:url value='/movies/${movie.id}'/>" class="home-poster-card">
+              <span class="home-poster-rank">${rank}</span>
+              <img src="${posterSrc}" alt="${movie.title} 포스터" />
+              <strong>${movie.title}</strong>
+              <em>
+                <c:choose>
+                  <c:when test="${not empty movie.rated}">${movie.rated}</c:when>
+                  <c:otherwise>등급 미정</c:otherwise>
+                </c:choose>
+                · 평점 <fmt:formatNumber value="${movie.rating}" pattern="#0.0" />
+              </em>
+            </a>
+          </c:forEach>
+        </div>
+      </article>
+
+      <article class="home-board-panel" id="admin-recommended-movies">
+        <div class="home-board-heading">
+          <div>
+            <span class="home-eyebrow home-eyebrow-violet">큐레이션</span>
+            <h2>PreWatch 추천 영화</h2>
+          </div>
+        </div>
+
+        <c:choose>
+          <c:when test="${not empty adminRecommendedMovies}">
+            <div class="home-poster-grid home-poster-grid-compact">
+              <c:forEach var="movie" items="${adminRecommendedMovies}" begin="0" end="5">
+                <c:set var="posterSrc">
+                  <c:choose>
+                    <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
+                      <c:choose>
+                        <c:when test="${fn:startsWith(movie.posterPath, 'http://') or fn:startsWith(movie.posterPath, 'https://')}">
+                          ${movie.posterPath}
+                        </c:when>
+                        <c:otherwise>
+                          ${pageContext.request.contextPath}${movie.posterPath}
+                        </c:otherwise>
+                      </c:choose>
+                    </c:when>
+                    <c:otherwise>
+                      ${pageContext.request.contextPath}/resources/images/movies/256px-No-Image-Placeholder.png
+                    </c:otherwise>
+                  </c:choose>
+                </c:set>
+                <a href="<c:url value='/movies/${movie.id}'/>" class="home-poster-card">
+                  <img src="${posterSrc}" alt="${movie.title} 포스터" />
+                  <strong>${movie.title}</strong>
+                  <em>${movie.year} · ${movie.genre}</em>
+                </a>
+              </c:forEach>
+            </div>
+          </c:when>
+          <c:otherwise>
+            <div class="home-empty-note">아직 추천 영화가 없습니다.</div>
+          </c:otherwise>
+        </c:choose>
+      </article>
+    </section>
 </div> <%-- .container py-4 닫는 태그 --%>
 
   <!-- ========== 로그인 모달 ========== -->
     <jsp:include page="/WEB-INF/views/loginModal.jsp" />
   <!-- Bootstrap JS -->
  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// 캘린더 데이터를 동적으로 업데이트하는 함수
-function changeMonth(year, month) {
-    // 월 계산 (1월 미만, 12월 초과 처리)
-    if (month < 1) {
-        year--;
-        month = 12;
-    } else if (month > 12) {
-        year++;
-        month = 1;
-    }
-    var contextPath = "${pageContext.request.contextPath}"; // 컨텍스트 패스
-    
-    $.ajax({
-        url: contextPath + '/calendar/data', // 07-31: AJAX 엔드포인트
-        type: 'GET',
-        data: { year: year, month: month },
-        dataType: 'json', // 서버 응답을 JSON으로 예상
-        success: function(response) {
-            console.log("AJAX Success:", response); // 디버깅용
-            updateCalendarUI(response, contextPath); // 07-31: contextPath를 updateCalendarUI에 전달
-        },
-        error: function(xhr, status, error) {
-            console.error("AJAX Error:", status, error, xhr.responseText);
-            alert("달력 데이터를 불러오는 데 실패했습니다: " + error);
-        }
-    });
-}
-// 서버로부터 받은 데이터로 달력 UI를 업데이트하는 함수
-function updateCalendarUI(data, contextPath) { // 07-31: contextPath를 파라미터로 받음
-    var calendarBody = $('#calendarBody'); // tbody 요소
-    calendarBody.empty(); // 기존 달력 내용 비우기
-    // 현재 월 표시 업데이트
-    $('#currentMonthDisplay').text(data.currentYear + '년 ' + data.currentMonth + '월');
-    // 이전/다음 달 버튼의 onclick 속성 업데이트 (매우 중요!)
-    $('button.calendar-nav:contains("이전 달")').attr('onclick', 'changeMonth(' + data.prevMonthYear + ',' + data.prevMonth + ')'); // 07-31: 버튼 onclick 재설정
-    $('button.calendar-nav:contains("다음 달")').attr('onclick', 'changeMonth(' + data.nextMonthYear + ',' + data.nextMonth + ')'); // 07-31: 버튼 onclick 재설정
-    // 캘린더 tbody 내용 생성
-    data.calendarWeeks.forEach(function(week) {
-        var row = $('<tr>');
-        week.forEach(function(dayData) {
-            var cell = $('<td>');
-            cell.addClass(dayData.todayStatus ? 'today' : ''); // 07-31: getter 이름 변경 반영
-            cell.addClass(!dayData.currentMonthStatus ? 'other-month' : ''); // 07-31: getter 이름 변경 반영
-            // 날짜 숫자
-            var dateObj = new Date(dayData.date);
-            cell.append($('<span class="day-number">').text(dateObj.getDate()));
-            // 영화 포스터 컨테이너
-            var posterContainer = $('<div class="movie-poster-container">');
-            if (dayData.movies && dayData.movies.length > 0) {
-                var posterCount = dayData.movies.length;
-                dayData.movies.forEach(function(movie) {
-                    var posterSrc = '';
-                    
-                    if (movie.posterPath && (movie.posterPath.startsWith('http://') || movie.posterPath.startsWith('https://'))) {
-                        posterSrc = movie.posterPath; // 외부 URL인 경우 그대로 사용
-                    } else if (movie.posterPath) {
-                        posterSrc = contextPath + movie.posterPath; // 07-31: contextPath 적용
-                    } else {
-                        posterSrc = contextPath + '/resources/images/movies/256px-No-Image-Placeholder.png'; // 07-31: 기본 이미지 컨텍스트 패스 적용
-                    }
-                    var imgClass = 'movie-poster';
-                    if (posterCount === 2) { imgClass += ' small'; }
-                    else if (posterCount >= 3) { imgClass += ' smaller'; }
-                    var movieLink = $('<a class="movie-link">').attr('href', contextPath + '/movies/' + movie.id); // 07-31: 링크에도 contextPath 적용
-                    var img = $('<img>').attr('src', posterSrc).attr('alt', movie.title + ' 포스터').addClass(imgClass);
-                    movieLink.append(img);
-                    posterContainer.append(movieLink);
-                });
-            }
-            cell.append(posterContainer);
-            row.append(cell);
-        });
-        calendarBody.append(row);
-    });
-}
-</script>
+ <script>
+ document.addEventListener('DOMContentLoaded', function () {
+   const storageKey = 'prewatch.hiddenRecentSearchKeywords';
+   const keywordList = document.getElementById('homeSearchKeywords');
+   const emptyNotice = document.getElementById('homeSearchHiddenEmpty');
+
+   if (!keywordList) {
+     return;
+   }
+
+   function getHiddenKeywords() {
+     try {
+       return JSON.parse(localStorage.getItem(storageKey) || '[]');
+     } catch (error) {
+       return [];
+     }
+   }
+
+   function setHiddenKeywords(keywords) {
+     localStorage.setItem(storageKey, JSON.stringify(Array.from(new Set(keywords))));
+   }
+
+   function refreshKeywordVisibility() {
+     const hiddenKeywords = getHiddenKeywords();
+     const keywordItems = Array.from(keywordList.querySelectorAll('.home-search-keyword-item'));
+
+     keywordItems.forEach(function (item) {
+       item.hidden = hiddenKeywords.includes(item.dataset.keyword);
+     });
+
+     const visibleCount = keywordItems.filter(function (item) {
+       return !item.hidden;
+     }).length;
+
+     if (emptyNotice) {
+       emptyNotice.style.display = visibleCount === 0 ? 'block' : 'none';
+     }
+   }
+
+   keywordList.addEventListener('click', function (event) {
+     const removeButton = event.target.closest('.home-search-keyword-remove');
+     if (!removeButton) {
+       return;
+     }
+
+     event.preventDefault();
+     const item = removeButton.closest('.home-search-keyword-item');
+     if (!item) {
+       return;
+     }
+
+     const hiddenKeywords = getHiddenKeywords();
+     hiddenKeywords.push(item.dataset.keyword);
+     setHiddenKeywords(hiddenKeywords);
+     refreshKeywordVisibility();
+   });
+
+   refreshKeywordVisibility();
+ });
+ </script>
