@@ -45,6 +45,7 @@ import com.springmvc.repository.MovieRepository;
 import com.springmvc.service.AdminBannerMovieService;
 import com.springmvc.service.MovieImageService;
 import com.springmvc.service.StatService;
+import com.springmvc.service.ExternalMovieApiService.MovieSearchResult;
 import com.springmvc.service.StatServiceImpl.InsightMessage;
 import com.springmvc.service.TmdbApiService;
 import com.springmvc.service.UserReviewService;
@@ -59,6 +60,7 @@ public class MovieController {
     private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
 
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
+    private static final int USER_SEARCH_PAGE_SIZE = 12;
 
     private final MovieService movieService;
     private final ExternalMovieApiService externalMovieApiService;
@@ -695,21 +697,7 @@ public class MovieController {
         if (query != null && !query.trim().isEmpty()) {
             List<Movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
             overrideRatingsWithLocalData(searchResults);
-
-            Member loginMember = (Member) session.getAttribute("loginMember");
-            if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-                for (Movie movie : searchResults) {
-                    if (movie.getId() != null) {
-                        boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                        movie.setIsLiked(isLiked);
-                    } else {
-                        movie.setIsLiked(false);
-                    }
-                }
-                logger.debug("API 검색 결과에 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
-            } else {
-                logger.debug("API 검색 결과에 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
-            }
+            applyLikedStatusToSearchResults(searchResults, session);
 
             model.addAttribute("apiMovies", searchResults);
             model.addAttribute("searchPerformed", true);
@@ -727,32 +715,48 @@ public class MovieController {
     public String searchMoviesFromHeader(@RequestParam(value = "query", required = false) String query, Model model, HttpSession session) {
         logger.info("[GET /search] 헤더 검색 요청. 쿼리: {}", query);
         if (query != null && !query.trim().isEmpty()) {
-            List<Movie> searchResults = externalMovieApiService.searchMoviesByKeyword(query);
+            MovieSearchResult searchResult = externalMovieApiService.searchMoviesForUserCards(query, 1, 0, USER_SEARCH_PAGE_SIZE);
+            List<Movie> searchResults = searchResult.getMovies();
             overrideRatingsWithLocalData(searchResults);
-
-            Member loginMember = (Member) session.getAttribute("loginMember");
-            if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
-                for (Movie movie : searchResults) {
-                    if (movie.getId() != null) {
-                        boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
-                        movie.setIsLiked(isLiked);
-                    } else {
-                        movie.setIsLiked(false);
-                    }
-                }
-                logger.debug("헤더 검색 결과에 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
-            } else {
-                logger.debug("헤더 검색 결과에 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
-            }
+            applyLikedStatusToSearchResults(searchResults, session);
 
             model.addAttribute("apiMovies", searchResults);
             model.addAttribute("searchPerformed", true);
             model.addAttribute("query", query);
+            model.addAttribute("hasMoreSearchResults", searchResult.isHasMore());
+            model.addAttribute("nextSearchPage", searchResult.getNextPage());
+            model.addAttribute("nextSearchOffset", searchResult.getNextOffset());
         } else {
             model.addAttribute("searchPerformed", false);
         }
         model.addAttribute("userRole", session.getAttribute("userRole"));
         return "movie/apiSearchPage";
+    }
+
+    @GetMapping("/search/more")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> searchMoreMovies(
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            HttpSession session) {
+
+        if (isBlank(query)) {
+            return new ResponseEntity<>(Map.of("message", "검색어를 입력해주세요."), HttpStatus.BAD_REQUEST);
+        }
+
+        MovieSearchResult searchResult = externalMovieApiService.searchMoviesForUserCards(query, page, offset, USER_SEARCH_PAGE_SIZE);
+        List<Movie> searchResults = searchResult.getMovies();
+        overrideRatingsWithLocalData(searchResults);
+        applyLikedStatusToSearchResults(searchResults, session);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("movies", toSearchMovieCards(searchResults));
+        response.put("hasMore", searchResult.isHasMore());
+        response.put("nextPage", searchResult.getNextPage());
+        response.put("nextOffset", searchResult.getNextOffset());
+        return ResponseEntity.ok(response);
     }
 
 	    @GetMapping("/movies/api-external-detail")
@@ -774,13 +778,11 @@ public class MovieController {
             }
             
 	           // Integer tmdbId = tmdbApiService.getTmdbMovieId(imdbId);
-            if (isSignedInUser(session)) {
-                Movie savedMovie = saveApiMovieIfAbsent(imdbId, apiMovie, true);
-                if (savedMovie.getId() != null) {
-                    return "redirect:/movies/" + savedMovie.getId();
-                }
-                logger.warn("[GET /movies/api-external-detail] API 영화 저장 후 ID를 확인하지 못했습니다. API 상세 표시로 이어갑니다. imdbID = {}", imdbId);
+            Movie savedMovie = saveApiMovieIfAbsent(imdbId, apiMovie, true);
+            if (savedMovie.getId() != null) {
+                return "redirect:/movies/" + savedMovie.getId();
             }
+            logger.warn("[GET /movies/api-external-detail] API 영화 저장 후 ID를 확인하지 못했습니다. API 상세 표시로 이어갑니다. imdbID = {}", imdbId);
 
             	Integer tmdbId = Integer.parseInt(imdbId); //25.12.03 tmdb로 바로 이으면서 숫자로 잇기 처리
 	            Movie localMovie = movieService.findByApiId(imdbId);
@@ -857,12 +859,48 @@ public class MovieController {
                 apiMovie.setViolence_score_avg(localMovie.getViolence_score_avg());
                 apiMovie.setId(localMovie.getId());
                 apiMovie.setLikeCount(localMovie.getLikeCount());
+                apiMovie.setRated(localMovie.getRated());
                 logger.debug("영화 '{}' (apiId: {})의 평점/잔혹도/찜개수를 로컬 DB 데이터로 덮어씀.", apiMovie.getTitle(), apiMovie.getApiId());
             } else {
                 logger.debug("영화 '{}' (apiId: {})는 로컬 DB에 없어 API 평점/잔혹도/찜개수 유지.", apiMovie.getTitle(), apiMovie.getApiId());
                 apiMovie.setLikeCount(0);
             }
         }
+    }
+
+    private void applyLikedStatusToSearchResults(List<Movie> movies, HttpSession session) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null || !"MEMBER".equals(loginMember.getRole())) {
+            for (Movie movie : movies) {
+                movie.setIsLiked(false);
+            }
+            logger.debug("검색 결과에 비로그인 또는 관리자 계정으로 찜 상태 미반영.");
+            return;
+        }
+
+        for (Movie movie : movies) {
+            if (movie.getId() != null) {
+                boolean isLiked = userCartService.isMovieLiked(loginMember.getId(), movie.getId());
+                movie.setIsLiked(isLiked);
+            } else {
+                movie.setIsLiked(false);
+            }
+        }
+        logger.debug("검색 결과에 로그인된 일반 회원 ({})의 찜 상태 반영 완료.", loginMember.getId());
+    }
+
+    private List<Map<String, Object>> toSearchMovieCards(List<Movie> movies) {
+        List<Map<String, Object>> cards = new ArrayList<>();
+        for (Movie movie : movies) {
+            Map<String, Object> card = new HashMap<>();
+            card.put("apiId", movie.getApiId());
+            card.put("title", movie.getTitle());
+            card.put("posterPath", movie.getPosterPath());
+            card.put("rated", movie.getRated());
+            card.put("liked", movie.isLiked());
+            cards.add(card);
+        }
+        return cards;
     }
 
     @GetMapping("/accessDenied")
@@ -997,6 +1035,51 @@ public class MovieController {
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("찜 토글 처리 중 오류 발생 (memberId={}, movieId={}): {}", memberId, movieId, e.getMessage(), e);
+            return new ResponseEntity<>(Map.of("message", "찜 처리 중 오류가 발생했습니다.", "status", "error"), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/movies/api-toggle-cart")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> toggleApiMovieCart(@RequestParam("apiId") String apiId, HttpSession session) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null || !"MEMBER".equals(loginMember.getRole())) {
+            logger.warn("[POST /movies/api-toggle-cart] 권한 없음: 비로그인 또는 비회원 계정의 API 영화 찜 시도. apiId={}", apiId);
+            return new ResponseEntity<>(Map.of("message", "로그인한 일반 회원만 찜 기능을 사용할 수 있습니다.", "status", "forbidden"), HttpStatus.FORBIDDEN);
+        }
+
+        if (isBlank(apiId)) {
+            return new ResponseEntity<>(Map.of("message", "영화 정보를 확인할 수 없습니다.", "status", "error"), HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            Movie localMovie = movieService.findByApiId(apiId);
+            if (localMovie == null) {
+                Movie apiMovie = externalMovieApiService.getMovieFromApi(apiId);
+                if (apiMovie == null) {
+                    return new ResponseEntity<>(Map.of("message", "영화 정보를 가져올 수 없습니다.", "status", "error"), HttpStatus.BAD_REQUEST);
+                }
+
+                if (isBlank(apiMovie.getApiId())) {
+                    apiMovie.setApiId(apiId);
+                }
+
+                localMovie = saveApiMovieIfAbsent(apiId, apiMovie, true);
+                logger.info("[POST /movies/api-toggle-cart] API 영화 저장 후 찜 처리. apiId={}, movieId={}", apiId, localMovie.getId());
+            } else {
+                logger.info("[POST /movies/api-toggle-cart] 이미 등록된 영화이므로 저장을 건너뛰고 찜 처리. apiId={}, movieId={}", apiId, localMovie.getId());
+            }
+
+            if (localMovie.getId() == null) {
+                return new ResponseEntity<>(Map.of("message", "저장된 영화 ID를 확인할 수 없습니다.", "status", "error"), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            Map<String, Object> result = userCartService.addOrRemoveMovie(loginMember.getId(), localMovie.getId());
+            result.put("movieId", localMovie.getId());
+            result.put("apiId", apiId);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("API 영화 찜 처리 중 오류 발생 (memberId={}, apiId={}): {}", loginMember.getId(), apiId, e.getMessage(), e);
             return new ResponseEntity<>(Map.of("message", "찜 처리 중 오류가 발생했습니다.", "status", "error"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

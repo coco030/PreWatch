@@ -24,15 +24,18 @@ public class ExternalMovieApiService {
     private final String omdbSearchApiKey; // API Key
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final TmdbApiService tmdbApiService;
 
     //TMDB 검색용
     private final String OMDB_BASE_URL = "https://api.themoviedb.org/3/search/movie";
 
     // 3. 생성자
-    public ExternalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey) {
+    public ExternalMovieApiService(@Value("${omdb.api.key.search}") String omdbSearchApiKey,
+                                   TmdbApiService tmdbApiService) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         this.omdbSearchApiKey = omdbSearchApiKey;
+        this.tmdbApiService = tmdbApiService;
         logger.info("ExternalMovieApiService 초기화 완료. TMDb 검색용 API 키가 설정되었습니다.");
     }
 
@@ -78,6 +81,91 @@ public class ExternalMovieApiService {
         return moviesWithFullDetails;
     }
 
+    public List<Movie> searchMoviesForUserCards(String keyword) {
+        return searchMoviesForUserCards(keyword, 1, 0, 12).getMovies();
+    }
+
+    public MovieSearchResult searchMoviesForUserCards(String keyword, int page, int offset, int limit) {
+        int safePage = Math.max(page, 1);
+        int safeOffset = Math.max(offset, 0);
+        int safeLimit = Math.max(limit, 1);
+        logger.debug("TMDB API에서 키워드 '{}'로 사용자 카드용 영화 목록 검색 시도. page={}, offset={}, limit={}",
+                keyword, safePage, safeOffset, safeLimit);
+
+        List<Movie> movies = new ArrayList<>();
+        boolean hasMore = false;
+        int currentPage = safePage;
+        int currentOffset = safeOffset;
+
+        try {
+            int totalPages = safePage;
+
+            while (movies.size() < safeLimit && currentPage <= totalPages) {
+                String searchApiUrl = UriComponentsBuilder.fromHttpUrl(OMDB_BASE_URL)
+                        .queryParam("api_key", this.omdbSearchApiKey)
+                        .queryParam("query", keyword)
+                        .queryParam("language", "ko-KR")
+                        .queryParam("page", currentPage)
+                        .build().toUriString();
+
+                String jsonResponse = restTemplate.getForObject(searchApiUrl, String.class);
+                JsonNode rootNode = objectMapper.readTree(jsonResponse);
+                JsonNode searchResults = rootNode.path("results");
+                totalPages = rootNode.path("total_pages").asInt(currentPage);
+
+                if (!searchResults.isArray() || searchResults.size() == 0) {
+                    break;
+                }
+
+                int resultCount = searchResults.size();
+                int start = Math.min(currentOffset, resultCount);
+                int nextIndex = start;
+
+                for (int i = start; i < resultCount && movies.size() < safeLimit; i++) {
+                    JsonNode movieNode = searchResults.get(i);
+                    Movie movie = createMovieCardFromSearchResult(movieNode);
+                    if (movie != null) {
+                        movies.add(movie);
+                    }
+                    nextIndex = i + 1;
+                }
+
+                boolean reachedEndOfPage = nextIndex >= resultCount;
+                if (movies.size() >= safeLimit) {
+                    hasMore = !reachedEndOfPage || currentPage < totalPages;
+                    currentOffset = nextIndex;
+                    if (reachedEndOfPage && currentPage < totalPages) {
+                        currentPage++;
+                        currentOffset = 0;
+                    }
+                    break;
+                }
+
+                if (reachedEndOfPage) {
+                    if (currentPage >= totalPages) {
+                        currentOffset = resultCount;
+                        hasMore = false;
+                        break;
+                    }
+                    currentPage++;
+                    currentOffset = 0;
+                    hasMore = true;
+                } else {
+                    currentOffset = nextIndex;
+                    hasMore = true;
+                    break;
+                }
+            }
+
+            logger.info("TMDB API에서 키워드 '{}'로 사용자 카드용 영화 {}개 검색 성공. hasMore={}",
+                    keyword, movies.size(), hasMore);
+        } catch (Exception e) {
+            logger.error("사용자 카드용 영화 검색 API 오류: {}", e.getMessage(), e);
+        }
+
+        return new MovieSearchResult(movies, hasMore, currentPage, currentOffset);
+    }
+
     // 상세 조회  (ID -> 상세 정보)
     public Movie getMovieFromApi(String tmdbId) {
         String detailBaseUrl = "https://api.themoviedb.org/3/movie/";
@@ -119,6 +207,11 @@ public class ExternalMovieApiService {
                 // 런타임
                 movie.setRuntime(rootNode.has("runtime") ? rootNode.get("runtime").asText() + "분" : "N/A");
 
+                Integer parsedTmdbId = parseTmdbId(tmdbId);
+                if (parsedTmdbId != null) {
+                    movie.setRated(tmdbApiService.getCertification(parsedTmdbId));
+                }
+
                 // 평점 (Rating/Violence_score_avg)
                 movie.setRating(0.0); 
                 movie.setViolence_score_avg(0.0); // 폭력성 지수도 0.0
@@ -140,6 +233,91 @@ public class ExternalMovieApiService {
             logger.error("TMDB 상세 조회 오류: {}", e.getMessage());
         }
         return null;
+    }
+
+    private Integer parseTmdbId(String tmdbId) {
+        if (tmdbId == null || tmdbId.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(tmdbId.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("TMDB ID가 숫자 형식이 아닙니다: {}", tmdbId);
+            return null;
+        }
+    }
+
+    private Movie createMovieCardFromSearchResult(JsonNode movieNode) {
+        String tmdbId = movieNode.path("id").asText(null);
+        if (isBlank(tmdbId)) {
+            return null;
+        }
+
+        Movie movie = new Movie();
+        movie.setApiId(tmdbId);
+        movie.setTitle(movieNode.path("title").asText("N/A"));
+        movie.setOverview(movieNode.path("overview").asText(""));
+        movie.setRating(0.0);
+        movie.setViolence_score_avg(0.0);
+        movie.setLikeCount(0);
+
+        String releaseDateText = movieNode.path("release_date").asText(null);
+        if (!isBlank(releaseDateText)) {
+            try {
+                LocalDate releaseDate = LocalDate.parse(releaseDateText);
+                movie.setReleaseDate(releaseDate);
+                movie.setYear(releaseDate.getYear());
+            } catch (Exception e) {
+                logger.debug("검색 결과 release_date 파싱 실패: tmdbId={}, releaseDate={}", tmdbId, releaseDateText);
+            }
+        }
+
+        String posterPath = movieNode.path("poster_path").asText(null);
+        if (!isBlank(posterPath)) {
+            movie.setPosterPath("https://image.tmdb.org/t/p/w500" + posterPath);
+        }
+
+        Integer parsedTmdbId = parseTmdbId(tmdbId);
+        if (parsedTmdbId != null) {
+            movie.setRated(tmdbApiService.getCertification(parsedTmdbId));
+        }
+
+        return movie;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty() || "null".equalsIgnoreCase(value.trim());
+    }
+
+    public static class MovieSearchResult {
+        private final List<Movie> movies;
+        private final boolean hasMore;
+        private final int nextPage;
+        private final int nextOffset;
+
+        public MovieSearchResult(List<Movie> movies, boolean hasMore, int nextPage, int nextOffset) {
+            this.movies = movies;
+            this.hasMore = hasMore;
+            this.nextPage = nextPage;
+            this.nextOffset = nextOffset;
+        }
+
+        public List<Movie> getMovies() {
+            return movies;
+        }
+
+        public boolean isHasMore() {
+            return hasMore;
+        }
+
+        public int getNextPage() {
+            return nextPage;
+        }
+
+        public int getNextOffset() {
+            return nextOffset;
+        }
     }
 
     private String getDirectorFromCredits(String tmdbId) {

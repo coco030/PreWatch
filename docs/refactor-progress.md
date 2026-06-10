@@ -192,3 +192,28 @@
   - `src/main/webapp/resources/css/layout.css`
   - `src/main/webapp/resources/css/rating-score.css`
   - `src/main/webapp/resources/js/rating-score.js`
+
+### 11. 영화 검색 결과 카드형 UI와 더보기 조회
+
+- 일반 사용자 검색 결과는 표 대신 포스터 카드형 목록으로 보여주게 했다.
+- 관리자가 보는 API 검색 화면은 기존처럼 등록 작업에 필요한 표 형식을 유지했다.
+- 사용자 검색은 처음 12개만 가져오고, `더보기`를 누를 때 다음 12개를 이어서 조회한다.
+- 결과 카드의 빈 영역을 누르면 상세 페이지로 이동하고, 정보 아이콘은 별도로 유지했다.
+- 찜 버튼은 저장되지 않은 API 영화도 누르는 순간 DB에 저장한 뒤 찜 처리한다.
+- 이미 등록된 API 영화는 중복 저장하지 않고 기존 영화로 찜 처리한다.
+- 비로그인 사용자가 API 검색 결과에서 상세 페이지에 들어가도 영화를 저장해 평가지수와 상세 화면 흐름이 비지 않도록 했다.
+- 검색 결과 카드에 영화 등급을 표시하기 위해 TMDB 등급 조회값을 검색 카드와 상세 조회 흐름에 반영했다.
+- TMDB 등급 조회는 서버 실행 중 캐시해 반복 API 호출을 줄인다.
+- 관련 파일:
+  - `src/main/java/com/springmvc/controller/MovieController.java`
+  - `src/main/java/com/springmvc/service/ExternalMovieApiService.java`
+  - `src/main/java/com/springmvc/service/TmdbApiService.java`
+  - `src/main/webapp/WEB-INF/views/movie/apiSearchPage.jsp`
+
+## 아이디어 메모
+
+- 검색어에 제외 조건을 자연어처럼 섞어 쓰는 기능을 검토한다.
+- 예: 검색창에 `공포 제외`, `전연령가 제외`처럼 입력하면 해당 장르나 등급 조건을 검색 결과에서 제외한다.
+- 공포 장르는 예시일 뿐이고, 장르/등급/필터 조건 전반에 적용할 수 있는 방식으로 본다.
+- 처음에는 복잡한 추천 알고리즘으로 연결하지 않고, 검색 조건 파싱과 제외 필터 정도로 작게 시작한다.
+- 나중에 제외 조건이 늘어나면 `공포 제외`, `전연령가 제외`, `청불 제외` 같은 검색 칩 UI로 분리할 수 있다.

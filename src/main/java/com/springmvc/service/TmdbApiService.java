@@ -23,11 +23,13 @@ public class TmdbApiService {
 
     private static final int MAX_CAST_COUNT = 11;
     private static final String NO_BACKDROP_PATH = "";
+    private static final String NO_CERTIFICATION = "";
 
     private final Map<Integer, List<Map<String, String>>> castAndCrewCache = new ConcurrentHashMap<>();
     private final Map<String, List<String>> backdropImageUrlsCache = new ConcurrentHashMap<>();
     private final Map<Integer, String> backdropPathCache = new ConcurrentHashMap<>();
     private final Map<String, Double> tmdbRatingCache = new ConcurrentHashMap<>();
+    private final Map<Integer, String> certificationCache = new ConcurrentHashMap<>();
 
 
     private final String tmdbApiKey;
@@ -362,6 +364,11 @@ public class TmdbApiService {
             return null;
         }
 
+        String cached = certificationCache.get(tmdbMovieId);
+        if (cached != null) {
+            return NO_CERTIFICATION.equals(cached) ? null : cached;
+        }
+
         String url = UriComponentsBuilder
                 .fromHttpUrl(TMDB_MOVIE_CREDITS_URL + tmdbMovieId + "/release_dates")
                 .queryParam("api_key", this.tmdbApiKey)
@@ -383,7 +390,9 @@ public class TmdbApiService {
                     }
 
                     if ("KR".equals(countryCode)) {
-                        return normalizeCertification(certification);
+                        String normalized = normalizeCertification(certification);
+                        certificationCache.put(tmdbMovieId, normalized == null ? NO_CERTIFICATION : normalized);
+                        return normalized;
                     }
 
                     if (fallback == null && "US".equals(countryCode)) {
@@ -392,6 +401,7 @@ public class TmdbApiService {
                 }
             }
 
+            certificationCache.put(tmdbMovieId, fallback == null ? NO_CERTIFICATION : fallback);
             return fallback;
         } catch (Exception e) {
             System.out.println("[WARN] TMDB 연령 등급 조회 실패: tmdbId=" + tmdbMovieId + ", msg=" + e.getMessage());
