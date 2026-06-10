@@ -127,6 +127,10 @@
 <script>
     // 숫자 카운트업 애니메이션 함수
     function animateCountUp(element) {
+        if (!element) {
+            return;
+        }
+
         const finalCount = parseInt(element.dataset.count, 10);
         if (isNaN(finalCount)) {
             element.innerText = '0';
@@ -155,12 +159,7 @@
 
     // 페이지 로드가 완료되면, 각 통계 숫자에 애니메이션 적용
     document.addEventListener('DOMContentLoaded', function() {
-        animateCountUp(document.getElementById('reviewCount'));
-        animateCountUp(document.getElementById('ratingCount'));
-        animateCountUp(document.getElementById('violenceCount'));
-
-        animateCountUp(document.getElementById('horrorCount'));
-        animateCountUp(document.getElementById('sexualCount'));
+        document.querySelectorAll('.review-banner-bar strong[data-count]').forEach(animateCountUp);
     });
     </script>
 <!-- 모바일 하단 고정 메뉴에 가려지는 공간 확보용 여백 

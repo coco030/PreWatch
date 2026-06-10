@@ -15,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -132,18 +130,6 @@ public class HomeController {
         return "home";
     }
     
-    // 25.07.28 위치 옮김. globalStats 통계 컨트롤러
-    @ControllerAdvice
-    public class GlobalControllerAdvice {
-        @Autowired
-        private GlobalStatService statisticsService;
-        // 모든 컨트롤러의 메서드가 실행되기 전에 호출. 반환된 값은 "globalStats"라는 이름으로 모델에 추가.
-        @ModelAttribute("globalStats")
-        public StatDTO addGlobalStatsToModel() {
-            return statisticsService.getGlobalStats();
-        }
-    }
-
 // 07-31: AJAX 요청을 처리하는 캘린더 데이터 엔드포인트 (JSON 반환)
 @GetMapping("/calendar/data")
 @ResponseBody

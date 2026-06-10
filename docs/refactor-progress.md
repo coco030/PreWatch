@@ -221,6 +221,15 @@
   - `src/main/java/com/springmvc/service/ExternalMovieApiService.java`
   - `src/main/webapp/WEB-INF/views/movie/apiSearchPage.jsp`
 
+### 13. 홈 화면 통계 표시 안정화
+
+- 홈 하단 통계 영역에서 실제 화면에 남아 있는 카운트 요소만 애니메이션 처리하도록 바꿨다.
+- 주석 처리된 통계 요소를 JavaScript가 계속 찾으면서 null 오류가 날 수 있던 흐름을 제거했다.
+- `globalStats`는 홈 화면에서만 쓰이므로 모든 컨트롤러에 주입하던 `ControllerAdvice`를 제거하고 홈 컨트롤러에서 한 번만 조회하게 했다.
+- 관련 파일:
+  - `src/main/java/com/springmvc/controller/HomeController.java`
+  - `src/main/webapp/WEB-INF/views/home.jsp`
+
 ## 아이디어 메모
 
 - 검색어에 제외 조건을 자연어처럼 섞어 쓰는 기능을 검토한다.
