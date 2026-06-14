@@ -107,6 +107,11 @@
     </c:set>
 
     <form action="${formActionUrl}" method="post" enctype="multipart/form-data">
+        <c:if test="${not empty returnTo}">
+            <input type="hidden" name="returnTo" value="${returnTo}" />
+            <input type="hidden" name="managedPage" value="${managedPage}" />
+            <input type="hidden" name="managedSize" value="${managedSize}" />
+        </c:if>
         <div class="mb-3">
             <label for="apiId" class="form-label">TMDb 코드:</label>
             <div class="d-flex align-items-center">
@@ -160,7 +165,14 @@
 
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <button type="submit" class="btn btn-primary btn-action me-md-2">${movie.id == null ? '등록' : '수정'}</button>
-            <a href="<c:url value='/movies'/>" class="btn btn-secondary btn-action">목록으로</a>
+            <c:choose>
+                <c:when test="${returnTo == 'upcoming'}">
+                    <a href="<c:url value='/movies/upcoming-candidates'/>" class="btn btn-secondary btn-action">목록으로</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="<c:url value='/movies'/>" class="btn btn-secondary btn-action">목록으로</a>
+                </c:otherwise>
+            </c:choose>
         </div>
     </form>
 </div>

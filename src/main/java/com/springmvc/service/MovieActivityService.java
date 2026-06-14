@@ -38,6 +38,7 @@ public class MovieActivityService {
             return;
         }
 
+        // 홈 관심 영화용. 상세 페이지에 들어온 영화만 기록.
         ensureMovieViewActivityTable();
         String sql = """
             INSERT INTO movie_view_activity (movie_id, view_count, last_viewed_at)

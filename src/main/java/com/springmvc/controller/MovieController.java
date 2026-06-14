@@ -65,6 +65,8 @@ public class MovieController {
     private static final String UPLOAD_DIRECTORY_RELATIVE = "/resources/images/movies/";
     private static final int USER_SEARCH_PAGE_SIZE = 12;
     private static final List<String> POSTER_PROTECTION_MODES = List.of("off", "horror", "adult", "horror_adult", "all");
+    private static final Set<String> UNKNOWN_RATED_VALUES =
+            Set.of("n/a", "nr", "not rated", "unrated", "등급 미정");
 
     private final MovieService movieService;
     private final ExternalMovieApiService externalMovieApiService;
@@ -317,7 +319,7 @@ public class MovieController {
     private Movie saveApiMovieIfAbsent(String apiId, Movie apiMovie, boolean saveCastAndCrew) {
         Movie localMovie = movieService.findByApiId(apiId);
         if (localMovie != null) {
-            return localMovie;
+            return refreshRatedIfMissing(localMovie);
         }
 
         if (isBlank(apiMovie.getRated())) {
@@ -348,6 +350,27 @@ public class MovieController {
         return savedMovie;
     }
 
+    private Movie refreshRatedIfMissing(Movie movie) {
+        if (movie == null || !isMissingRated(movie.getRated())) {
+            return movie;
+        }
+
+        Integer tmdbIdForRating = parseTmdbId(movie.getApiId());
+        if (tmdbIdForRating == null) {
+            return movie;
+        }
+
+        String certification = tmdbApiService.getCertification(tmdbIdForRating);
+        if (isMissingRated(certification)) {
+            return movie;
+        }
+
+        movie.setRated(certification);
+        movieService.update(movie);
+        logger.info("영화 '{}'의 비어 있던 등급을 '{}'로 보정했습니다.", movie.getTitle(), certification);
+        return movie;
+    }
+
     private void saveCastAndCrewIfPossible(String apiId, Long movieId) {
         Integer tmdbId = parseTmdbId(apiId);
         if (tmdbId == null || movieId == null) {
@@ -376,6 +399,7 @@ public class MovieController {
         // coco030 추가 25.08.04
         Movie existingMovie = movieService.findByApiId(imdbId);
         if (existingMovie != null) {
+            existingMovie = refreshRatedIfMissing(existingMovie);
             logger.warn("[POST /movies/import-api-detail] 이미 등록된 영화입니다. imdbID = {}", imdbId);
 
             // 모델에 에러 메시지를 담는다. 주소창 피라미터로 보임
@@ -430,6 +454,56 @@ public class MovieController {
             model.addAttribute("errorMessage", "영화 상세 정보를 찾을 수 없습니다.");
             return "redirect:/search?error=detailNotFound";
         }
+    }
+
+    private boolean isMissingRated(String rated) {
+        if (isBlank(rated)) {
+            return true;
+        }
+
+        return UNKNOWN_RATED_VALUES.contains(rated.trim().toLowerCase());
+    }
+
+    @PostMapping("/movies/import-api-detail/ajax")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> importApiMovieDetailAjax(@RequestParam("imdbId") String imdbId,
+                                                                        HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        if (!isAdmin(session)) {
+            response.put("status", "forbidden");
+            response.put("message", "관리자만 영화를 등록할 수 있습니다.");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+        }
+
+        Movie existingMovie = movieService.findByApiId(imdbId);
+        if (existingMovie != null) {
+            existingMovie = refreshRatedIfMissing(existingMovie);
+            response.put("status", "exists");
+            response.put("message", "이미 등록된 영화입니다.");
+            response.put("movieId", existingMovie.getId());
+            response.put("title", existingMovie.getTitle());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+
+        Movie movieFromApi = externalMovieApiService.getMovieFromApi(imdbId);
+        if (movieFromApi == null) {
+            response.put("status", "not_found");
+            response.put("message", "영화 상세 정보를 찾을 수 없습니다.");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+
+        Movie savedMovie = saveApiMovieIfAbsent(imdbId, movieFromApi, true);
+        if (savedMovie == null || savedMovie.getId() == null) {
+            response.put("status", "error");
+            response.put("message", "영화 등록 결과를 확인할 수 없습니다.");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        response.put("status", "created");
+        response.put("message", "등록 완료");
+        response.put("movieId", savedMovie.getId());
+        response.put("title", savedMovie.getTitle());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 
@@ -612,9 +686,18 @@ public class MovieController {
     // read-all: 모든 영화 목록 조회
     @GetMapping({"/movies", "/movies/"})
     @Transactional(readOnly = true)
-    public String list(Model model, HttpSession session) {
+    public String list(@RequestParam(value = "page", defaultValue = "1") int page,
+                       @RequestParam(value = "size", defaultValue = "20") int size,
+                       Model model,
+                       HttpSession session) {
         logger.info("[GET /movies] 영화 목록 요청이 들어왔습니다.");
-        List<Movie> movies = movieService.findAll();
+        int pageSize = Math.min(Math.max(size, 1), 50);
+        int totalMovies = movieService.countAllMovies();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalMovies / pageSize));
+        int currentPage = Math.min(Math.max(page, 1), totalPages);
+        int startPage = ((currentPage - 1) / 5) * 5 + 1;
+        int endPage = Math.min(startPage + 4, totalPages);
+        List<Movie> movies = movieService.findAllPaged(currentPage, pageSize);
 
         Member loginMember = (Member) session.getAttribute("loginMember");
         if (loginMember != null && "MEMBER".equals(loginMember.getRole())) {
@@ -631,9 +714,60 @@ public class MovieController {
         }
 
         model.addAttribute("movies", movies);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("startPage", startPage);
+        model.addAttribute("endPage", endPage);
+        model.addAttribute("totalMovies", totalMovies);
+        model.addAttribute("missingRatedCount", movieService.countMissingRatedMovies());
         model.addAttribute("userRole", currentUserRole(session));
-        logger.debug("[GET /movies] movieService.findAll() 호출 완료.");
+        logger.debug("[GET /movies] movieService.findAllPaged() 호출 완료.");
         return "movie/list";
+    }
+
+    @PostMapping("/movies/refresh-missing-ratings")
+    public String refreshMissingRatings(@RequestParam(value = "limit", defaultValue = "30") int limit,
+                                        @RequestParam(value = "page", defaultValue = "1") int page,
+                                        @RequestParam(value = "size", defaultValue = "20") int size,
+                                        RedirectAttributes redirectAttributes,
+                                        HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies/refresh-missing-ratings] 권한 없음: 비관리자 등급 보정 시도.");
+            return "redirect:/accessDenied";
+        }
+
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        List<Movie> movies = movieService.findMoviesMissingRated(safeLimit);
+        int updatedCount = 0;
+        int unresolvedCount = 0;
+
+        for (Movie movie : movies) {
+            try {
+                Movie refreshedMovie = refreshRatedIfMissing(movie);
+                if (refreshedMovie != null && !isMissingRated(refreshedMovie.getRated())) {
+                    updatedCount++;
+                } else {
+                    unresolvedCount++;
+                }
+            } catch (Exception e) {
+                unresolvedCount++;
+                logger.warn("영화 ID {} 등급 보정 실패: {}", movie.getId(), e.getMessage());
+            }
+        }
+
+        if (movies.isEmpty()) {
+            redirectAttributes.addFlashAttribute("ratingRefreshMessage", "보정할 등급 미정 영화가 없습니다.");
+        } else {
+            redirectAttributes.addFlashAttribute(
+                    "ratingRefreshMessage",
+                    "등급 미정 영화 " + movies.size() + "개 확인, " + updatedCount + "개 보정, " + unresolvedCount + "개 미확인"
+            );
+        }
+
+        int redirectPage = Math.max(page, 1);
+        int redirectSize = Math.min(Math.max(size, 1), 50);
+        return "redirect:/movies?page=" + redirectPage + "&size=" + redirectSize;
     }
     
     
@@ -738,6 +872,45 @@ public class MovieController {
         }
         model.addAttribute("userRole", currentUserRole(session));
         return "movie/apiSearchPage";
+    }
+
+    @GetMapping("/movies/upcoming-candidates")
+    @Transactional(readOnly = true)
+    public String upcomingMovieCandidates(@RequestParam(value = "page", defaultValue = "1") int page,
+                                          @RequestParam(value = "managedPage", defaultValue = "1") int managedPage,
+                                          @RequestParam(value = "managedSize", defaultValue = "10") int managedSize,
+                                          Model model,
+                                          HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[GET /movies/upcoming-candidates] 권한 없음: 비관리자 개봉예정 후보 접근 시도.");
+            return "redirect:/accessDenied";
+        }
+
+        int currentPage = Math.max(page, 1);
+        int managedPageSize = Math.min(Math.max(managedSize, 1), 50);
+        int totalManagedMovies = movieService.countUpcomingMovies();
+        int totalManagedPages = Math.max(1, (int) Math.ceil((double) totalManagedMovies / managedPageSize));
+        int currentManagedPage = Math.min(Math.max(managedPage, 1), totalManagedPages);
+        int managedStartPage = ((currentManagedPage - 1) / 5) * 5 + 1;
+        int managedEndPage = Math.min(managedStartPage + 4, totalManagedPages);
+        List<Movie> managedUpcomingMovies = movieService.getUpcomingMoviesPaged(currentManagedPage, managedPageSize);
+        List<Movie> upcomingCandidates = externalMovieApiService.getUpcomingMovieCandidates(currentPage);
+        overrideRatingsWithLocalData(upcomingCandidates);
+        upcomingCandidates.removeIf(movie -> movie.getId() != null);
+
+        model.addAttribute("managedUpcomingMovies", managedUpcomingMovies);
+        model.addAttribute("managedCurrentPage", currentManagedPage);
+        model.addAttribute("managedPageSize", managedPageSize);
+        model.addAttribute("managedTotalPages", totalManagedPages);
+        model.addAttribute("managedStartPage", managedStartPage);
+        model.addAttribute("managedEndPage", managedEndPage);
+        model.addAttribute("managedTotalMovies", totalManagedMovies);
+        model.addAttribute("upcomingCandidates", upcomingCandidates);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("prevPage", Math.max(currentPage - 1, 1));
+        model.addAttribute("nextPage", currentPage + 1);
+        model.addAttribute("userRole", currentUserRole(session));
+        return "movie/upcomingCandidateList";
     }
 
 
@@ -853,6 +1026,7 @@ public class MovieController {
 	    public String getApiExternalMovieDetail(@RequestParam("imdbId") String imdbId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
             Movie existingMovie = movieService.findByApiId(imdbId);
             if (existingMovie != null) {
+                existingMovie = refreshRatedIfMissing(existingMovie);
                 return "redirect:/movies/" + existingMovie.getId();
             }
 
@@ -1029,7 +1203,12 @@ public class MovieController {
 
 
     @GetMapping("/movies/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model, HttpSession session) {
+    public String editForm(@PathVariable Long id,
+                           @RequestParam(value = "returnTo", required = false) String returnTo,
+                           @RequestParam(value = "managedPage", defaultValue = "1") int managedPage,
+                           @RequestParam(value = "managedSize", defaultValue = "10") int managedSize,
+                           Model model,
+                           HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[GET /movies/{}/edit] 권한 없음: 비관리자 접근 시도.");
             return "redirect:/accessDenied";
@@ -1051,6 +1230,9 @@ public class MovieController {
         }
 
         model.addAttribute("movie", movie);
+        model.addAttribute("returnTo", returnTo);
+        model.addAttribute("managedPage", Math.max(managedPage, 1));
+        model.addAttribute("managedSize", Math.min(Math.max(managedSize, 1), 50));
         model.addAttribute("userRole", currentUserRole(session));
         return "movie/form";
     }
@@ -1059,6 +1241,9 @@ public class MovieController {
     public String update(@PathVariable Long id,
                           @ModelAttribute Movie movie,
                           @RequestParam("posterImage") MultipartFile posterImage,
+                          @RequestParam(value = "returnTo", required = false) String returnTo,
+                          @RequestParam(value = "managedPage", defaultValue = "1") int managedPage,
+                          @RequestParam(value = "managedSize", defaultValue = "10") int managedSize,
                           HttpServletRequest request, HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[POST /movies/{}/edit] 권한 없음: 비관리자 영화 업데이트 시도.");
@@ -1104,17 +1289,68 @@ public class MovieController {
 
         movieService.update(movie);
         logger.info("영화 '{}' 업데이트 완료.", movie.getTitle());
+        if ("upcoming".equals(returnTo)) {
+            return "redirect:/movies/upcoming-candidates?status=updated&managedPage="
+                    + Math.max(managedPage, 1) + "&managedSize=" + Math.min(Math.max(managedSize, 1), 50);
+        }
         return "redirect:/movies";
     }
 
     @PostMapping("/movies/{id}/delete")
-    public String delete(@PathVariable Long id, HttpServletRequest request, HttpSession session) {
+    public String delete(@PathVariable Long id,
+                         @RequestParam(value = "returnTo", required = false) String returnTo,
+                         @RequestParam(value = "managedPage", defaultValue = "1") int managedPage,
+                         @RequestParam(value = "managedSize", defaultValue = "10") int managedSize,
+                         HttpServletRequest request,
+                         HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[POST /movies/{}/delete] 권한 없음: 비관리자 영화 삭제 시도.");
             return "redirect:/accessDenied";
         }
         logger.info("[POST /movies/{}/delete] 영화 삭제 요청: ID = {}", id, id);
 
+        deleteMovieAndPoster(id, request);
+        logger.info("영화 ID {} 삭제 완료.", id);
+        if ("upcoming".equals(returnTo)) {
+            return "redirect:/movies/upcoming-candidates?status=deleted&managedPage="
+                    + Math.max(managedPage, 1) + "&managedSize=" + Math.min(Math.max(managedSize, 1), 50);
+        }
+        return "redirect:/movies";
+    }
+
+    @PostMapping("/movies/delete-selected")
+    public String deleteSelected(@RequestParam(value = "movieIds", required = false) List<Long> movieIds,
+                                 @RequestParam(value = "returnTo", required = false) String returnTo,
+                                 @RequestParam(value = "managedPage", defaultValue = "1") int managedPage,
+                                 @RequestParam(value = "managedSize", defaultValue = "10") int managedSize,
+                                 HttpServletRequest request,
+                                 HttpSession session) {
+        if (!isAdmin(session)) {
+            logger.warn("[POST /movies/delete-selected] 권한 없음: 비관리자 영화 선택 삭제 시도.");
+            return "redirect:/accessDenied";
+        }
+
+        if (movieIds == null || movieIds.isEmpty()) {
+            if ("upcoming".equals(returnTo)) {
+                return "redirect:/movies/upcoming-candidates?error=noSelection&managedPage="
+                        + Math.max(managedPage, 1) + "&managedSize=" + Math.min(Math.max(managedSize, 1), 50);
+            }
+            return "redirect:/movies?error=noSelection";
+        }
+
+        for (Long movieId : movieIds) {
+            deleteMovieAndPoster(movieId, request);
+        }
+
+        logger.info("선택한 영화 {}개 삭제 완료.", movieIds.size());
+        if ("upcoming".equals(returnTo)) {
+            return "redirect:/movies/upcoming-candidates?status=deleted&managedPage="
+                    + Math.max(managedPage, 1) + "&managedSize=" + Math.min(Math.max(managedSize, 1), 50);
+        }
+        return "redirect:/movies?status=deleted";
+    }
+
+    private void deleteMovieAndPoster(Long id, HttpServletRequest request) {
         Movie movieToDelete = movieService.findById(id);
         if (movieToDelete != null && movieToDelete.getPosterPath() != null) {
             if (!movieToDelete.getPosterPath().startsWith("http://") && !movieToDelete.getPosterPath().startsWith("https://")) {
@@ -1133,8 +1369,6 @@ public class MovieController {
         }
 
         movieService.delete(id);
-        logger.info("영화 ID {} 삭제 완료.", id);
-        return "redirect:/movies";
     }
 
     @PostMapping("/movies/{movieId}/toggleCart")
@@ -1204,22 +1438,33 @@ public class MovieController {
     }
 
     @GetMapping("/admin/banner-movies")
-    public String adminBannerMovies(Model model, HttpSession session) {
+    public String adminBannerMovies(@RequestParam(value = "keyword", required = false) String keyword,
+                                    Model model,
+                                    HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[GET /admin/banner-movies] 권한 없음: 비관리자 접근 시도.");
             return "redirect:/accessDenied";
         }
         logger.info("[GET /admin/banner-movies] 관리자 수동 추천 영화 관리 페이지 요청.");
-        List<Movie> allMovies = movieService.findAll();
+        String searchKeyword = keyword == null ? "" : keyword.trim();
+        List<Movie> candidateMovies = movieService.findBannerMovieCandidates(searchKeyword, 30);
         List<Movie> currentAdminBannerMovies = adminBannerMovieService.getAdminRecommendedMovies();
+        Set<Long> currentBannerMovieIds = currentAdminBannerMovies.stream()
+                .map(Movie::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        candidateMovies.removeIf(movie -> currentBannerMovieIds.contains(movie.getId()));
 
-        model.addAttribute("allMovies", allMovies);
+        model.addAttribute("candidateMovies", candidateMovies);
+        model.addAttribute("keyword", searchKeyword);
         model.addAttribute("currentAdminBannerMovies", currentAdminBannerMovies);
         model.addAttribute("userRole", currentUserRole(session));
         return "admin/bannerMovieManage";
     }
     @PostMapping("/admin/banner-movies/add")
-    public String addBannerMovie(@RequestParam("movieId") Long movieId, RedirectAttributes redirectAttributes, HttpSession session) {
+    public String addBannerMovie(@RequestParam("movieId") Long movieId,
+                                 @RequestParam(value = "keyword", required = false) String keyword,
+                                 RedirectAttributes redirectAttributes,
+                                 HttpSession session) {
         if (!isAdmin(session)) {
             logger.warn("[POST /admin/banner-movies/add] 권한 없음: 비관리자 추천 영화 추가 시도.");
             return "redirect:/accessDenied";
@@ -1229,6 +1474,7 @@ public class MovieController {
         try {
             if (adminBannerMovieService.isMovieInAdminBanner(movieId)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "이미 수동 추천 영화로 등록된 영화입니다.");
+                keepBannerKeyword(keyword, redirectAttributes);
                 return "redirect:/admin/banner-movies";
             }
 
@@ -1238,6 +1484,7 @@ public class MovieController {
             logger.error("수동 추천 영화 추가 실패 (movieId={}): {}", movieId, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 추가 중 오류가 발생했습니다.");
         }
+        keepBannerKeyword(keyword, redirectAttributes);
         return "redirect:/admin/banner-movies";
     }
 
@@ -1257,6 +1504,12 @@ public class MovieController {
             redirectAttributes.addFlashAttribute("errorMessage", "수동 추천 영화 삭제 중 오류가 발생했습니다.");
         }
         return "redirect:/admin/banner-movies";
+    }
+
+    private void keepBannerKeyword(String keyword, RedirectAttributes redirectAttributes) {
+        if (!isBlank(keyword)) {
+            redirectAttributes.addAttribute("keyword", keyword.trim());
+        }
     }
    
     @GetMapping("/movies/upcoming")

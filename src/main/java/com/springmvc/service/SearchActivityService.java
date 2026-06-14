@@ -47,6 +47,7 @@ public class SearchActivityService {
     @Transactional(readOnly = true)
     public List<String> getRecentKeywords() {
         ensureSearchActivityTable();
+        // 홈 노출용 검색어. 현재는 전체 최근순.
         String sql = """
             SELECT keyword
             FROM search_activity

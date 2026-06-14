@@ -34,6 +34,31 @@ public class MovieService {
         logger.debug("DB에서 {}개의 영화 목록을 가져왔습니다.", movies.size());
         return movies;
     }
+
+    public List<Movie> findAllPaged(int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+        int offset = (safePage - 1) * safeSize;
+        logger.debug("movieService.findAllPaged({}, {}) 호출.", safePage, safeSize);
+        return movieRepository.findAllPaged(safeSize, offset);
+    }
+
+    public int countAllMovies() {
+        return movieRepository.countAllMovies();
+    }
+
+    public List<Movie> findBannerMovieCandidates(String keyword, int limit) {
+        return movieRepository.findBannerMovieCandidates(keyword, limit);
+    }
+
+    public int countMissingRatedMovies() {
+        return movieRepository.countMissingRatedMovies();
+    }
+
+    public List<Movie> findMoviesMissingRated(int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        return movieRepository.findMoviesMissingRated(safeLimit);
+    }
     
     // 모든 추천 랭킹 영화 조회
     public List<Movie> getAllRecommendedMovies() {
@@ -211,6 +236,17 @@ public class MovieService {
     public List<Movie> getAllUpcomingMovies() {
         logger.debug("movieService.getAllUpcomingMovies() 호출: 모든 개봉 예정 영화 조회.");
         return movieRepository.findAllUpcomingMovies();
+    }
+
+    public List<Movie> getUpcomingMoviesPaged(int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        int offset = (safePage - 1) * safeSize;
+        return movieRepository.findUpcomingMoviesPaged(safeSize, offset);
+    }
+
+    public int countUpcomingMovies() {
+        return movieRepository.countUpcomingMovies();
     }
     
     // D-day를 포함한 개봉 예정 영화 조회

@@ -3,6 +3,7 @@
 
 <div class="header-center">
     <form action="${pageContext.request.contextPath}/search" method="get" class="search-form">
+        <%-- 포스터 가림은 검색어와 따로 넘김 --%>
         <c:set var="selectedPosterMode" value="${param.posterMode}" />
         <c:if test="${selectedPosterMode ne 'horror' and selectedPosterMode ne 'adult' and selectedPosterMode ne 'horror_adult' and selectedPosterMode ne 'all'}">
             <c:set var="selectedPosterMode" value="off" />
@@ -26,6 +27,7 @@
                 <strong>포스터를 가려드릴게요</strong>
                 <span>검색어와 별도로 적용됩니다.</span>
             </div>
+            <%-- 공포/성인등급은 같이 선택 가능 --%>
             <div class="search-filter-options">
                 <button type="button" class="search-filter-option ${selectedPosterMode eq 'off' ? 'is-active' : ''}" data-poster-mode="off">끄기</button>
                 <button type="button" class="search-filter-option ${(selectedPosterMode eq 'horror' or selectedPosterMode eq 'horror_adult') ? 'is-active' : ''}" data-poster-mode="horror">공포·긴장감</button>
@@ -71,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.addEventListener('click', openSearchFilters);
     }
 
+    // 버튼 상태를 hidden 값으로 합침
     function getPosterModeFromFilters() {
         if (allButton && allButton.classList.contains('is-active')) {
             return 'all';

@@ -29,6 +29,8 @@ public class ExternalMovieApiService {
 
     //TMDB 검색용
     private final String OMDB_BASE_URL = "https://api.themoviedb.org/3/search/movie";
+    private final String TMDB_UPCOMING_URL = "https://api.themoviedb.org/3/movie/upcoming";
+    private final String TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
     private static final Map<Integer, String> TMDB_MOVIE_GENRES_BY_ID = Map.ofEntries(
             Map.entry(28, "액션"),
             Map.entry(12, "모험"),
@@ -105,6 +107,38 @@ public class ExternalMovieApiService {
 
     public List<Movie> searchMoviesForUserCards(String keyword) {
         return searchMoviesForUserCards(keyword, 1, 0, 12).getMovies();
+    }
+
+    public List<Movie> getUpcomingMovieCandidates(int page) {
+        int safePage = Math.max(page, 1);
+        String upcomingApiUrl = UriComponentsBuilder.fromHttpUrl(TMDB_UPCOMING_URL)
+                .queryParam("api_key", this.omdbSearchApiKey)
+                .queryParam("language", "ko-KR")
+                .queryParam("region", "KR")
+                .queryParam("page", safePage)
+                .build()
+                .toUriString();
+
+        List<Movie> movies = new ArrayList<>();
+        try {
+            String jsonResponse = restTemplate.getForObject(upcomingApiUrl, String.class);
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+            JsonNode results = rootNode.path("results");
+
+            if (results.isArray()) {
+                for (JsonNode movieNode : results) {
+                    Movie movie = createMovieCardFromSearchResult(movieNode);
+                    if (movie != null) {
+                        movies.add(movie);
+                    }
+                }
+            }
+
+            logger.info("TMDB 개봉예정 후보 {}페이지에서 {}개를 가져왔습니다.", safePage, movies.size());
+        } catch (Exception e) {
+            logger.error("TMDB 개봉예정 후보 조회 오류: {}", e.getMessage(), e);
+        }
+        return movies;
     }
 
     public MovieSearchResult searchMoviesForUserCards(String keyword, int page, int offset, int limit) {
@@ -223,7 +257,9 @@ public class ExternalMovieApiService {
                 // 포스터
                 if (rootNode.has("poster_path")) {
                     String posterPath = rootNode.get("poster_path").asText();
-                    movie.setPosterPath("https://image.tmdb.org/t/p/w500" + posterPath);
+                    if (!isBlank(posterPath)) {
+                        movie.setPosterPath(TMDB_IMAGE_BASE_URL + posterPath);
+                    }
                 }
 
                 // 런타임
@@ -297,7 +333,7 @@ public class ExternalMovieApiService {
 
         String posterPath = movieNode.path("poster_path").asText(null);
         if (!isBlank(posterPath)) {
-            movie.setPosterPath("https://image.tmdb.org/t/p/w500" + posterPath);
+            movie.setPosterPath(TMDB_IMAGE_BASE_URL + posterPath);
         }
 
         movie.setGenre(resolveGenreNames(movieNode.path("genre_ids")));

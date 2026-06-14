@@ -80,6 +80,97 @@ public class MovieRepository {
         return list;
     }
 
+    public List<Movie> findAllPaged(int limit, int offset) {
+        logger.debug("movieRepository.findAllPaged({}, {}) 호출: 영화 목록 페이지 조회.", limit, offset);
+        String sql = """
+            SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at
+            FROM movies
+            WHERE release_date IS NULL OR release_date <= CURDATE()
+            ORDER BY like_count DESC, created_at DESC
+            LIMIT ? OFFSET ?
+            """;
+
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), limit, offset);
+        fillMissingDirectors(list);
+        return list;
+    }
+
+    public int countAllMovies() {
+        String sql = "SELECT COUNT(*) FROM movies WHERE release_date IS NULL OR release_date <= CURDATE()";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    public List<Movie> findBannerMovieCandidates(String keyword, int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        String baseSelect = """
+            SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at
+            FROM movies
+            WHERE release_date IS NULL OR release_date <= CURDATE()
+            """;
+
+        List<Movie> list;
+        if (isBlank(keyword)) {
+            String sql = baseSelect + " ORDER BY created_at DESC LIMIT ?";
+            list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), safeLimit);
+        } else {
+            String searchText = "%" + keyword.trim().toLowerCase() + "%";
+            String sql = baseSelect + """
+                AND (
+                    LOWER(title) LIKE ?
+                    OR LOWER(IFNULL(director, '')) LIKE ?
+                    OR LOWER(IFNULL(genre, '')) LIKE ?
+                    OR LOWER(IFNULL(rated, '')) LIKE ?
+                )
+                ORDER BY created_at DESC
+                LIMIT ?
+                """;
+            list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class),
+                    searchText, searchText, searchText, searchText, safeLimit);
+        }
+
+        fillMissingDirectors(list);
+        return list;
+    }
+
+    public int countMissingRatedMovies() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM movies
+            WHERE api_id IS NOT NULL
+              AND TRIM(api_id) <> ''
+              AND (
+                    rated IS NULL
+                    OR TRIM(rated) = ''
+                    OR UPPER(TRIM(rated)) IN ('N/A', 'NR', 'NOT RATED', 'UNRATED')
+                    OR TRIM(rated) = '등급 미정'
+                  )
+            """;
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    public List<Movie> findMoviesMissingRated(int limit) {
+        String sql = """
+            SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at
+            FROM movies
+            WHERE api_id IS NOT NULL
+              AND TRIM(api_id) <> ''
+              AND (
+                    rated IS NULL
+                    OR TRIM(rated) = ''
+                    OR UPPER(TRIM(rated)) IN ('N/A', 'NR', 'NOT RATED', 'UNRATED')
+                    OR TRIM(rated) = '등급 미정'
+                  )
+            ORDER BY updated_at ASC, created_at ASC
+            LIMIT ?
+            """;
+
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), limit);
+        fillMissingDirectors(list);
+        return list;
+    }
+
     public Movie findById(Long id) {
         logger.debug("movieRepository.findById({}) 호출: DB에서 특정 영화 조회 시도.", id);
         String sql = "SELECT id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, like_count, runtime, rated, created_at, updated_at FROM movies WHERE id = ?";
@@ -141,6 +232,27 @@ public class MovieRepository {
         List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));
         logger.info("DB에서 모든 개봉 예정작 레코드 {}개 성공적으로 가져옴.", list.size());
         return list;
+    }
+
+    public List<Movie> findUpcomingMoviesPaged(int limit, int offset) {
+        String sql = """
+            SELECT
+                id, api_id, title, director, year, release_date, genre, rating, violence_score_avg, overview, poster_path, created_at, updated_at, like_count, runtime, rated,
+                DATEDIFF(release_date, CURDATE()) AS dday
+            FROM movies
+            WHERE release_date > CURDATE()
+            ORDER BY release_date ASC
+            LIMIT ? OFFSET ?
+            """;
+        List<Movie> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class), limit, offset);
+        fillMissingDirectors(list);
+        return list;
+    }
+
+    public int countUpcomingMovies() {
+        String sql = "SELECT COUNT(*) FROM movies WHERE release_date > CURDATE()";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count == null ? 0 : count;
     }
     
     public Long save(Movie movie) {
@@ -332,7 +444,7 @@ public class MovieRepository {
         return list;
     }
 
-    //개봉예정영화 가져오는 거 초과 7일은 너무 목록이 짧아서 14일로 수정함
+    // 홈 개봉예정작: 오늘부터 두 달 뒤까지 12개만 표시
     public List<Movie> getUpcomingMoviesWithDday() {
         String sql = """
             SELECT
@@ -354,9 +466,9 @@ public class MovieRepository {
                 rated,
                 DATEDIFF(release_date, CURDATE()) AS dday
             FROM movies
-            WHERE DATEDIFF(release_date, CURDATE()) >= -14
-            ORDER BY ABS(DATEDIFF(release_date, CURDATE())) ASC
-            LIMIT 6
+            WHERE release_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 2 MONTH)
+            ORDER BY release_date ASC
+            LIMIT 12
             """;
 
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Movie.class));

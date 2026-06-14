@@ -310,7 +310,7 @@
         <div class="home-board-heading">
           <div>
             <span class="home-eyebrow home-eyebrow-blue">개봉 일정</span>
-            <h2>이번 주 볼 만한 개봉작</h2>
+            <h2>다가오는 개봉작</h2>
           </div>
           <a href="<c:url value='/movies/all-upcoming'/>">전체 보기</a>
         </div>
@@ -318,7 +318,7 @@
         <div class="home-release-timeline">
           <c:choose>
             <c:when test="${not empty upcomingMovies}">
-              <c:forEach var="movie" items="${upcomingMovies}" begin="0" end="4">
+              <c:forEach var="movie" items="${upcomingMovies}" begin="0" end="11">
                 <c:set var="timelinePosterSrc">
                   <c:choose>
                     <c:when test="${not empty movie.posterPath and movie.posterPath ne 'N/A'}">
@@ -473,6 +473,7 @@
      return;
    }
 
+   // DB 삭제 아님. 이 브라우저에서만 숨김
    function getHiddenKeywords() {
      try {
        return JSON.parse(localStorage.getItem(storageKey) || '[]');

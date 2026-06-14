@@ -369,6 +369,82 @@
             opacity: 0.7;
         }
 
+        .register-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .register-toolbar label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+        }
+
+        .register-toolbar button {
+            border: 1px solid #6c757d;
+            background: #fff;
+            color: #333;
+            border-radius: 4px;
+            padding: 7px 12px;
+            cursor: pointer;
+        }
+
+        .register-progress {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .register-check-cell {
+            text-align: center;
+            width: 56px;
+        }
+
+        .register-status {
+            display: block;
+            margin-top: 6px;
+            color: #6c757d;
+            font-size: 13px;
+        }
+
+        .action-button.is-complete {
+            background-color: #6c757d;
+            cursor: default;
+        }
+
+        .import-toast {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 2000;
+            max-width: 360px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            background: #25282d;
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .import-toast.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .import-toast.is-error {
+            background: #b02a37;
+        }
+
         @media (max-width: 720px) {
             .container {
                 width: 96%;
@@ -402,9 +478,10 @@
 <body>
     <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
-    <div class="container">
+    <div class="container" data-register-panel data-import-url="<c:url value='/movies/import-api-detail/ajax'/>">
         <c:if test="${userRole eq 'ADMIN'}">
             <p class="back-link"><a href="<c:url value='/movies'/>" class="back-button">내 영화 관리페이지로 돌아가기</a></p>
+            <p class="back-link"><a href="<c:url value='/movies/upcoming-candidates'/>" class="back-button">개봉예정영화 관리</a></p>
         </c:if> 
 
         <c:if test="${searchPerformed}">
@@ -428,9 +505,17 @@
             <c:if test="${not empty apiMovies}">
                 <c:choose>
                     <c:when test="${userRole eq 'ADMIN'}">
+                        <div class="register-toolbar">
+                            <label><input type="checkbox" data-select-all /> 전체 체크</label>
+                            <button type="button" data-register-selected>선택한 영화 등록</button>
+                            <button type="button" data-register-all>현재 목록 전체 등록</button>
+                            <span class="register-progress" data-register-count>선택된 영화 없음</span>
+                            <span class="register-progress" data-register-progress></span>
+                        </div>
                         <table class="movie-table">
                             <thead>
                                 <tr>
+                                    <th>선택</th>
                                     <th>포스터</th>
                                     <th>제목</th>
                                     <th>감독</th>
@@ -445,7 +530,11 @@
                             </thead>
                             <tbody>
                                 <c:forEach var="apiMovie" items="${apiMovies}">
-                                    <tr>
+                                    <c:set var="alreadyRegistered" value="${not empty apiMovie.id}" />
+                                    <tr data-register-row data-api-id="${apiMovie.apiId}" class="${alreadyRegistered ? 'is-registered' : ''}">
+                                        <td class="register-check-cell">
+                                            <input type="checkbox" class="js-register-check" value="${apiMovie.apiId}" <c:if test="${alreadyRegistered}">disabled</c:if> />
+                                        </td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${not empty apiMovie.posterPath and apiMovie.posterPath ne 'N/A'}">
@@ -487,9 +576,17 @@
                                         <td>${fn:substring(apiMovie.overview, 0, 30)}...</td>
                                         <td>${apiMovie.apiId}</td>
                                         <td>
-                                            <form action="<c:url value='/movies/import-api-detail'/>" method="post" class="action-form">
+                                            <form action="<c:url value='/movies/import-api-detail'/>" method="post" class="action-form js-register-form" data-api-id="${apiMovie.apiId}">
                                                 <input type="hidden" name="imdbId" value="${apiMovie.apiId}" />
-                                                <button type="submit" class="action-button">이 영화 등록</button>
+                                                <button type="submit" class="action-button js-register-one <c:if test="${alreadyRegistered}">is-complete</c:if>" <c:if test="${alreadyRegistered}">disabled</c:if>>
+                                                    <c:choose>
+                                                        <c:when test="${alreadyRegistered}">등록 완료</c:when>
+                                                        <c:otherwise>이 영화 등록</c:otherwise>
+                                                    </c:choose>
+                                                </button>
+                                                <span class="register-status" data-register-status>
+                                                    <c:if test="${alreadyRegistered}">등록 완료</c:if>
+                                                </span>
                                             </form>
                                         </td>
                                     </tr>
@@ -518,6 +615,7 @@
                                     or fn:contains(normalizedRated, '19')
                                     or normalizedRated eq 'r'
                                     or normalizedRated eq 'nc-17'}" />
+                                <%-- 더보기 카드와 기준 맞추기 --%>
                                 <c:set var="isPosterProtected" value="${searchPosterMode eq 'all'
                                     or ((searchPosterMode eq 'horror' or searchPosterMode eq 'horror_adult') and isHorrorPosterTarget)
                                     or ((searchPosterMode eq 'adult' or searchPosterMode eq 'horror_adult') and isAdultPosterTarget)}" />
@@ -678,11 +776,13 @@
         return false;
     }
 
+    // 검색창 필터 바꾸면 현재 카드도 다시 계산
     window.addEventListener('prewatch:posterModeChanged', function (event) {
         searchPosterMode = event.detail && event.detail.posterMode ? event.detail.posterMode : 'off';
         applySearchPosterProtection(document);
     });
 
+    // 찜하지 않은 하트만 hover 미리보기
     function setLikeHoverPreview(button, isPreview) {
         if (!button || button.classList.contains('is-liked') || button.disabled) {
             return;
@@ -695,6 +795,7 @@
         }
     }
 
+    // 보기 누른 포스터는 다시 가리지 않음
     function applySearchPosterProtection(root) {
         const scope = root || document;
         Array.from(scope.querySelectorAll('.user-search-poster')).forEach(function (poster) {
@@ -742,6 +843,7 @@
             + '</div>';
     }
 
+    // 등급은 화면 먼저 띄운 뒤 따로 채움. 끝나면 포스터 가림도 다시 계산.
     function loadSearchCertifications(root) {
         const scope = root || document;
         const ratedElements = Array.from(scope.querySelectorAll('.user-search-rated[data-api-id]'))
@@ -959,5 +1061,7 @@
     applySearchPosterProtection(document);
     loadSearchCertifications(document);
     </script>
+    <div class="import-toast" data-register-toast></div>
+    <script src="<c:url value='/resources/js/movie-import-register.js'/>"></script>
 </body>
 </html>

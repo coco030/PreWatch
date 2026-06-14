@@ -24,6 +24,8 @@ public class TmdbApiService {
     private static final int MAX_CAST_COUNT = 11;
     private static final String NO_BACKDROP_PATH = "";
     private static final String NO_CERTIFICATION = "";
+    private static final List<String> CERTIFICATION_COUNTRY_PRIORITY =
+            List.of("KR", "US", "JP", "GB", "CA", "AU", "FR", "DE");
 
     private final Map<Integer, List<Map<String, String>>> castAndCrewCache = new ConcurrentHashMap<>();
     private final Map<String, List<String>> backdropImageUrlsCache = new ConcurrentHashMap<>();
@@ -379,6 +381,7 @@ public class TmdbApiService {
             JsonNode root = objectMapper.readTree(json);
             JsonNode results = root.path("results");
 
+            Map<String, String> countryCertifications = new HashMap<>();
             String fallback = null;
             if (results.isArray()) {
                 for (JsonNode country : results) {
@@ -389,15 +392,23 @@ public class TmdbApiService {
                         continue;
                     }
 
-                    if ("KR".equals(countryCode)) {
-                        String normalized = normalizeCertification(certification);
-                        certificationCache.put(tmdbMovieId, normalized == null ? NO_CERTIFICATION : normalized);
-                        return normalized;
+                    String normalized = normalizeCertification(certification);
+                    if (normalized == null) {
+                        continue;
                     }
 
-                    if (fallback == null && "US".equals(countryCode)) {
-                        fallback = normalizeCertification(certification);
+                    countryCertifications.put(countryCode, normalized);
+                    if (fallback == null) {
+                        fallback = normalized;
                     }
+                }
+            }
+
+            for (String countryCode : CERTIFICATION_COUNTRY_PRIORITY) {
+                String certification = countryCertifications.get(countryCode);
+                if (certification != null) {
+                    certificationCache.put(tmdbMovieId, certification);
+                    return certification;
                 }
             }
 
@@ -414,14 +425,30 @@ public class TmdbApiService {
             return null;
         }
 
+        String fallback = null;
+        int fallbackPriority = Integer.MAX_VALUE;
+
         for (JsonNode releaseDate : releaseDates) {
             String certification = releaseDate.path("certification").asText(null);
             if (certification != null && !certification.isBlank()) {
-                return certification.trim();
+                int priority = releaseTypePriority(releaseDate.path("type").asInt(0));
+                if (priority < fallbackPriority) {
+                    fallback = certification.trim();
+                    fallbackPriority = priority;
+                }
             }
         }
 
-        return null;
+        return fallback;
+    }
+
+    private int releaseTypePriority(int type) {
+        return switch (type) {
+            case 3 -> 0;
+            case 2 -> 1;
+            case 4, 5 -> 2;
+            default -> 3;
+        };
     }
 
     private String normalizeCertification(String certification) {
@@ -430,10 +457,11 @@ public class TmdbApiService {
         }
 
         return switch (certification.trim().toUpperCase(Locale.ROOT)) {
-            case "ALL", "ALL AGES", "0", "전체" -> "전체관람가";
-            case "12", "12+", "12세이상관람가" -> "12세";
-            case "15", "15+", "15세이상관람가" -> "15세";
-            case "18", "18+", "19", "19+", "청소년관람불가" -> "청불";
+            case "N/A", "NR", "NOT RATED", "UNRATED" -> null;
+            case "ALL", "ALL AGES", "0", "G", "U", "전체", "전체관람가", "전체 관람가" -> "전체관람가";
+            case "PG", "12", "12+", "12A", "12세", "12세이상관람가", "12세 이상 관람가" -> "12세";
+            case "PG-13", "15", "15+", "15세", "15세이상관람가", "15세 이상 관람가" -> "15세";
+            case "R", "NC-17", "18", "18+", "19", "19+", "청불", "청소년관람불가", "청소년 관람불가" -> "청불";
             default -> certification.trim();
         };
     }
